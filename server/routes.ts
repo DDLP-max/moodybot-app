@@ -219,7 +219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const moodItems = moodData.map(mood => ({
         mood: mood.mood,
         intensity: mood.intensity,
-        notes: mood.notes
+        notes: mood.notes || undefined
       }));
 
       // Analyze patterns

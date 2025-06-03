@@ -194,7 +194,8 @@ export class MemStorage implements IStorage {
     const entry: JournalEntry = {
       ...insertEntry,
       id,
-      createdAt: new Date()
+      createdAt: new Date(),
+      mood: insertEntry.mood || null
     };
     this.journalEntries.set(id, entry);
     return entry;
@@ -212,7 +213,9 @@ export class MemStorage implements IStorage {
     const card: QuoteCard = {
       ...insertCard,
       id,
-      createdAt: new Date()
+      createdAt: new Date(),
+      source: insertCard.source || null,
+      imageUrl: insertCard.imageUrl || null
     };
     this.quoteCards.set(id, card);
     return card;
@@ -230,7 +233,8 @@ export class MemStorage implements IStorage {
     const mood: MoodTracking = {
       ...insertMood,
       id,
-      createdAt: new Date()
+      createdAt: new Date(),
+      notes: insertMood.notes || null
     };
     this.moodTracking.set(id, mood);
     return mood;

@@ -1,8 +1,13 @@
 import OpenAI from "openai";
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key" 
+// Using OpenRouter for AI model access
+const openai = new OpenAI({
+  apiKey: process.env.OPENROUTER_API_KEY,
+  baseURL: "https://openrouter.ai/api/v1",
+  defaultHeaders: {
+    "HTTP-Referer": "https://mindmirror.ai",
+    "X-Title": "MindMirrorAI",
+  },
 });
 
 export interface ChatModeConfig {
@@ -52,7 +57,7 @@ export async function generateChatResponse(
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "anthropic/claude-3.5-sonnet",
       messages: messages as any,
       temperature: config.temperature,
       max_tokens: config.maxTokens,
@@ -70,7 +75,7 @@ export async function generateJournalPrompt(mood?: string): Promise<string> {
   
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "anthropic/claude-3.5-sonnet",
       messages: [
         {
           role: "system",
@@ -95,7 +100,7 @@ export async function generateJournalPrompt(mood?: string): Promise<string> {
 export async function generateQuoteCard(journalContent: string): Promise<{ quote: string; source: string }> {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "anthropic/claude-3.5-sonnet",
       messages: [
         {
           role: "system",
@@ -131,7 +136,7 @@ export async function analyzeDamagePatterns(
 ): Promise<{ patterns: any[]; triggers: any[]; loops: any[] }> {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "anthropic/claude-3.5-sonnet",
       messages: [
         {
           role: "system",
