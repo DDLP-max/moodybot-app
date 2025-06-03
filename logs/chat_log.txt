@@ -1,0 +1,10 @@
+{
+  "type": "chat",
+  "mode": "savage",
+  "input": "I feel lost and disconnected from everything",
+  "output": "Cut the melodramatic repetition - that's your first sign of wallowing. Let's be brutally honest here: feeling \"lost and disconnected\" is often just code for \"I'm not doing the hard work of actually engaging with life.\"\n\nHere's your wake-up call:\n\n1. You're probably spending too much time in your head instead of taking action\n2. You've likely isolated yourself and then complain about feeling isolated\n3. You're waiting for some magical feeling of connection to just happen TO you\n\nThis \"disconnected\" feeling? It's not some cosmic curse - it's the natural result of:\n- Avoiding real conversations\n- Dodging responsibilities\n- Choosing comfort over growth\n- Using screens as a shield from real life\n\nHere's the harsh truth: Connection isn't something you FEEL, it's something you DO. No one's coming to rescue you from this. Either you start taking uncomfortable action to build meaningful",
+  "userId": 1,
+  "sessionId": 1,
+  "timestamp": "2025-06-03T19:33:55.478Z"
+}
+==================================================
