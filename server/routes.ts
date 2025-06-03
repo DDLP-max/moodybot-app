@@ -73,7 +73,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const aiResponse = await generateChatResponse(
           session.mode,
           messageData.content,
-          conversationHistory
+          conversationHistory,
+          session.userId,
+          messageData.sessionId
         );
 
         // Save AI response
@@ -117,7 +119,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/journal/prompt", async (req, res) => {
     try {
       const mood = req.query.mood as string;
-      const prompt = await generateJournalPrompt(mood);
+      const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
+      const prompt = await generateJournalPrompt(mood, userId);
       res.json({ prompt });
     } catch (error) {
       res.status(500).json({ error: "Failed to generate journal prompt" });
@@ -152,7 +155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Journal content and user ID required" });
       }
 
-      const { quote, source } = await generateQuoteCard(journalContent);
+      const { quote, source } = await generateQuoteCard(journalContent, parseInt(userId));
       
       const card = await storage.createQuoteCard({
         userId: parseInt(userId),
@@ -223,7 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
 
       // Analyze patterns
-      const analysis = await analyzeDamagePatterns(journalTexts, moodItems);
+      const analysis = await analyzeDamagePatterns(journalTexts, moodItems, userIdNum);
 
       // Save damage profile
       const profile = await storage.upsertDamageProfile({

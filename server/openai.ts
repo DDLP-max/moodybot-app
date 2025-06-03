@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { logApiInteraction, logError } from "./logger";
 
 // Using OpenRouter for AI model access
 const openai = new OpenAI({
@@ -42,7 +43,9 @@ export const chatModes: Record<string, ChatModeConfig> = {
 export async function generateChatResponse(
   mode: string,
   userMessage: string,
-  conversationHistory: Array<{ role: string; content: string }> = []
+  conversationHistory: Array<{ role: string; content: string }> = [],
+  userId?: number,
+  sessionId?: number
 ): Promise<string> {
   const config = chatModes[mode];
   if (!config) {
@@ -65,16 +68,31 @@ export async function generateChatResponse(
       max_tokens: config.maxTokens,
     });
 
-    console.log("API response received:", response.choices[0].message.content?.substring(0, 100));
-    return response.choices[0].message.content || "I have nothing to say right now.";
+    const aiResponse = response.choices[0].message.content || "I have nothing to say right now.";
+    console.log("API response received:", aiResponse.substring(0, 100));
+
+    // Log the interaction
+    logApiInteraction({
+      type: "chat",
+      mode,
+      input: userMessage,
+      output: aiResponse,
+      userId,
+      sessionId,
+      timestamp: new Date().toISOString()
+    });
+
+    return aiResponse;
   } catch (error) {
     console.error("OpenRouter API error:", error);
+    logError(error, `Chat generation - Mode: ${mode}, User: ${userId}, Session: ${sessionId}`);
     throw new Error("Failed to generate response. The AI is processing your darkness.");
   }
 }
 
-export async function generateJournalPrompt(mood?: string): Promise<string> {
+export async function generateJournalPrompt(mood?: string, userId?: number): Promise<string> {
   const moodContext = mood ? `The user's current mood is: ${mood}.` : "";
+  const inputText = `Generate a dark journaling prompt for mood: ${mood || 'unspecified'}`;
   
   try {
     const response = await openai.chat.completions.create({
@@ -93,14 +111,26 @@ export async function generateJournalPrompt(mood?: string): Promise<string> {
       max_tokens: 100,
     });
 
-    return response.choices[0].message.content || "What truth are you avoiding right now?";
+    const prompt = response.choices[0].message.content || "What truth are you avoiding right now?";
+
+    // Log the interaction
+    logApiInteraction({
+      type: "journal",
+      input: inputText,
+      output: prompt,
+      userId,
+      timestamp: new Date().toISOString()
+    });
+
+    return prompt;
   } catch (error) {
-    console.error("OpenAI API error:", error);
+    console.error("OpenRouter API error:", error);
+    logError(error, `Journal prompt generation - User: ${userId}, Mood: ${mood}`);
     return "What truth are you avoiding right now?";
   }
 }
 
-export async function generateQuoteCard(journalContent: string): Promise<{ quote: string; source: string }> {
+export async function generateQuoteCard(journalContent: string, userId?: number): Promise<{ quote: string; source: string }> {
   try {
     const response = await openai.chat.completions.create({
       model: "anthropic/claude-3.5-sonnet",
@@ -120,12 +150,22 @@ export async function generateQuoteCard(journalContent: string): Promise<{ quote
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
-    return {
-      quote: result.quote || "You are not broken. You are breaking through.",
-      source: result.source || "Born from your depths"
-    };
+    const quote = result.quote || "You are not broken. You are breaking through.";
+    const source = result.source || "Born from your depths";
+
+    // Log the interaction
+    logApiInteraction({
+      type: "quote",
+      input: journalContent.substring(0, 200) + "...",
+      output: `Quote: "${quote}" - Source: ${source}`,
+      userId,
+      timestamp: new Date().toISOString()
+    });
+
+    return { quote, source };
   } catch (error) {
-    console.error("OpenAI API error:", error);
+    console.error("OpenRouter API error:", error);
+    logError(error, `Quote generation - User: ${userId}`);
     return {
       quote: "You are not broken. You are breaking through.",
       source: "Born from your depths"
@@ -135,8 +175,11 @@ export async function generateQuoteCard(journalContent: string): Promise<{ quote
 
 export async function analyzeDamagePatterns(
   journalEntries: string[],
-  moodData: Array<{ mood: string; intensity: number; notes?: string }>
+  moodData: Array<{ mood: string; intensity: number; notes?: string }>,
+  userId?: number
 ): Promise<{ patterns: any[]; triggers: any[]; loops: any[] }> {
+  const inputSummary = `${journalEntries.length} journal entries, ${moodData.length} mood records`;
+  
   try {
     const response = await openai.chat.completions.create({
       model: "anthropic/claude-3.5-sonnet",
@@ -158,13 +201,25 @@ export async function analyzeDamagePatterns(
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
-    return {
+    const analysis = {
       patterns: result.patterns || [],
       triggers: result.triggers || [],
       loops: result.loops || []
     };
+
+    // Log the interaction
+    logApiInteraction({
+      type: "analysis",
+      input: inputSummary,
+      output: `Found ${analysis.patterns.length} patterns, ${analysis.triggers.length} triggers, ${analysis.loops.length} loops`,
+      userId,
+      timestamp: new Date().toISOString()
+    });
+
+    return analysis;
   } catch (error) {
-    console.error("OpenAI API error:", error);
+    console.error("OpenRouter API error:", error);
+    logError(error, `Damage pattern analysis - User: ${userId}`);
     return {
       patterns: [],
       triggers: [],
