@@ -56,6 +56,8 @@ export async function generateChatResponse(
   ];
 
   try {
+    console.log("Making API call with:", { model: "anthropic/claude-3.5-sonnet", mode, messageCount: messages.length });
+    
     const response = await openai.chat.completions.create({
       model: "anthropic/claude-3.5-sonnet",
       messages: messages as any,
@@ -63,9 +65,10 @@ export async function generateChatResponse(
       max_tokens: config.maxTokens,
     });
 
+    console.log("API response received:", response.choices[0].message.content?.substring(0, 100));
     return response.choices[0].message.content || "I have nothing to say right now.";
   } catch (error) {
-    console.error("OpenAI API error:", error);
+    console.error("OpenRouter API error:", error);
     throw new Error("Failed to generate response. The AI is processing your darkness.");
   }
 }
