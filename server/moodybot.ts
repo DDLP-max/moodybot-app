@@ -56,9 +56,6 @@ This is not a quick chat - this is an emotional journey. Take your time. Build a
   ];
 
  try {
-  const cinematicTemperature = 0.85;
-  const cinematicMaxTokens = 1200;
-  const model = "x-ai/grok-4"; // Use Grok-4 for cinematic experience
 
   console.log("Using model:", model, "for cinematic experience");
 
@@ -111,6 +108,15 @@ This is not a quick chat - this is an emotional journey. Take your time. Build a
     hasImage: !!imageData
   });
 
+  // Check if it's a network error
+  if (error.message?.includes('fetch') || error.message?.includes('network')) {
+    return {
+      aiReply: "MoodyBot is having connection issues. Please check your internet and try again.",
+      selectedMode,
+      isAutoSelected
+    };
+  }
+
   if (error.response?.status === 429) {
     return {
       aiReply: "MoodyBot is getting too many requests. Please try again in a moment.",
@@ -126,6 +132,18 @@ This is not a quick chat - this is an emotional journey. Take your time. Build a
       isAutoSelected
     };
   }
+
+  if (error.response?.status === 400) {
+    return {
+      aiReply: "MoodyBot received an invalid request. Please try rephrasing your message.",
+      selectedMode,
+      isAutoSelected
+    };
+  }
+
+  // Log the specific error for debugging
+  console.error("Specific error message:", error.message);
+  console.error("Error stack:", error.stack);
 
   return {
     aiReply: "MoodyBot is in a bad mood. Try again later.",
