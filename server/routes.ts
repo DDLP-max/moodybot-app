@@ -69,6 +69,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check user question limit
+  app.get("/api/users/:userId/limit", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const limitCheck = await storage.checkQuestionLimit(userId);
+      res.json(limitCheck);
+    } catch (error) {
+      console.error("Limit check error:", error);
+      res.status(500).json({ error: "Failed to check question limit" });
+    }
+  });
+
   // Fetch chat sessions
   app.get("/api/chat/sessions/:userId", async (req, res) => {
     try {
@@ -111,11 +123,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/chat/messages", async (req, res) => {
     try {
       const messageData = insertChatMessageSchema.parse(req.body);
-      const userMessage = await storage.createChatMessage(messageData);
-
+      
       if (messageData.role === "user") {
         const session = await storage.getChatSession(messageData.sessionId);
         if (!session) return res.status(404).json({ error: "Session not found" });
+
+        // Check question limit for free users
+        const limitCheck = await storage.checkQuestionLimit(session.userId);
+        
+        if (!limitCheck.canAsk) {
+          // User has reached the limit, return subscription prompt
+          const subscriptionMessage = await storage.createChatMessage({
+            sessionId: messageData.sessionId,
+            role: "assistant",
+            content: `*Camera pans to a dimly lit corner where shadows dance on empty walls*
+
+You've reached the end of your free trial, wanderer. Three questions. That's all the universe gives for free.
+
+*Close-up on weathered hands, turning over a coin*
+
+The real conversations? The ones that cut deep enough to bleed truth? Those cost something. Not money. Commitment. The willingness to sit in the dark with your own demons.
+
+*Wide shot of an empty room, one chair waiting*
+
+MoodyBot isn't a chatbot. It's a mirror that shows you what you're afraid to see. And mirrors don't work for free.
+
+**Subscribe to MoodyBot Premium** and unlock unlimited access to:
+• 🔶 Brutal clarity, validation, roast therapy
+• 🎴 Premium quote card drops  
+• 🧠 Custom MoodyBot replies
+• 🧃 Emotional Damage Audit access
+• 🎧 Early access to voice drops and story packs
+• 🛰 Access to the Premium Telegram channel
+
+**$9/month** - The emotional intelligence upgrade your ex was never ready for.
+
+[Subscribe Now](https://moodybot.gumroad.com/l/moodybotpremium)
+
+@MoodyBotAI
+
+*Fade to black*`
+          });
+
+          return res.json({
+            userMessage: messageData,
+            aiMessage: subscriptionMessage,
+            limitReached: true,
+            remaining: limitCheck.remaining,
+            limit: limitCheck.limit
+          });
+        }
+
+        // Increment question count for free users
+        await storage.incrementQuestionCount(session.userId);
+
+        const userMessage = await storage.createChatMessage(messageData);
 
         const history = await storage.getChatMessages(messageData.sessionId);
         const conversation: ChatCompletionMessageParam[] = history.map(msg => ({
@@ -170,10 +232,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userMessage, 
           aiMessage,
           selectedMode: selectedMode,
-          isAutoSelected: isAutoSelected
+          isAutoSelected: isAutoSelected,
+          remaining: limitCheck.remaining - 1,
+          limit: limitCheck.limit
         });
       } else {
-        res.json({ userMessage });
+        res.json({ userMessage: messageData });
       }
     } catch (error) {
       console.error("Chat message error:", error);

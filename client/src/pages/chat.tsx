@@ -116,6 +116,7 @@ export default function Chat() {
   const [currentSession, setCurrentSession] = useState<{ mode: string; sessionId: number; userId: number } | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [currentMode, setCurrentMode] = useState<string>("savage");
+  const [questionLimit, setQuestionLimit] = useState<{ remaining: number; limit: number } | null>(null);
   // TODO: Re-enable when OpenRouter supports vision models
   // const [selectedImage, setSelectedImage] = useState<string | null>(null);
   // TODO: Re-enable when OpenRouter supports vision models
@@ -191,6 +192,20 @@ export default function Chat() {
             mode: "savage"
           });
           setCurrentMode("savage");
+        }
+
+        // Check question limit
+        try {
+          const limitResponse = await fetch(`/api/users/${userId}/limit`);
+          if (limitResponse.ok) {
+            const limitData = await limitResponse.json();
+            setQuestionLimit({
+              remaining: limitData.remaining,
+              limit: limitData.limit
+            });
+          }
+        } catch (error) {
+          console.error("Error checking question limit:", error);
         }
       } catch (error) {
         console.error("Error during session initialization:", error);
@@ -373,6 +388,14 @@ export default function Chat() {
       if (data.selectedMode) {
         setCurrentMode(data.selectedMode);
       }
+
+      // Update question limit if provided
+      if (data.remaining !== undefined && data.limit !== undefined) {
+        setQuestionLimit({
+          remaining: data.remaining,
+          limit: data.limit
+        });
+      }
       
       // Check if we got a proper AI response
       if (data.aiMessage && data.aiMessage.content) {
@@ -413,6 +436,7 @@ export default function Chat() {
   const handleSendMessage = async () => {
     if (!message.trim()) return; // Removed image check since images are disabled
     if (sendMessageMutation.isPending || isInitializing) return;
+    if ((questionLimit?.remaining ?? 0) <= 0) return; // Prevent sending when limit reached
 
     const userMessage = { 
       role: "user", 
@@ -484,6 +508,23 @@ export default function Chat() {
           <p className="text-xs text-muted-foreground mt-1">
             Powered by Claude-3.5-Sonnet via OpenRouter • Full Cinematic Experience
           </p>
+          {questionLimit && (
+            <div className="flex items-center justify-center space-x-2 mt-2">
+              <span className="text-xs text-muted-foreground">
+                Questions: {questionLimit.remaining}/{questionLimit.limit}
+              </span>
+              {questionLimit.remaining <= 1 && questionLimit.remaining > 0 && (
+                <span className="text-xs bg-red-500 text-white px-2 py-1 rounded-full">
+                  Last question!
+                </span>
+              )}
+              {questionLimit.remaining === 0 && (
+                <span className="text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-full">
+                  Subscribe to continue
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <Button 
@@ -499,6 +540,29 @@ export default function Chat() {
           <Plus className="h-5 w-5" />
         </Button>
       </div>
+
+      {/* Subscription Banner - Show when 1 question left */}
+      {questionLimit && questionLimit.remaining === 1 && (
+        <div className="p-3 border-b border-primary/20 bg-gradient-to-r from-purple-500/10 to-pink-500/10">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground">
+                🚨 Last question remaining!
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Subscribe to MoodyBot Premium for unlimited access to emotional intelligence upgrades
+              </p>
+            </div>
+            <Button
+              onClick={() => window.open('https://moodybot.gumroad.com/l/moodybotpremium', '_blank')}
+              size="sm"
+              className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90"
+            >
+              Subscribe $9/month
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Command Bar - Grid Layout */}
       <div className="p-3 border-b border-primary/20 bg-surface/50">
@@ -591,7 +655,7 @@ export default function Chat() {
         >
           <input
             type="text"
-            placeholder="Begin your cinematic journey... Share your story, your pain, your truth"
+            placeholder={questionLimit && questionLimit.remaining <= 0 ? "Subscribe to continue your journey..." : "Begin your cinematic journey... Share your story, your pain, your truth"}
             className="flex-1 p-3 rounded-full bg-background border border-muted-foreground text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -600,7 +664,7 @@ export default function Chat() {
                 handleSendMessage();
               }
             }}
-            disabled={sendMessageMutation.isPending || isInitializing}
+            disabled={sendMessageMutation.isPending || isInitializing || (questionLimit?.remaining ?? 0) <= 0}
           />
           
           {/* Image Upload Button */}
@@ -623,13 +687,22 @@ export default function Chat() {
             <Image className="h-5 w-5" />
           </Button>
           
-          <Button
-            onClick={handleSendMessage}
-            className="rounded-full px-6 py-3 bg-primary text-primary-foreground hover:bg-primary/90"
-            disabled={sendMessageMutation.isPending || isInitializing}
-          >
-            {sendMessageMutation.isPending ? "Crafting..." : "Begin Journey"}
-          </Button>
+          {(questionLimit?.remaining ?? 0) <= 0 ? (
+            <Button
+              onClick={() => window.open('https://moodybot.gumroad.com/l/moodybotpremium', '_blank')}
+              className="rounded-full px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90"
+            >
+              Subscribe to Premium
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSendMessage}
+              className="rounded-full px-6 py-3 bg-primary text-primary-foreground hover:bg-primary/90"
+              disabled={sendMessageMutation.isPending || isInitializing}
+            >
+              {sendMessageMutation.isPending ? "Crafting..." : "Begin Journey"}
+            </Button>
+          )}
         </div>
         
         {/* Cinematic Experience Instructions */}

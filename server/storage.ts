@@ -30,6 +30,8 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  incrementQuestionCount(userId: number): Promise<User>;
+  checkQuestionLimit(userId: number): Promise<{ canAsk: boolean; remaining: number; limit: number }>;
 
   // Chat Sessions
   getChatSession(id: number): Promise<ChatSession | undefined>;
@@ -138,10 +140,39 @@ export class MemStorage implements IStorage {
     const user: User = { 
       ...insertUser, 
       id, 
+      questionCount: 0,
+      isSubscribed: false,
       createdAt: new Date() 
     };
     this.users.set(id, user);
     return user;
+  }
+
+  async incrementQuestionCount(userId: number): Promise<User> {
+    const user = this.users.get(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    
+    const updatedUser = {
+      ...user,
+      questionCount: user.questionCount + 1
+    };
+    this.users.set(userId, updatedUser);
+    return updatedUser;
+  }
+
+  async checkQuestionLimit(userId: number): Promise<{ canAsk: boolean; remaining: number; limit: number }> {
+    const user = this.users.get(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const limit = 3; // 3 questions for free users
+    const remaining = Math.max(0, limit - user.questionCount);
+    const canAsk = user.isSubscribed || user.questionCount < limit;
+
+    return { canAsk, remaining, limit };
   }
 
   // Chat Sessions
