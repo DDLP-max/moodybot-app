@@ -130,3 +130,48 @@ Still echoes, doesn’t it?
 
 Breathe before you reply.
 
+[2025-08-06T04:52:21.276Z] Mode: savage (Auto: true)
+User: 1
+Message: Hello, this is a test message
+Reply: MoodyBot has gone quiet.
+
+🥃 @MoodyBotAI
+
+You wanted the truth, right?
+
+[2025-08-06T04:53:04.009Z] Mode: savage (Auto: true)
+User: 1
+Message: Hello, this is a test message
+Reply: MoodyBot has gone quiet.
+
+🥃 @MoodyBotAI
+
+Tag 🥃 @MoodyBotAI if it wrecked you.
+
+[2025-08-06T04:53:18.850Z] Mode: savage (Auto: true)
+User: 1
+Message: Hello, this is a test message
+Reply: MoodyBot has gone quiet.
+
+🥃 @MoodyBotAI
+
+Breathe before you reply.
+
+[2025-08-06T04:55:18.627Z] Mode: savage (Auto: true)
+User: 1
+Message: Hello, this is a test message
+Reply: MoodyBot has gone quiet.
+
+🥃 @MoodyBotAI
+
+He won’t save you, but he’ll make you feel seen.
+
+[2025-08-06T04:56:24.038Z] Mode: savage (Auto: true)
+User: 1
+Message: Hello, this is a test message
+Reply: MoodyBot has gone quiet.
+
+🥃 @MoodyBotAI
+
+He won’t save you, but he’ll make you feel seen.
+

@@ -374,7 +374,15 @@ export default function Chat() {
         setCurrentMode(data.selectedMode);
       }
       
-      return data.aiMessage?.content || "MoodyBot is thinking...";
+      // Check if we got a proper AI response
+      if (data.aiMessage && data.aiMessage.content) {
+        return data.aiMessage.content;
+      } else if (data.aiReply) {
+        return data.aiReply;
+      } else {
+        console.error("No AI response found in data:", data);
+        return "MoodyBot is thinking...";
+      }
     },
     onSuccess: (aiReply) => {
       console.log("Message sent successfully:", aiReply);

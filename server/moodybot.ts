@@ -30,7 +30,7 @@ export async function generateChatResponse(
   const cinematicTemperature = 0.85;
   const cinematicMaxTokens = 1200;
 
-  const model = "xai/grok-beta";
+  const model = "anthropic/claude-3.5-sonnet"; // Use a reliable model that's definitely available
 
   let enhancedPrompt = moodyPrompt;
   enhancedPrompt += `
@@ -58,7 +58,7 @@ This is not a quick chat - this is an emotional journey. Take your time. Build a
  try {
   const cinematicTemperature = 0.85;
   const cinematicMaxTokens = 1200;
-  const model = "xai/grok-beta";
+  const model = "anthropic/claude-3.5-sonnet"; // Use a reliable model that's definitely available
 
   console.log("Using model:", model, "for cinematic experience");
 
@@ -78,7 +78,18 @@ This is not a quick chat - this is an emotional journey. Take your time. Build a
     }),
   });
 
+  console.log("OpenRouter response status:", res.status);
+  console.log("OpenRouter response headers:", Object.fromEntries(res.headers.entries()));
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    console.error("OpenRouter API error response:", errorText);
+    throw new Error(`OpenRouter API error: ${res.status} - ${errorText}`);
+  }
+
   const json = await res.json();
+  console.log("OpenRouter response data:", json);
+  
   const aiRaw = json.choices?.[0]?.message?.content || "MoodyBot has gone quiet.";
   const finalReply = postProcessMoodyResponse(aiRaw);
 
