@@ -175,3 +175,12 @@ Reply: MoodyBot has gone quiet.
 
 He won’t save you, but he’ll make you feel seen.
 
+[2025-08-06T04:59:06.708Z] Mode: savage (Auto: true)
+User: 2
+Message: Hello, this is a test
+Reply: MoodyBot has gone quiet.
+
+🥃 @MoodyBotAI
+
+Tag 🥃 @MoodyBotAI if it wrecked you.
+

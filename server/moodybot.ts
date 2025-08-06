@@ -58,7 +58,7 @@ This is not a quick chat - this is an emotional journey. Take your time. Build a
  try {
   const cinematicTemperature = 0.85;
   const cinematicMaxTokens = 1200;
-  const model = "anthropic/claude-3.5-sonnet"; // Use a reliable model that's definitely available
+  const model = "x-ai/grok-4"; // Use Grok-4 for cinematic experience
 
   console.log("Using model:", model, "for cinematic experience");
 
