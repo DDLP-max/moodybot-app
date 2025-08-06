@@ -5,8 +5,8 @@ import 'dotenv/config';
 import http from "http";
 import cors from "cors";
 
-if (!process.env.OPENROUTER_API_KEY && !process.env.OPENAI_API_KEY) {
-  console.warn("⚠️  Neither OPENROUTER_API_KEY nor OPENAI_API_KEY is set in .env file");
+if (!process.env.OPENROUTER_API_KEY) {
+  console.warn("⚠️  OPENROUTER_API_KEY is not set in .env file");
 }
 
 const app = express();

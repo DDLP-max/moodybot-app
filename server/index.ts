@@ -1,12 +1,20 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from the server folder (for production, it's in the same directory as the built index.js)
+dotenv.config({ path: path.resolve(__dirname, ".env") });
 import http from "http";
 import cors from "cors";
 
-if (!process.env.OPENROUTER_API_KEY && !process.env.OPENAI_API_KEY) {
-  console.warn("⚠️  Neither OPENROUTER_API_KEY nor OPENAI_API_KEY is set in .env file");
+if (!process.env.OPENROUTER_API_KEY) {
+  console.warn("⚠️  OPENROUTER_API_KEY is not set in .env file");
 }
 
 const app = express();
@@ -75,6 +83,8 @@ const host = '0.0.0.0';
 
 httpServer.listen(port, host, () => {
   log(`✅ MoodyBot server listening at http://${host}:${port}`);
+  log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
+  log(`✅ API Keys: ${process.env.OPENROUTER_API_KEY ? 'OpenRouter' : 'None configured'}`);
 });
 
 })();
