@@ -22,7 +22,7 @@ export function appendToTextLog(entry: string) {
 }
 
 // Create logs directory if it doesn't exist
-const logsDir = join(process.cwd(), "logs");
+const logsDir = join(__dirname, "logs");
 if (!existsSync(logsDir)) {
   mkdirSync(logsDir, { recursive: true });
 }
