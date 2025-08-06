@@ -8,7 +8,6 @@ const __dirname = path.dirname(__filename);
 // Load environment variables from the server folder
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 
-import { OpenAI } from "openai";
 import fs from "fs";
 import { postProcessMoodyResponse } from "../utils/moodybotPostProcess";
 import { appendToTextLog } from "./logger";
@@ -17,20 +16,113 @@ import type { ChatCompletionMessageParam } from "openai/resources/chat";
 // Load system prompt from file
 const moodyPrompt = fs.readFileSync(path.resolve("server/system_prompt.txt"), "utf-8");
 
-// Fallback for key compatibility
-if (!process.env.OPENAI_API_KEY && process.env.OPENROUTER_API_KEY) {
-  process.env.OPENAI_API_KEY = process.env.OPENROUTER_API_KEY;
-}
+export async function generateChatResponse(
+  userMessage: string,
+  mode: string = "savage",
+  userId?: number,
+  sessionId?: number,
+  conversationHistory: ChatCompletionMessageParam[] = [],
+  imageData?: string
+): Promise<{ aiReply: string; selectedMode: string; isAutoSelected: boolean }> {
+  const selectedMode = mode === "savage" ? selectModeFromMessage(userMessage) : mode;
+  const isAutoSelected = mode === "savage";
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY,
-  baseURL: process.env.OPENROUTER_API_KEY ? "https://openrouter.ai/api/v1" : undefined,
-  defaultHeaders: process.env.OPENROUTER_API_KEY ? {
-    "HTTP-Referer": "https://moodybot.ai",
-    "X-Title": "MoodyBotAI",
-  } : undefined,
-});
+  const cinematicTemperature = 0.85;
+  const cinematicMaxTokens = 1200;
+
+  const model = "xai/grok-beta";
+
+  let enhancedPrompt = moodyPrompt;
+  enhancedPrompt += `
+
+CINEMATIC EXPERIENCE MODE:
+You are now in a full cinematic experience. Every response should feel like a scene from a film, with:
+- Emotional pacing and rhythm
+- Vivid sensory details and atmosphere
+- Character development and depth
+- Poetic language and metaphor
+- Emotional arcs that build and resolve
+- Cinematic dialogue and monologue structure
+
+This is not a quick chat - this is an emotional journey. Take your time. Build atmosphere. Create moments that linger.`;
+
+  const messages: ChatCompletionMessageParam[] = [
+    { role: "system", content: enhancedPrompt },
+    ...conversationHistory.filter(msg => 
+      typeof msg.content === 'string' || 
+      (Array.isArray(msg.content) && msg.content.every(item => typeof item === 'object' && 'type' in item))
+    ),
+    { role: "user", content: userMessage }
+  ];
+
+ try {
+  const cinematicTemperature = 0.85;
+  const cinematicMaxTokens = 1200;
+  const model = "xai/grok-beta";
+
+  console.log("Using model:", model, "for cinematic experience");
+
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://moodybot.ai",
+      "X-Title": "MoodyBotAI"
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature: cinematicTemperature,
+      max_tokens: cinematicMaxTokens
+    }),
+  });
+
+  const json = await res.json();
+  const aiRaw = json.choices?.[0]?.message?.content || "MoodyBot has gone quiet.";
+  const finalReply = postProcessMoodyResponse(aiRaw);
+
+  appendToTextLog(
+    `Mode: ${selectedMode} (Auto: ${isAutoSelected})\nUser: ${userId ?? "anon"}\nMessage: ${userMessage}${imageData ? ' [with image]' : ''}\nReply: ${finalReply}`
+  );
+
+  return {
+    aiReply: finalReply,
+    selectedMode,
+    isAutoSelected
+  };
+} catch (error: any) {
+  console.error("OpenRouter API error:", error);
+  console.error("Error details:", {
+    message: error.message,
+    status: error.response?.status,
+    data: error.response?.data,
+    hasImage: !!imageData
+  });
+
+  if (error.response?.status === 429) {
+    return {
+      aiReply: "MoodyBot is getting too many requests. Please try again in a moment.",
+      selectedMode,
+      isAutoSelected
+    };
+  }
+
+  if (error.response?.status === 401) {
+    return {
+      aiReply: "MoodyBot's API key is invalid. Please contact support.",
+      selectedMode,
+      isAutoSelected
+    };
+  }
+
+  return {
+    aiReply: "MoodyBot is in a bad mood. Try again later.",
+    selectedMode,
+    isAutoSelected
+  };
+}
+}
 
 // Intelligent mode selection based on message content
 function selectModeFromMessage(message: string): string {
@@ -139,148 +231,4 @@ function selectModeFromMessage(message: string): string {
 
   // Default to savage for general conversation
   return 'savage';
-}
-
-// Main function
-export async function generateChatResponse(
-  userMessage: string,
-  mode: string = "savage",
-  userId?: number,
-  sessionId?: number,
-  conversationHistory: ChatCompletionMessageParam[] = [],
-  imageData?: string
-): Promise<{ aiReply: string; selectedMode: string; isAutoSelected: boolean }> {
-  // Auto-select mode if none specified or if mode is just "savage" (default)
-  const selectedMode = mode === "savage" ? selectModeFromMessage(userMessage) : mode;
-  const isAutoSelected = mode === "savage"; // If mode was "savage" (default), it was auto-selected
-  
-  const temperature = 0.75;
-  const maxTokens = 800;
-
-  // Enhance the system prompt for cinematic experience
-  let enhancedPrompt = moodyPrompt;
-  
-  // Add cinematic experience instructions
-  enhancedPrompt += `
-
-CINEMATIC EXPERIENCE MODE:
-You are now in a full cinematic experience. Every response should feel like a scene from a film, with:
-- Emotional pacing and rhythm
-- Vivid sensory details and atmosphere
-- Character development and depth
-- Poetic language and metaphor
-- Emotional arcs that build and resolve
-- Cinematic dialogue and monologue structure
-
-This is not a quick chat - this is an emotional journey. Take your time. Build atmosphere. Create moments that linger.`;
-
-  const messages: ChatCompletionMessageParam[] = [
-    { role: "system", content: enhancedPrompt },
-    // Filter out any messages that might have malformed image content
-    ...conversationHistory.filter(msg => 
-      typeof msg.content === 'string' || 
-      (Array.isArray(msg.content) && msg.content.every(item => 
-        typeof item === 'object' && 'type' in item
-      ))
-    ),
-  ];
-
-  // Create the user message with or without image
-  // TODO: Re-enable when OpenRouter supports vision models
-  // if (imageData) {
-  //   console.log("Processing image message:", {
-  //     hasImage: !!imageData,
-  //     imageLength: imageData?.length,
-  //     imageStartsWithData: imageData?.startsWith('data:'),
-  //     userMessage: userMessage || "Analyze this image"
-  //   });
-  //   
-  //   // Since we can't send images to the API, we'll process them as text prompts
-  //   // The actual image processing will be handled in the try block above
-  // } else {
-  //   messages.push({ role: "user", content: userMessage });
-  // }
-  
-  // For now, always treat as text-only
-  messages.push({ role: "user", content: userMessage });
-
-  try {
-    // Model selection for cinematic experience through OpenRouter
-    let model = "gpt-4";
-    if (process.env.OPENROUTER_API_KEY) {
-      model = "xai/grok-beta"; // Use Grok-4 through OpenRouter for cinematic experience
-    }
-    
-    console.log("Using model:", model, "for cinematic experience");
-    
-    // Enhanced parameters for cinematic responses
-    const cinematicTemperature = 0.85; // Higher creativity for cinematic feel
-    const cinematicMaxTokens = 1200; // Longer responses for cinematic experience
-    
-    const response = await openai.chat.completions.create({
-      model,
-      messages,
-      temperature: cinematicTemperature,
-      max_tokens: cinematicMaxTokens,
-    });
-
-    const aiRaw = response.choices?.[0]?.message?.content || "MoodyBot has gone quiet.";
-    const finalReply = postProcessMoodyResponse(aiRaw);
-
-    appendToTextLog(
-      `Mode: ${selectedMode} (Auto: ${isAutoSelected})\nUser: ${userId ?? "anon"}\nMessage: ${userMessage}${imageData ? ' [with image]' : ''}\nReply: ${finalReply}`
-    );
-
-    return { 
-      aiReply: finalReply, 
-      selectedMode: selectedMode, 
-      isAutoSelected: isAutoSelected 
-    };
-  } catch (error: any) {
-    console.error("OpenRouter API error:", error);
-    console.error("Error details:", {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-      hasImage: !!imageData
-    });
-    
-    // TODO: Re-enable when OpenRouter supports vision models
-    // Handle specific image-related errors
-    // if (imageData && (error.message?.includes('vision') || error.message?.includes('model') || error.message?.includes('unsupported'))) {
-    //   return { 
-    //     aiReply: "MoodyBot can't process images right now. Please describe what you see in the image, and I'll respond to that instead. For example: 'I see a hot dog with lots of ketchup on it'", 
-    //     selectedMode: selectedMode, 
-    //     isAutoSelected: isAutoSelected 
-    //   };
-    // }
-    
-    if (error.response?.status === 429) {
-      return { 
-        aiReply: "MoodyBot is getting too many requests. Please try again in a moment.", 
-        selectedMode: selectedMode, 
-        isAutoSelected: isAutoSelected 
-      };
-    }
-    if (error.response?.status === 401) {
-      return { 
-        aiReply: "MoodyBot's API key is invalid. Please contact support.", 
-        selectedMode: selectedMode, 
-        isAutoSelected: isAutoSelected 
-      };
-    }
-    // TODO: Re-enable when OpenRouter supports vision models
-    // if (error.response?.status === 400 && imageData) {
-    //   return { 
-    //     aiReply: "MoodyBot couldn't process that image. The image might be too large, unclear, or in an unsupported format. Try a smaller, clearer image or describe what you see.", 
-    //     selectedMode: selectedMode, 
-    //     isAutoSelected: isAutoSelected 
-    //   };
-    // }
-    return { 
-      aiReply: "MoodyBot is in a bad mood. Try again later.", 
-      selectedMode: selectedMode, 
-      isAutoSelected: isAutoSelected 
-    };
-  }
 }
