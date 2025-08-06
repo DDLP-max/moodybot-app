@@ -6,6 +6,15 @@ import { insertChatSessionSchema, insertChatMessageSchema, insertUserSchema } fr
 import type { ChatCompletionMessageParam } from "openai/resources/chat";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Health check endpoint for Render
+  app.get("/health", (req, res) => {
+    res.status(200).json({ 
+      status: "healthy", 
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development'
+    });
+  });
+
   // Test endpoint
   app.get("/api/test", (req, res) => {
     res.json({ message: "MoodyBot server is running", timestamp: new Date().toISOString() });

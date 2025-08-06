@@ -60,31 +60,47 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  await registerRoutes(app); // no longer expecting a return value
+  try {
+    console.log("🚀 Starting MoodyBot server...");
+    console.log("📁 Current directory:", process.cwd());
+    console.log("🔧 Environment:", process.env.NODE_ENV || 'development');
+    console.log("🔑 API Key status:", process.env.OPENROUTER_API_KEY ? 'SET' : 'NOT SET');
+    
+    await registerRoutes(app); // no longer expecting a return value
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
 
-    res.status(status).json({ message });
-    throw err;
-  });
+      res.status(status).json({ message });
+      console.error("❌ Server error:", err);
+    });
 
-  const httpServer = http.createServer(app);
+    const httpServer = http.createServer(app);
 
-  if (app.get("env") === "development") {
-    await setupVite(app, httpServer);
-  } else {
-    serveStatic(app);
+    if (process.env.NODE_ENV === "development") {
+      await setupVite(app, httpServer);
+    } else {
+      serveStatic(app);
+    }
+
+    const port = parseInt(process.env.PORT || '10000', 10);
+    const host = '0.0.0.0';
+
+    httpServer.listen(port, host, () => {
+      log(`✅ MoodyBot server listening at http://${host}:${port}`);
+      log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
+      log(`✅ API Keys: ${process.env.OPENROUTER_API_KEY ? 'OpenRouter' : 'None configured'}`);
+    });
+
+    // Handle server errors
+    httpServer.on('error', (error) => {
+      console.error("❌ Server error:", error);
+      process.exit(1);
+    });
+
+  } catch (error) {
+    console.error("❌ Failed to start server:", error);
+    process.exit(1);
   }
-
- const port = parseInt(process.env.PORT || '10000', 10);
-const host = '0.0.0.0';
-
-httpServer.listen(port, host, () => {
-  log(`✅ MoodyBot server listening at http://${host}:${port}`);
-  log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
-  log(`✅ API Keys: ${process.env.OPENROUTER_API_KEY ? 'OpenRouter' : 'None configured'}`);
-});
-
 })();
