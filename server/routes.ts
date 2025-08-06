@@ -1,24 +1,66 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { 
-  generateChatResponse, 
-  generateJournalPrompt, 
-  generateQuoteCard, 
-  analyzeDamagePatterns 
-} from "./openai";
-import { 
-  insertChatSessionSchema, 
-  insertChatMessageSchema, 
-  insertJournalEntrySchema,
-  insertQuoteCardSchema,
-  insertMoodTrackingSchema,
-  insertDamageProfileSchema
-} from "@shared/schema";
+import { generateChatResponse } from "./moodybot"; // or "./openai" if that's still the active filename
+import { insertChatSessionSchema, insertChatMessageSchema, insertUserSchema } from "@shared/schema";
+import type { ChatCompletionMessageParam } from "openai/resources/chat";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  
-  // Chat Sessions
+  // Test endpoint
+  app.get("/api/test", (req, res) => {
+    res.json({ message: "MoodyBot server is running", timestamp: new Date().toISOString() });
+  });
+
+  // TODO: Re-enable when OpenRouter supports vision models
+  // Image test endpoint
+  // app.post("/api/test-image", async (req, res) => {
+  //   try {
+  //     const { image } = req.body;
+  //     if (!image) {
+  //       return res.status(400).json({ error: "No image provided" });
+  //     }
+  //     
+  //     console.log("Testing image processing:", {
+  //       hasImage: !!image,
+  //       imageLength: image.length,
+  //       imageStartsWithData: image.startsWith('data:')
+  //     });
+  //     
+  //     res.json({ 
+  //       message: "Image received successfully", 
+  //       imageLength: image.length,
+  //       imageFormat: image.startsWith('data:') ? 'data-url' : 'base64'
+  //     });
+  //   } catch (error) {
+  //     console.error("Image test error:", error);
+  //     res.status(500).json({ error: "Image test failed" });
+  //   }
+  // });
+
+  // Create user
+  app.post("/api/users", async (req, res) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByUsername(userData.username);
+      if (existingUser) {
+        return res.json(existingUser);
+      }
+      
+      const user = await storage.createUser(userData);
+      res.json(user);
+    } catch (error) {
+      console.error("User creation error:", error);
+      if (error instanceof Error) {
+        res.status(400).json({ error: error.message });
+      } else {
+        res.status(400).json({ error: "Invalid user data" });
+      }
+    }
+  });
+
+  // Fetch chat sessions
   app.get("/api/chat/sessions/:userId", async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
@@ -29,17 +71,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create chat session
   app.post("/api/chat/sessions", async (req, res) => {
     try {
       const sessionData = insertChatSessionSchema.parse(req.body);
       const session = await storage.createChatSession(sessionData);
       res.json(session);
     } catch (error) {
-      res.status(400).json({ error: "Invalid session data" });
+      console.error("Session creation error:", error);
+      if (error instanceof Error) {
+        res.status(400).json({ error: error.message });
+      } else {
+        res.status(400).json({ error: "Invalid session data" });
+      }
     }
   });
 
-  // Chat Messages
+  // Fetch messages from a session
   app.get("/api/chat/messages/:sessionId", async (req, res) => {
     try {
       const sessionId = parseInt(req.params.sessionId);
@@ -50,206 +98,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Send user message and generate AI reply
   app.post("/api/chat/messages", async (req, res) => {
     try {
       const messageData = insertChatMessageSchema.parse(req.body);
       const userMessage = await storage.createChatMessage(messageData);
 
-      // Generate AI response if this was a user message
       if (messageData.role === "user") {
         const session = await storage.getChatSession(messageData.sessionId);
-        if (!session) {
-          return res.status(404).json({ error: "Session not found" });
-        }
+        if (!session) return res.status(404).json({ error: "Session not found" });
 
-        // Get conversation history
-        const messages = await storage.getChatMessages(messageData.sessionId);
-        const conversationHistory = messages.map(msg => ({
-          role: msg.role,
+        const history = await storage.getChatMessages(messageData.sessionId);
+        const conversation: ChatCompletionMessageParam[] = history.map(msg => ({
+          role: msg.role as "user" | "assistant" | "system",
           content: msg.content
         }));
 
-        // Generate AI response
-        const aiResponse = await generateChatResponse(
-          session.mode,
-          messageData.content,
-          conversationHistory,
+        // TODO: Re-enable when OpenRouter supports vision models
+        // Check if there's an image in the request
+        // const imageData = req.body.image;
+        let enhancedMessage = messageData.content;
+        
+        // console.log("Route processing:", {
+        //   hasImage: !!imageData,
+        //   imageLength: imageData?.length,
+        //   originalMessage: messageData.content
+        // });
+        
+        // if (imageData) {
+        //   // Validate image data format
+        //   if (typeof imageData !== 'string' || imageData.length === 0) {
+        //     return res.status(400).json({ error: "Invalid image data" });
+        //   }
+        //   
+        //   // Add image context to the message
+        //   enhancedMessage = `[Image attached] ${messageData.content || "Analyze this image"}`;
+        // }
+        
+        // Ensure we have some content for the message
+        if (!enhancedMessage.trim()) {
+          return res.status(400).json({ error: "Message content is required" });
+        }
+
+        const { aiReply, selectedMode, isAutoSelected } = await generateChatResponse(
+          enhancedMessage,
+          session.mode || "savage",
           session.userId,
-          messageData.sessionId
+          messageData.sessionId,
+          conversation
+          // TODO: Re-enable when OpenRouter supports vision models
+          // imageData // Pass image data to the AI function
         );
 
-        // Save AI response
         const aiMessage = await storage.createChatMessage({
           sessionId: messageData.sessionId,
           role: "assistant",
-          content: aiResponse
+          content: aiReply
         });
 
-        res.json({ userMessage, aiMessage });
+        // Return the selected mode along with the messages
+        res.json({ 
+          userMessage, 
+          aiMessage,
+          selectedMode: selectedMode,
+          isAutoSelected: isAutoSelected
+        });
       } else {
         res.json({ userMessage });
       }
     } catch (error) {
       console.error("Chat message error:", error);
-      res.status(500).json({ error: "Failed to process message" });
-    }
-  });
-
-  // Journal Entries
-  app.get("/api/journal/:userId", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const entries = await storage.getJournalEntries(userId);
-      res.json(entries);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch journal entries" });
-    }
-  });
-
-  app.post("/api/journal", async (req, res) => {
-    try {
-      const entryData = insertJournalEntrySchema.parse(req.body);
-      const entry = await storage.createJournalEntry(entryData);
-      res.json(entry);
-    } catch (error) {
-      res.status(400).json({ error: "Invalid journal entry data" });
-    }
-  });
-
-  app.get("/api/journal/prompt", async (req, res) => {
-    try {
-      const mood = req.query.mood as string;
-      const userId = req.query.userId ? parseInt(req.query.userId as string) : undefined;
-      const prompt = await generateJournalPrompt(mood, userId);
-      res.json({ prompt });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to generate journal prompt" });
-    }
-  });
-
-  // Quote Cards
-  app.get("/api/quotes/:userId", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const cards = await storage.getQuoteCards(userId);
-      res.json(cards);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch quote cards" });
-    }
-  });
-
-  app.post("/api/quotes", async (req, res) => {
-    try {
-      const cardData = insertQuoteCardSchema.parse(req.body);
-      const card = await storage.createQuoteCard(cardData);
-      res.json(card);
-    } catch (error) {
-      res.status(400).json({ error: "Invalid quote card data" });
-    }
-  });
-
-  app.post("/api/quotes/generate", async (req, res) => {
-    try {
-      const { journalContent, userId } = req.body;
-      if (!journalContent || !userId) {
-        return res.status(400).json({ error: "Journal content and user ID required" });
+      if (error instanceof Error) {
+        res.status(500).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: "Failed to process chat message" });
       }
-
-      const { quote, source } = await generateQuoteCard(journalContent, parseInt(userId));
-      
-      const card = await storage.createQuoteCard({
-        userId: parseInt(userId),
-        quote,
-        source,
-        imageUrl: null
-      });
-
-      res.json(card);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to generate quote card" });
-    }
-  });
-
-  // Mood Tracking
-  app.get("/api/mood/:userId", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const moods = await storage.getMoodTracking(userId);
-      res.json(moods);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch mood data" });
-    }
-  });
-
-  app.post("/api/mood", async (req, res) => {
-    try {
-      const moodData = insertMoodTrackingSchema.parse(req.body);
-      const mood = await storage.createMoodTracking(moodData);
-      res.json(mood);
-    } catch (error) {
-      res.status(400).json({ error: "Invalid mood data" });
-    }
-  });
-
-  // Damage Profile
-  app.get("/api/damage-profile/:userId", async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const profile = await storage.getDamageProfile(userId);
-      if (!profile) {
-        return res.status(404).json({ error: "Damage profile not found" });
-      }
-      res.json(profile);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch damage profile" });
-    }
-  });
-
-  app.post("/api/damage-profile/analyze", async (req, res) => {
-    try {
-      const { userId } = req.body;
-      if (!userId) {
-        return res.status(400).json({ error: "User ID required" });
-      }
-
-      const userIdNum = parseInt(userId);
-      
-      // Get user's journal entries and mood data
-      const journalEntries = await storage.getJournalEntries(userIdNum);
-      const moodData = await storage.getMoodTracking(userIdNum);
-
-      const journalTexts = journalEntries.map(entry => entry.content);
-      const moodItems = moodData.map(mood => ({
-        mood: mood.mood,
-        intensity: mood.intensity,
-        notes: mood.notes || undefined
-      }));
-
-      // Analyze patterns
-      const analysis = await analyzeDamagePatterns(journalTexts, moodItems, userIdNum);
-
-      // Save damage profile
-      const profile = await storage.upsertDamageProfile({
-        userId: userIdNum,
-        patterns: analysis.patterns,
-        triggers: analysis.triggers,
-        loops: analysis.loops
-      });
-
-      res.json(profile);
-    } catch (error) {
-      console.error("Damage profile analysis error:", error);
-      res.status(500).json({ error: "Failed to analyze damage patterns" });
-    }
-  });
-
-  // Reflection Stacks
-  app.get("/api/reflection-stacks", async (req, res) => {
-    try {
-      const stacks = await storage.getReflectionStacks();
-      res.json(stacks);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to fetch reflection stacks" });
     }
   });
 

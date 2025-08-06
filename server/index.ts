@@ -1,10 +1,27 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import 'dotenv/config';
+import http from "http";
+import cors from "cors";
+
+if (!process.env.OPENROUTER_API_KEY && !process.env.OPENAI_API_KEY) {
+  console.warn("⚠️  Neither OPENROUTER_API_KEY nor OPENAI_API_KEY is set in .env file");
+}
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+
+// CORS configuration
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://moodybot.ai', 'https://www.moodybot.ai']
+    : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5000', 'http://127.0.0.1:5000'],
+  credentials: true
+}));
+
+// Increase payload limits for image uploads
+app.use(express.json({ limit: 10 * 1024 * 1024 })); // 10MB
+app.use(express.urlencoded({ limit: 10 * 1024 * 1024, extended: true })); // 10MB
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -24,11 +41,9 @@ app.use((req, res, next) => {
       if (capturedJsonResponse) {
         logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
       }
-
       if (logLine.length > 80) {
         logLine = logLine.slice(0, 79) + "…";
       }
-
       log(logLine);
     }
   });
@@ -37,7 +52,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  const server = await registerRoutes(app);
+  await registerRoutes(app); // no longer expecting a return value
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -47,24 +62,18 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
+  const httpServer = http.createServer(app);
+
   if (app.get("env") === "development") {
-    await setupVite(app, server);
+    await setupVite(app, httpServer);
   } else {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
+  const port = process.env.PORT || 5000;
+  const host = process.env.HOST || '127.0.0.1';
+  
+  httpServer.listen(port, host, () => {
+    log(`✅ MoodyBot server listening at http://${host}:${port}`);
   });
 })();

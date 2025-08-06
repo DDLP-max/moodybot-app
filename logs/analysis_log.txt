@@ -1,0 +1,16 @@
+{
+  "type": "analysis",
+  "input": "0 journal entries, 0 mood records",
+  "output": "Found 0 patterns, 0 triggers, 0 loops",
+  "userId": 1,
+  "timestamp": "2025-06-03T21:00:22.339Z"
+}
+==================================================
+{
+  "type": "analysis",
+  "input": "0 journal entries, 0 mood records",
+  "output": "Found 0 patterns, 0 triggers, 0 loops",
+  "userId": 1,
+  "timestamp": "2025-06-03T21:00:30.834Z"
+}
+==================================================

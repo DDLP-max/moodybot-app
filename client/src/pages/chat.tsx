@@ -1,189 +1,440 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams, useLocation } from "wouter";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import { MoodSelector } from "@/components/ui/mood-selector";
-import { Eye, Send, Plus, ArrowLeft } from "lucide-react";
+import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import type { ChatSession, ChatMessage } from "@shared/schema";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Eye, Plus, Image, X, Upload } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 
-const MOCK_USER_ID = 1; // In real app, this would come from auth
+interface Message {
+  role: string;
+  content: string;
+  image?: string; // Base64 image data
+  imageDescription?: string; // AI-generated description of the image
+}
+
+interface Command {
+  name: string;
+  command: string;
+  style: 'primary' | 'accent' | 'gradient';
+}
+
+interface CommandCategory {
+  title: string;
+  commands: Command[];
+}
+
+const allCommands: CommandCategory[] = [
+  {
+    title: "🔥 Core Emotional & Savage Modes",
+    commands: [
+      { name: "/savage", command: "/savage", style: "gradient" },
+      { name: "/roast", command: "/roast", style: "gradient" },
+      { name: "/cut", command: "/cut", style: "gradient" },
+      { name: "/bomb", command: "/bomb", style: "gradient" },
+      { name: "/cia", command: "/cia", style: "gradient" },
+    ],
+  },
+  {
+    title: "💔 Reflective & Supportive Modes",
+    commands: [
+      { name: "/velvet", command: "/velvet", style: "gradient" },
+      { name: "/validate", command: "/validate", style: "gradient" },
+      { name: "/mirror", command: "/mirror", style: "gradient" },
+      { name: "/float", command: "/float", style: "gradient" },
+      { name: "/noir", command: "/noir", style: "gradient" },
+      { name: "/clinical", command: "/clinical", style: "gradient" },
+    ],
+  },
+  {
+    title: "🧠 Cognitive Expansion / Longform Modes",
+    commands: [
+      { name: "/discuss", command: "/discuss", style: "gradient" },
+      { name: "/thoughts", command: "/thoughts", style: "gradient" },
+    ],
+  },
+  {
+    title: "🎭 Persona-Based Roleplay Modes",
+    commands: [
+      { name: "/mentor", command: "/mentor", style: "gradient" },
+      { name: "/ex", command: "/ex", style: "gradient" },
+      { name: "/godfather", command: "/godfather", style: "gradient" },
+      { name: "/agent", command: "/agent", style: "gradient" },
+      { name: "/hobo", command: "/hobo", style: "gradient" },
+      { name: "/rollins", command: "/rollins", style: "gradient" },
+      { name: "/munger", command: "/munger", style: "gradient" },
+    ],
+  },
+  {
+    title: "🧨 Structural Interventions",
+    commands: [
+      { name: "/contrast", command: "/contrast", style: "gradient" },
+      { name: "/audit", command: "/audit", style: "gradient" },
+      { name: "/intervene", command: "/intervene", style: "gradient" },
+    ],
+  },
+  {
+    title: "🎬 Cultural Review Mode",
+    commands: [
+      { name: "/rate", command: "/rate", style: "gradient" },
+    ],
+  },
+  {
+    title: "👑 Archetype Mode",
+    commands: [
+      { name: "/villain", command: "/villain", style: "gradient" },
+    ],
+  },
+  {
+    title: "🔺 Triangle & Spiral Analysis",
+    commands: [
+      { name: "/triangulate", command: "/triangulate", style: "gradient" },
+      { name: "/drama", command: "/drama", style: "gradient" },
+      { name: "/iron", command: "/iron", style: "gradient" },
+      { name: "/sadness", command: "/sadness", style: "gradient" },
+      { name: "/cbt or /spiral", command: "/cbt", style: "gradient" },
+      { name: "/dark", command: "/dark", style: "gradient" },
+    ],
+  },
+  {
+    title: "✍️ Style / Voice Injection",
+    commands: [
+      { name: "/moodyfy", command: "/moodyfy", style: "gradient" },
+    ],
+  },
+  {
+    title: "🛞 Chaos Crash Mode",
+    commands: [
+      { name: "/dale-yolo", command: "/dale-yolo", style: "gradient" },
+    ],
+  },
+];
 
 export default function Chat() {
-  const { sessionId } = useParams();
-  const [, setLocation] = useLocation();
-  const { toast } = useToast();
+  const [location, setLocation] = useLocation();
+  const [messages, setMessages] = useState<Message[]>([]);
   const [message, setMessage] = useState("");
-  const [selectedMode, setSelectedMode] = useState("savage");
-  const [currentSessionId, setCurrentSessionId] = useState<number | null>(
-    sessionId ? parseInt(sessionId) : null
-  );
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [currentSession, setCurrentSession] = useState<{ mode: string; sessionId: number; userId: number } | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [currentMode, setCurrentMode] = useState<string>("savage");
+  // TODO: Re-enable when OpenRouter supports vision models
+  // const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  // TODO: Re-enable when OpenRouter supports vision models
+  // const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  // Initialize session on component mount
+  useEffect(() => {
+    const initializeSession = async () => {
+      try {
+        setIsInitializing(true);
+        console.log("Starting session initialization...");
+        
+        // First, try to create a default user if it doesn't exist
+        let userId = 1;
+        try {
+          console.log("Attempting to create/get user...");
+          const userResponse = await fetch("/api/users", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              username: "moodybot_user",
+              password: "default_password"
+            }),
+          });
+          
+          console.log("User response status:", userResponse.status);
+          
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            console.log("User created/found:", userData);
+            userId = userData.id;
+          } else {
+            console.error("Failed to create user, status:", userResponse.status);
+            const errorText = await userResponse.text();
+            console.error("User creation error:", errorText);
+          }
+        } catch (error) {
+          console.error("Error creating/getting user:", error);
+        }
 
-  // Fetch chat sessions
-  const { data: sessions = [], isLoading: sessionsLoading } = useQuery({
-    queryKey: [`/api/chat/sessions/${MOCK_USER_ID}`],
-  });
+        // Create a new session
+        console.log("Creating new session with userId:", userId);
+        const newSessionResponse = await fetch("/api/chat/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            userId: userId,
+            mode: "savage",
+            title: "New Chat"
+          }),
+        });
+        
+        console.log("Session response status:", newSessionResponse.status);
+        
+        if (newSessionResponse.ok) {
+          const sessionData = await newSessionResponse.json();
+          console.log("Session created successfully:", sessionData);
+          setCurrentSession({
+            sessionId: sessionData.id, // Use 'id' from backend response
+            userId: sessionData.userId,
+            mode: sessionData.mode
+          });
+          setCurrentMode(sessionData.mode);
+        } else {
+          console.error("Failed to create new session, status:", newSessionResponse.status);
+          const errorText = await newSessionResponse.text();
+          console.error("Session creation error:", errorText);
+          // Set a fallback session for testing
+          setCurrentSession({
+            sessionId: 1,
+            userId: userId,
+            mode: "savage"
+          });
+          setCurrentMode("savage");
+        }
+      } catch (error) {
+        console.error("Error during session initialization:", error);
+        // Set a fallback session for testing
+        setCurrentSession({
+          sessionId: 1,
+          userId: 1,
+          mode: "savage"
+        });
+        setCurrentMode("savage");
+      } finally {
+        console.log("Session initialization complete");
+        setIsInitializing(false);
+      }
+    };
 
-  // Fetch messages for current session
-  const { data: messages = [], isLoading: messagesLoading } = useQuery({
-    queryKey: [`/api/chat/messages/${currentSessionId}`],
-    enabled: !!currentSessionId,
-  });
+    initializeSession();
+  }, []);
 
-  // Create new session mutation
-  const createSessionMutation = useMutation({
-    mutationFn: async (mode: string) => {
-      const response = await apiRequest("POST", "/api/chat/sessions", {
-        userId: MOCK_USER_ID,
-        mode,
-        title: `${mode.toUpperCase()} Session`,
-      });
-      return response.json();
-    },
-    onSuccess: (session: ChatSession) => {
-      setCurrentSessionId(session.id);
-      queryClient.invalidateQueries({ queryKey: [`/api/chat/sessions/${MOCK_USER_ID}`] });
-      setLocation(`/chat/${session.id}`);
-    },
-    onError: () => {
-      toast({
-        title: "Failed to create session",
-        description: "The void is not responding. Try again.",
-        variant: "destructive",
-      });
-    },
-  });
+  // TODO: Re-enable when OpenRouter supports vision models
+  // Handle paste events for images
+  // useEffect(() => {
+  //   const handlePaste = (e: ClipboardEvent) => {
+  //     const items = e.clipboardData?.items;
+  //     if (!items) return;
 
-  // Send message mutation
+  //     for (let i = 0; i < items.length; i++) {
+  //       if (items[i].type.indexOf('image') !== -1) {
+  //         const file = items[i].getAsFile();
+  //         if (file) {
+  //           handleImageFile(file);
+  //         }
+  //         break;
+  //       }
+  //     }
+  //   };
+
+  //   document.addEventListener('paste', handlePaste);
+  //   return () => document.removeEventListener('paste', handlePaste);
+  // }, []);
+
+  // TODO: Re-enable when OpenRouter supports vision models
+  // const handleImageFile = (file: File) => {
+  //   if (!file.type.startsWith('image/')) {
+  //     alert('Please select an image file');
+  //     return;
+  //   }
+
+  //   // Compress the image before converting to base64
+  //   const compressImage = (file: File): Promise<string> => {
+  //     return new Promise((resolve) => {
+  //       const canvas = document.createElement('canvas');
+  //       const ctx = canvas.getContext('2d');
+  //       const img = new window.Image();
+  //       
+  //       img.onload = () => {
+  //         // Calculate new dimensions (max 800px width/height)
+  //         const maxSize = 800;
+  //         let { width, height } = img;
+  //           
+  //         if (width > height) {
+  //           if (width > maxSize) {
+  //             height = (height * maxSize) / width;
+  //             width = maxSize;
+  //           }
+  //         } else {
+  //           if (height > maxSize) {
+  //             width = (width * maxSize) / height;
+  //             height = maxSize;
+  //           }
+  //         }
+  //           
+  //         canvas.width = width;
+  //         canvas.height = height;
+  //           
+  //         // Draw and compress
+  //         ctx?.drawImage(img, 0, 0, width, height);
+  //           
+  //         // Convert to base64 with compression
+  //         const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7); // 70% quality
+  //         resolve(compressedDataUrl);
+  //       };
+  //       
+  //       img.src = URL.createObjectURL(file);
+  //     });
+  //   };
+
+  //   // Compress and set the image
+  //   compressImage(file).then((compressedImage) => {
+  //     console.log('Original file size:', file.size, 'bytes');
+  //     console.log('Compressed image size:', compressedImage.length, 'bytes');
+  //     setSelectedImage(compressedImage);
+  //   });
+  // };
+
+  // TODO: Re-enable when OpenRouter supports vision models
+  // const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const file = e.target.files?.[0];
+  //   if (file) {
+  //     handleImageFile(file);
+  //   }
+  // };
+
+  // TODO: Re-enable when OpenRouter supports vision models
+  // const handleDragOver = (e: React.DragEvent) => {
+  //   e.preventDefault();
+  //   setIsDragOver(true);
+  // };
+
+  // const handleDragLeave = (e: React.DragEvent) => {
+  //   e.preventDefault();
+  //   setIsDragOver(false);
+  // };
+
+  // const handleDrop = (e: React.DragEvent) => {
+  //   e.preventDefault();
+  //   setIsDragOver(false);
+  //   
+  //   const files = e.dataTransfer.files;
+  //   if (files.length > 0) {
+  //     handleImageFile(files[0]);
+  //   }
+  // };
+
+  // TODO: Re-enable when OpenRouter supports vision models
+  // const removeImage = () => {
+  //   setSelectedImage(null);
+  //   if (fileInputRef.current) {
+  //     fileInputRef.current.value = '';
+  //   }
+  // };
+
   const sendMessageMutation = useMutation({
-    mutationFn: async (content: string) => {
-      if (!currentSessionId) throw new Error("No session");
-      
-      const response = await apiRequest("POST", "/api/chat/messages", {
-        sessionId: currentSessionId,
-        role: "user",
-        content,
+    mutationFn: async (newMessage: string) => {
+      if (!currentSession) {
+        throw new Error("Chat session not initialized.");
+      }
+
+      console.log("Sending message:", { 
+        message: newMessage
+        // TODO: Re-enable when OpenRouter supports vision models
+        // hasImage: !!selectedImage, 
+        // imageSize: selectedImage ? selectedImage.length : 0 
       });
-      return response.json();
+
+      const requestBody = {
+        sessionId: currentSession.sessionId,
+        userId: currentSession.userId,
+        role: "user",
+        content: newMessage,
+        // TODO: Re-enable when OpenRouter supports vision models
+        // image: selectedImage, // Include image data
+      };
+
+      console.log("Request body size:", JSON.stringify(requestBody).length);
+
+      const response = await fetch("/api/chat/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      console.log("Response status:", response.status);
+      console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
+        console.error("API Error:", errorData);
+        throw new Error(errorData.error || `HTTP ${response.status}: Failed to send message`);
+      }
+
+      const data = await response.json();
+      console.log("Response data:", data);
+      
+      // Update the current mode based on the response
+      if (data.selectedMode) {
+        setCurrentMode(data.selectedMode);
+      }
+      
+      return data.aiMessage?.content || "MoodyBot is thinking...";
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/chat/messages/${currentSessionId}`] });
-      setMessage("");
-      setTimeout(scrollToBottom, 100);
+    onSuccess: (aiReply) => {
+      console.log("Message sent successfully:", aiReply);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: aiReply },
+      ]);
+      // TODO: Re-enable when OpenRouter supports vision models
+      // Clear the image after sending
+      // setSelectedImage(null);
     },
-    onError: () => {
-      toast({
-        title: "Message failed",
-        description: "Your thoughts couldn't reach the void. Try again.",
-        variant: "destructive",
+    onError: (error) => {
+      console.error("Error sending message:", error);
+      // Don't add error message to chat if it's already there
+      const errorMessage = `Error: ${error.message}`;
+      setMessages((prev) => {
+        const lastMessage = prev[prev.length - 1];
+        if (lastMessage && lastMessage.content === errorMessage) {
+          return prev; // Don't add duplicate error
+        }
+        return [...prev, { role: "assistant", content: errorMessage }];
       });
     },
   });
 
   const handleSendMessage = async () => {
-    if (!message.trim()) return;
+    if (!message.trim()) return; // Removed image check since images are disabled
+    if (sendMessageMutation.isPending || isInitializing) return;
 
-    if (!currentSessionId) {
-      // Create new session first
-      await createSessionMutation.mutateAsync(selectedMode);
+    const userMessage = { 
+      role: "user", 
+      content: message,
+      // TODO: Re-enable when OpenRouter supports vision models
+      // image: selectedImage || undefined
+    };
+    setMessages((prev) => [...prev, userMessage]);
+    setMessage("");
+
+    try {
+      // Send the message (images disabled)
+      await sendMessageMutation.mutateAsync(message);
+    } catch (error) {
+      // Error handled by onError in useMutation
     }
-
-    sendMessageMutation.mutate(message);
   };
 
-  const handleNewChat = () => {
-    setCurrentSessionId(null);
-    setLocation("/chat");
+  const addCommandToInput = (command: string) => {
+    setMessage((prev) => prev + command + " "); // Add space after command
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  if (!currentSessionId) {
+  // Show loading state while initializing
+  if (isInitializing) {
     return (
-      <div className="min-h-screen bg-background p-4">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setLocation("/")}
-            className="text-muted-foreground hover:text-primary"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex items-center space-x-2">
-            <Eye className="text-primary text-xl" />
-            <span className="font-black text-lg gradient-text">SHADOW</span>
-          </div>
-          <div className="w-10" />
-        </div>
-
-        {/* Mode Selection */}
-        <div className="max-w-md mx-auto">
-          <h2 className="font-black text-3xl mb-8 text-center">
-            CHOOSE YOUR <span className="gradient-text">DEMON</span>
-          </h2>
-          
-          <MoodSelector selectedMode={selectedMode} onModeSelect={setSelectedMode} />
-
-          <Button
-            className="w-full mt-8 bg-primary hover:bg-primary/80 font-black shadow-brutal hover:shadow-neon transition-all duration-300"
-            onClick={() => createSessionMutation.mutate(selectedMode)}
-            disabled={createSessionMutation.isPending}
-          >
-            {createSessionMutation.isPending ? "SUMMONING..." : "ENTER THE CONVERSATION"}
-          </Button>
-
-          {/* Recent Sessions */}
-          {sessions.length > 0 && (
-            <div className="mt-8">
-              <h3 className="font-bold text-lg mb-4 text-center text-muted-foreground">
-                RECENT SESSIONS
-              </h3>
-              <div className="space-y-2">
-                {sessions.slice(0, 3).map((session: ChatSession) => (
-                  <Card
-                    key={session.id}
-                    className="card-tarot cursor-pointer hover:shadow-neon transition-all duration-300"
-                    onClick={() => setLocation(`/chat/${session.id}`)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-bold text-sm text-primary uppercase">
-                            {session.mode}
-                          </h4>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(session.createdAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <Eye className="h-5 w-5 text-accent" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Setting the stage...</p>
+          <p className="text-xs text-muted-foreground mt-2">Preparing your cinematic experience</p>
         </div>
       </div>
     );
   }
-
-  const currentSession = sessions.find((s: ChatSession) => s.id === currentSessionId);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -197,108 +448,174 @@ export default function Chat() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        
+
         <div className="text-center">
-          <div className="flex items-center space-x-2 mb-1">
-            <Eye className="text-accent text-sm" />
-            <span className="text-xs font-bold text-accent uppercase">
-              {currentSession?.mode || "UNKNOWN"} MODE
-            </span>
+          <a 
+            href="https://moodybot.ai" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center justify-center space-x-2 mb-1 hover:opacity-80 transition-opacity"
+          >
+            <Eye className="text-primary text-xl" />
+            <span className="font-black text-lg gradient-text">MoodyBot</span>
+            </a>
+          <div className="flex items-center justify-center space-x-2">
+            <p className="text-sm text-muted-foreground">
+              Mode: {currentMode === "savage" ? "auto" : currentMode}
+            </p>
+            {currentMode === "savage" && (
+              <span className="text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-full">
+                Auto-selected
+              </span>
+            )}
           </div>
-          <span className="font-black text-lg gradient-text">SHADOW</span>
+          <p className="text-xs text-muted-foreground mt-1">
+            Powered by Grok-4 via OpenRouter • Full Cinematic Experience
+          </p>
         </div>
-        
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleNewChat}
-          className="text-muted-foreground hover:text-primary"
-        >
+
+        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary">
           <Plus className="h-5 w-5" />
         </Button>
       </div>
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 p-4">
-        <div className="max-w-2xl mx-auto space-y-4">
-          {messagesLoading ? (
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className={`flex ${i % 2 === 0 ? "justify-end" : "justify-start"}`}>
-                  <Skeleton className="h-16 w-64 rounded-lg" />
-                </div>
-              ))}
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="text-center text-muted-foreground py-12">
-              <Eye className="h-12 w-12 mx-auto mb-4 text-primary" />
-              <p>The void awaits your thoughts...</p>
-            </div>
-          ) : (
-            <AnimatePresence>
-              {messages.map((msg: ChatMessage) => (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`flex mb-4 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
-                      msg.role === "user"
-                        ? "bg-primary/20 border border-primary/30"
-                        : "bg-muted border border-muted-foreground/30"
-                    }`}
-                  >
-                    {msg.role === "assistant" && (
-                      <div className="flex items-center mb-2">
-                        <Eye className="text-accent mr-2 h-4 w-4" />
-                        <span className="text-xs font-bold text-accent uppercase">
-                          {currentSession?.mode} MODE
-                        </span>
-                      </div>
-                    )}
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+      {/* Command Bar - Grid Layout */}
+      <div className="p-3 border-b border-primary/20 bg-surface/50">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+          {allCommands.flatMap(category => 
+            category.commands.map((cmd) => (
+              <Button
+                key={cmd.command}
+                variant="outline"
+                size="sm"
+                className="text-xs px-2 py-1 h-auto rounded-full whitespace-nowrap bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none hover:opacity-80"
+                onClick={() => addCommandToInput(cmd.command)}
+              >
+                {cmd.name}
+              </Button>
+            ))
           )}
-
-          {sendMessageMutation.isPending && (
-            <div className="flex justify-start">
-              <div className="bg-muted border border-muted-foreground/30 rounded-lg px-4 py-3">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <div ref={messagesEndRef} />
         </div>
-      </ScrollArea>
+      </div>
 
-      {/* Message Input */}
-      <div className="p-4 border-t border-primary/20">
-        <div className="max-w-2xl mx-auto flex space-x-2">
-          <Input
+      {/* Chat Messages Area */}
+      <div className="flex-1 p-4 overflow-y-auto space-y-4">
+        <AnimatePresence>
+          {messages.map((message, idx) => (
+            <motion.div
+              key={idx}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className={`max-w-lg mb-4 px-5 py-3 rounded-2xl shadow-lg bg-white text-black ${
+                message.role === "user" ? "ml-auto" : "mr-auto"
+              }`}
+              style={{ wordBreak: "break-word" }}
+            >
+              {/* TODO: Re-enable when OpenRouter supports vision models */}
+              {/* {message.image && (
+                <div className="mb-3">
+                  <img 
+                    src={message.image} 
+                    alt="Uploaded content" 
+                    className="max-w-full h-auto rounded-lg"
+                    style={{ maxHeight: '200px' }}
+                  />
+                </div>
+              )} */}
+              {message.content}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
+      {/* TODO: Re-enable when OpenRouter supports vision models */}
+      {/* Image Upload Area */}
+      {/* {selectedImage && (
+        <div className="p-4 border-t border-primary/20 bg-surface/30">
+          <div className="flex items-center space-x-3">
+            <img 
+              src={selectedImage} 
+              alt="Selected" 
+              className="w-16 h-16 object-cover rounded-lg"
+            />
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground">Image uploads disabled</p>
+              <p className="text-xs text-muted-foreground">Image functionality temporarily unavailable</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={removeImage}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )} */}
+
+      {/* Input Area */}
+      <div className="p-4 border-t border-primary/20 bg-surface/50">
+        <div 
+          className="flex items-center space-x-2"
+          // TODO: Re-enable when OpenRouter supports vision models
+          // className={`flex items-center space-x-2 ${
+          //   isDragOver ? 'border-2 border-dashed border-primary rounded-lg p-2' : ''
+          // }`}
+          // onDragOver={handleDragOver}
+          // onDragLeave={handleDragLeave}
+          // onDrop={handleDrop}
+        >
+          <input
+            type="text"
+            placeholder="Begin your cinematic journey... Share your story, your pain, your truth"
+            className="flex-1 p-3 rounded-full bg-background border border-muted-foreground text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Speak your truth..."
-            className="bg-muted border-muted-foreground/30 placeholder:text-muted-foreground"
-            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
-            disabled={sendMessageMutation.isPending}
+            onKeyPress={(e) => {
+              if (e.key === "Enter") {
+                handleSendMessage();
+              }
+            }}
+            disabled={sendMessageMutation.isPending || isInitializing}
+          />
+          
+          {/* Image Upload Button */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            // onChange={handleFileSelect}
+            className="hidden"
+            disabled={true}
           />
           <Button
-            onClick={handleSendMessage}
-            disabled={!message.trim() || sendMessageMutation.isPending}
-            className="bg-primary hover:bg-primary/80 px-4"
+            variant="ghost"
+            size="icon"
+            // onClick={() => fileInputRef.current?.click()}
+            className="text-muted-foreground hover:text-primary opacity-50"
+            disabled={true}
+            title="Image uploads temporarily disabled"
           >
-            <Send className="h-4 w-4" />
+            <Image className="h-5 w-5" />
           </Button>
+          
+          <Button
+            onClick={handleSendMessage}
+            className="rounded-full px-6 py-3 bg-primary text-primary-foreground hover:bg-primary/90"
+            disabled={sendMessageMutation.isPending || isInitializing}
+          >
+            {sendMessageMutation.isPending ? "Crafting..." : "Begin Journey"}
+          </Button>
+        </div>
+        
+        {/* Cinematic Experience Instructions */}
+        <div className="mt-2 text-center">
+          <p className="text-xs text-muted-foreground">
+            🎬 Cinematic Mode: Each response is crafted for emotional depth and atmospheric storytelling
+          </p>
         </div>
       </div>
     </div>

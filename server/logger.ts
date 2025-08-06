@@ -1,5 +1,25 @@
 import { writeFileSync, appendFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+
+const LOG_PATH = path.join(__dirname, 'logs', 'moodybot_log.txt');
+
+export function appendToTextLog(entry: string) {
+  const timestamp = new Date().toISOString();
+  const logLine = `[${timestamp}] ${entry}\n\n`;
+
+  fs.appendFile(LOG_PATH, logLine, (err) => {
+    if (err) {
+      console.error("Failed to write to log file:", err);
+    }
+  });
+}
 
 // Create logs directory if it doesn't exist
 const logsDir = join(process.cwd(), "logs");

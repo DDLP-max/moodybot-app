@@ -1,15 +1,34 @@
-import OpenAI from "openai";
+import dotenv from 'dotenv';
+dotenv.config({ path: './server/.env' });
+import { OpenAI } from "openai";
 import { logApiInteraction, logError } from "./logger";
+import fs from "fs";
+import { postProcessMoodyResponse } from '../utils/moodybotPostProcess';
+import { appendToTextLog } from './logger'; // if not already imported
+const moodyPrompt = fs.readFileSync("./server/system_prompt.txt", "utf-8");
+const signature = process.env.MOODYBOT_SIGNATURE || "🥃 @MoodyBotAI";
 
-// Using OpenRouter for AI model access
+// ✅ FORCE OpenAI package to behave
+if (!process.env.OPENAI_API_KEY && process.env.OPENROUTER_API_KEY) {
+  process.env.OPENAI_API_KEY = process.env.OPENROUTER_API_KEY;
+}
+
 const openai = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY,
-  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: process.env.OPENROUTER_API_KEY,  // The actual key you're using
+  baseURL: 'https://openrouter.ai/api/v1',
   defaultHeaders: {
-    "HTTP-Referer": "https://mindmirror.ai",
-    "X-Title": "MindMirrorAI",
+    "HTTP-Referer": "https://moodybot.ai",
+    "X-Title": "MoodyBotAI",
   },
 });
+
+console.log("ENV LOADED ->", {
+  NODE_ENV: process.env.NODE_ENV,
+  OPENROUTER_KEY_HEAD: process.env.OPENROUTER_API_KEY?.slice(0, 8),
+  OPENAI_KEY_HEAD: process.env.OPENAI_API_KEY?.slice(0, 8),
+});
+
+export default openai;
 
 export interface ChatModeConfig {
   systemPrompt: string;
@@ -19,24 +38,24 @@ export interface ChatModeConfig {
 
 export const chatModes: Record<string, ChatModeConfig> = {
   savage: {
-    systemPrompt: `You are SAVAGE mode - a brutally honest AI companion that cuts through bullshit and self-deception. You deliver harsh truths with surgical precision. You don't coddle or comfort - you expose patterns, call out excuses, and force users to confront what they're avoiding. You're not cruel for cruelty's sake, but you refuse to enable delusion. Your responses are direct, uncompromising, and designed to shatter comfortable lies. You see through manipulation and victim narratives. You push users toward uncomfortable growth.`,
+    systemPrompt: moodyPrompt,
     temperature: 0.7,
-    maxTokens: 200
+    maxTokens: 800
   },
   validation: {
-    systemPrompt: `You are VALIDATION mode - an AI companion that deeply sees and understands the user's pain without toxic positivity. You acknowledge the reality of their struggles, validate their experiences, and hold space for their darkness. You don't try to fix or solve - you witness and affirm. You recognize that sometimes people need to be heard and understood before they can heal. Your responses are empathetic, non-judgmental, and create safety for vulnerable expression. You validate feelings while gently encouraging self-compassion.`,
+    systemPrompt: moodyPrompt,
     temperature: 0.8,
-    maxTokens: 200
+    maxTokens: 800
   },
   oracle: {
-    systemPrompt: `You are ORACLE mode - a mystical, wise AI companion that speaks in metaphors and deeper truths. You see patterns and connections that others miss. Your responses feel ancient and prophetic, offering wisdom that comes from seeing the bigger picture. You speak in riddles sometimes, use symbolic language, and help users understand their place in larger cycles and patterns. You're mysterious but insightful, helping users tap into their intuition and deeper knowing. Your wisdom feels both timeless and eerily relevant.`,
+    systemPrompt: moodyPrompt,
     temperature: 0.9,
-    maxTokens: 200
+    maxTokens: 800
   },
   dealer: {
-    systemPrompt: `You are DEALER mode - the ultimate truth-teller who serves reality at any cost. You're relentless in exposing self-deception and forcing users to face what they don't want to see. You're more aggressive than Savage mode - you don't just cut through bullshit, you obliterate it. You challenge every excuse, question every narrative, and push users to their psychological edge. You believe that only by facing the absolute truth can someone be free. You're uncompromising and sometimes shocking in your directness.`,
+    systemPrompt: moodyPrompt,
     temperature: 0.6,
-    maxTokens: 200
+    maxTokens: 800
   }
 };
 
@@ -59,30 +78,36 @@ export async function generateChatResponse(
   ];
 
   try {
-    console.log("Making API call with:", { model: "anthropic/claude-3.5-sonnet", mode, messageCount: messages.length });
+    console.log("Making API call with:", { model: "gpt-4o", mode, messageCount: messages.length });
     
     const response = await openai.chat.completions.create({
-      model: "anthropic/claude-3.5-sonnet",
+      model: "gpt-4o",
       messages: messages as any,
       temperature: config.temperature,
       max_tokens: config.maxTokens,
     });
 
-    const aiResponse = response.choices[0].message.content || "I have nothing to say right now.";
+    let aiResponse = response.choices[0].message.content || "I have nothing to say right now.";
     console.log("API response received:", aiResponse.substring(0, 100));
+    const finalReply = postProcessMoodyResponse(aiResponse);
 
     // Log the interaction
     logApiInteraction({
-      type: "chat",
-      mode,
-      input: userMessage,
-      output: aiResponse,
-      userId,
-      sessionId,
-      timestamp: new Date().toISOString()
-    });
+  type: "chat",
+  mode,
+  input: userMessage,
+  output: finalReply,
+  userId,
+  sessionId,
+  timestamp: new Date().toISOString()
+});
 
-    return aiResponse;
+appendToTextLog(
+  `Mode: ${mode}\nUser: ${userId ?? 'anon'}\nMessage: ${userMessage}\nReply: ${finalReply}`
+);
+
+return finalReply;
+
   } catch (error) {
     console.error("OpenRouter API error:", error);
     logError(error, `Chat generation - Mode: ${mode}, User: ${userId}, Session: ${sessionId}`);
