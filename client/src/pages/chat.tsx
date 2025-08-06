@@ -482,7 +482,7 @@ export default function Chat() {
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Powered by Grok-4 via OpenRouter • Full Cinematic Experience
+            Powered by Claude-3.5-Sonnet via OpenRouter • Full Cinematic Experience
           </p>
         </div>
 
