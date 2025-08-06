@@ -351,6 +351,8 @@ export default function Chat() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Cache-Control": "no-cache",
+          "Pragma": "no-cache"
         },
         body: JSON.stringify(requestBody),
       });
@@ -387,7 +389,9 @@ export default function Chat() {
     onError: (error) => {
       console.error("Error sending message:", error);
       // Don't add error message to chat if it's already there
-      const errorMessage = `Error: ${error.message}`;
+      const errorMessage = error.message.includes("MoodyBot has gone quiet") 
+        ? "MoodyBot is thinking... Please try again in a moment."
+        : `Error: ${error.message}`;
       setMessages((prev) => {
         const lastMessage = prev[prev.length - 1];
         if (lastMessage && lastMessage.content === errorMessage) {
@@ -474,7 +478,16 @@ export default function Chat() {
           </p>
         </div>
 
-        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-muted-foreground hover:text-primary"
+          onClick={() => {
+            setMessages([]);
+            window.location.reload();
+          }}
+          title="Refresh chat"
+        >
           <Plus className="h-5 w-5" />
         </Button>
       </div>
