@@ -506,7 +506,7 @@ export default function Chat() {
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Powered by Claude-3.5-Sonnet via OpenRouter • Full Cinematic Experience
+            Powered by Grok-4 via OpenRouter • Full Cinematic Experience
           </p>
           {questionLimit && (
             <div className="flex items-center justify-center space-x-2 mt-2">
@@ -643,16 +643,7 @@ export default function Chat() {
 
       {/* Input Area */}
       <div className="p-4 border-t border-primary/20 bg-surface/50">
-        <div 
-          className="flex items-center space-x-2"
-          // TODO: Re-enable when OpenRouter supports vision models
-          // className={`flex items-center space-x-2 ${
-          //   isDragOver ? 'border-2 border-dashed border-primary rounded-lg p-2' : ''
-          // }`}
-          // onDragOver={handleDragOver}
-          // onDragLeave={handleDragLeave}
-          // onDrop={handleDrop}
-        >
+        <div className="flex items-center space-x-2 mb-3">
           <input
             type="text"
             placeholder={questionLimit && questionLimit.remaining <= 0 ? "Subscribe to continue your journey..." : "Begin your cinematic journey... Share your story, your pain, your truth"}
@@ -686,18 +677,21 @@ export default function Chat() {
           >
             <Image className="h-5 w-5" />
           </Button>
-          
+        </div>
+        
+        {/* Begin Journey Button - Below input on mobile */}
+        <div className="flex justify-center">
           {(questionLimit?.remaining ?? 0) <= 0 ? (
             <Button
               onClick={() => window.open('https://moodybot.gumroad.com/l/moodybot-webapp', '_blank')}
-              className="rounded-full px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90"
+              className="w-full md:w-auto rounded-full px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90"
             >
               Subscribe to Premium
             </Button>
           ) : (
             <Button
               onClick={handleSendMessage}
-              className="rounded-full px-6 py-3 bg-primary text-primary-foreground hover:bg-primary/90"
+              className="w-full md:w-auto rounded-full px-6 py-3 bg-primary text-primary-foreground hover:bg-primary/90"
               disabled={sendMessageMutation.isPending || isInitializing}
             >
               {sendMessageMutation.isPending ? "Crafting..." : "Begin Journey"}
