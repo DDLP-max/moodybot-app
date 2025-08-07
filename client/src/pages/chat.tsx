@@ -474,19 +474,11 @@ export default function Chat() {
         return <br key={index} />;
       }
       
-      // Handle asterisk-wrapped text (actions/emotions)
-      if (trimmedLine.startsWith('*') && trimmedLine.endsWith('*')) {
-        return (
-          <span key={index} className="text-gray-600 italic text-sm">
-            {trimmedLine}
-          </span>
-        );
-      }
-      
-      // Handle lines that start with asterisk but don't end with it
+      // Handle asterisk-wrapped text (actions/emotions) - both complete and partial
       if (trimmedLine.startsWith('*')) {
+        const isComplete = trimmedLine.endsWith('*');
         return (
-          <span key={index} className="text-gray-600 italic text-sm">
+          <span key={index} className="text-gray-600 italic text-sm block">
             {trimmedLine}
           </span>
         );
@@ -495,7 +487,16 @@ export default function Chat() {
       // Handle @MoodyBotAI tags
       if (trimmedLine.includes('@MoodyBotAI')) {
         return (
-          <span key={index} className="text-purple-600 font-medium">
+          <span key={index} className="text-purple-600 font-medium block">
+            {trimmedLine}
+          </span>
+        );
+      }
+      
+      // Handle emojis and special characters
+      if (trimmedLine.match(/^[🥃🎬💔🔥🧠🎭🧨📽️👑🔺✍️🛞]/)) {
+        return (
+          <span key={index} className="text-lg block">
             {trimmedLine}
           </span>
         );
@@ -660,7 +661,7 @@ export default function Chat() {
                   />
                 </div>
               )} */}
-              <div className="whitespace-pre-wrap">
+              <div className="whitespace-pre-wrap leading-relaxed">
                 {formatMessageContent(message.content)}
               </div>
             </motion.div>

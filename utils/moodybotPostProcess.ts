@@ -34,7 +34,7 @@ export function autoParagraph(text: string): string {
     .split(/(?<=[.!?])\s+/)
     .map(line => line.trim())
     .filter(line => line.length > 0)
-    .join("\n\n");
+    .join("\n");
 }
 
 export function cleanWeakOpeners(text: string): string {
@@ -62,7 +62,6 @@ export function getRandomCta(): string {
 export function postProcessMoodyResponse(raw: string): string {
   let processed = cleanWeakOpeners(raw);
   processed = polishSentences(processed);
-  processed = autoParagraph(processed);
   processed = replaceMoodyDescriptors(processed);
   processed = cleanMoodySignoffs(processed);
   processed = appendSignature(processed);

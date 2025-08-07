@@ -24,6 +24,16 @@ export async function generateChatResponse(
   conversationHistory: ChatCompletionMessageParam[] = [],
   imageData?: string
 ): Promise<{ aiReply: string; selectedMode: string; isAutoSelected: boolean }> {
+  // Check if API key is configured
+  if (!process.env.OPENROUTER_API_KEY) {
+    console.error("OPENROUTER_API_KEY is not configured");
+    return {
+      aiReply: "MoodyBot is not properly configured. Please check the API key setup.",
+      selectedMode: mode,
+      isAutoSelected: mode === "savage"
+    };
+  }
+
   const selectedMode = mode === "savage" ? selectModeFromMessage(userMessage) : mode;
   const isAutoSelected = mode === "savage";
 
@@ -81,7 +91,17 @@ This is not a quick chat - this is an emotional journey. Take your time. Build a
   if (!res.ok) {
     const errorText = await res.text();
     console.error("OpenRouter API error response:", errorText);
-    throw new Error(`OpenRouter API error: ${res.status} - ${errorText}`);
+    
+    // Provide more specific error messages
+    if (res.status === 401) {
+      throw new Error("API key is invalid or missing. Please check your OPENROUTER_API_KEY configuration.");
+    } else if (res.status === 429) {
+      throw new Error("Rate limit exceeded. Please try again in a moment.");
+    } else if (res.status === 400) {
+      throw new Error("Invalid request format. Please check your message content.");
+    } else {
+      throw new Error(`OpenRouter API error: ${res.status} - ${errorText}`);
+    }
   }
 
   const json = await res.json();
