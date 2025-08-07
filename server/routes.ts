@@ -158,7 +158,7 @@ MoodyBot isn't a chatbot. It's a mirror that shows you what you're afraid to see
 
 **$9/month** - The emotional intelligence upgrade your ex was never ready for.
 
-[Subscribe Now](https://moodybot.gumroad.com/l/moodybotpremium)
+[Subscribe Now](https://moodybot.gumroad.com/l/moodybot-webapp)
 
 @MoodyBotAI
 

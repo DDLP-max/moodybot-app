@@ -554,7 +554,7 @@ export default function Chat() {
               </p>
             </div>
             <Button
-              onClick={() => window.open('https://moodybot.gumroad.com/l/moodybotpremium', '_blank')}
+              onClick={() => window.open('https://moodybot.gumroad.com/l/moodybot-webapp', '_blank')}
               size="sm"
               className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90"
             >
@@ -689,7 +689,7 @@ export default function Chat() {
           
           {(questionLimit?.remaining ?? 0) <= 0 ? (
             <Button
-              onClick={() => window.open('https://moodybot.gumroad.com/l/moodybotpremium', '_blank')}
+              onClick={() => window.open('https://moodybot.gumroad.com/l/moodybot-webapp', '_blank')}
               className="rounded-full px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90"
             >
               Subscribe to Premium
