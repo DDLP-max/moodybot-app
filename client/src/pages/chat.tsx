@@ -459,6 +459,57 @@ export default function Chat() {
     setMessage((prev) => prev + command + " "); // Add space after command
   };
 
+  // Format message content with proper line breaks and styling
+  const formatMessageContent = (content: string) => {
+    if (!content) return '';
+    
+    // Split by line breaks and process each line
+    const lines = content.split('\n');
+    
+    return lines.map((line, index) => {
+      const trimmedLine = line.trim();
+      
+      // Handle empty lines
+      if (!trimmedLine) {
+        return <br key={index} />;
+      }
+      
+      // Handle asterisk-wrapped text (actions/emotions)
+      if (trimmedLine.startsWith('*') && trimmedLine.endsWith('*')) {
+        return (
+          <span key={index} className="text-gray-600 italic text-sm">
+            {trimmedLine}
+          </span>
+        );
+      }
+      
+      // Handle lines that start with asterisk but don't end with it
+      if (trimmedLine.startsWith('*')) {
+        return (
+          <span key={index} className="text-gray-600 italic text-sm">
+            {trimmedLine}
+          </span>
+        );
+      }
+      
+      // Handle @MoodyBotAI tags
+      if (trimmedLine.includes('@MoodyBotAI')) {
+        return (
+          <span key={index} className="text-purple-600 font-medium">
+            {trimmedLine}
+          </span>
+        );
+      }
+      
+      // Regular text
+      return (
+        <span key={index} className="block">
+          {trimmedLine}
+        </span>
+      );
+    });
+  };
+
   // Show loading state while initializing
   if (isInitializing) {
     return (
@@ -609,7 +660,9 @@ export default function Chat() {
                   />
                 </div>
               )} */}
-              {message.content}
+              <div className="whitespace-pre-wrap">
+                {formatMessageContent(message.content)}
+              </div>
             </motion.div>
           ))}
         </AnimatePresence>
