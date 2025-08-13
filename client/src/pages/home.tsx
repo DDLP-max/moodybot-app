@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Eye } from "lucide-react";
+import { Brain, Sparkles } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { User } from "lucide-react";
@@ -18,7 +18,7 @@ export default function Home() {
             rel="noopener noreferrer"
             className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
           >
-            <Eye className="text-primary text-xl" />
+            <Brain className="text-primary text-xl" />
             <span className="font-black text-lg gradient-text">MoodyBot</span>
           </a>
           <div className="flex items-center space-x-4">
@@ -54,12 +54,32 @@ export default function Home() {
             <p className="text-sm text-muted-foreground mb-8 max-w-sm mx-auto">
               No toxic positivity. No bullshit. Just brutal honesty and real growth.
             </p>
-            <Button 
-              className="bg-primary hover:bg-primary/80 px-8 py-4 font-black text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105"
-              onClick={() => setLocation("/chat")}
-            >
-              ENTER THE VOID
-            </Button>
+            
+            {/* Chat Options */}
+            <div className="flex justify-center items-center mb-6">
+              <Button 
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 px-8 py-4 font-black text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105"
+                onClick={() => setLocation("/dynamic")}
+              >
+                <Brain className="mr-2 h-5 w-5" />
+                DYNAMIC MODE
+              </Button>
+            </div>
+            
+            {/* Demo button removed */}
+            
+            {/* Mode Description */}
+            <div className="max-w-md mx-auto">
+              <div className="text-center p-4 bg-background/50 rounded-lg border border-primary/20">
+                <h3 className="font-bold text-blue-500 mb-2 flex items-center justify-center">
+                  <Brain className="h-4 w-4 mr-2" />
+                  Dynamic Mode
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  AI-powered persona selection. MoodyBot automatically adapts to your emotional state and message content.
+                </p>
+              </div>
+            </div>
           </motion.div>
         </section>
       </div>

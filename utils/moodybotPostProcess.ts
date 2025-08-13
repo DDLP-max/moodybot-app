@@ -42,7 +42,7 @@ export function cleanWeakOpeners(text: string): string {
 }
 
 export function appendSignature(text: string, signature = "\ud83e\udd43 @MoodyBotAI"): string {
-  return text.includes(signature) ? text : `${text}\n\n${signature}`;
+  return text.includes(signature) ? text : `${text}\n${signature}`;
 }
 
 export function cleanMoodySignoffs(text: string): string {
@@ -65,6 +65,6 @@ export function postProcessMoodyResponse(raw: string): string {
   processed = replaceMoodyDescriptors(processed);
   processed = cleanMoodySignoffs(processed);
   processed = appendSignature(processed);
-  processed += `\n\n${getRandomCta()}`;
+  processed += `\n${getRandomCta()}`;
   return processed;
 }

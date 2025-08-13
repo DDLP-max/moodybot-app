@@ -1,14 +1,18 @@
 import { Switch, Route } from "wouter";
 import Home from "@/pages/home";
 import Chat from "@/pages/chat";
+import SimplifiedChat from "@/components/SimplifiedChat";
+import Demo from "@/pages/demo";
 import NotFound from "@/pages/not-found"; // Optional fallback
 
 function Router() {
   return (
-     <Switch>
+    <Switch>
       <Route path="/" component={Home} />
       <Route path="/chat" component={Chat} />
       <Route path="/chat/:sessionId" component={Chat} />
+      <Route path="/dynamic" component={SimplifiedChat} />
+      <Route path="/demo" component={Demo} />
       <Route component={NotFound} />
     </Switch>
   );

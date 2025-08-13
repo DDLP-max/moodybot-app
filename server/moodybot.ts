@@ -2,6 +2,8 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 
+// FORCE RECOMPILATION - REMOVED CINEMATIC MODE AND SCENE-SETTING 2025-08-13 10:40 AM
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -24,8 +26,12 @@ export async function generateChatResponse(
   conversationHistory: ChatCompletionMessageParam[] = [],
   imageData?: string
 ): Promise<{ aiReply: string; selectedMode: string; isAutoSelected: boolean }> {
-  // Check if API key is configured
-  if (!process.env.OPENROUTER_API_KEY) {
+  // Use the API key directly since .env loading is having issues - UPDATED 2025-08-13
+  const apiKey = "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";
+  
+  console.log("🔑 Using hardcoded API key:", apiKey.substring(0, 20) + "...");
+  
+  if (!apiKey) {
     console.error("OPENROUTER_API_KEY is not configured");
     return {
       aiReply: "MoodyBot is not properly configured. Please check the API key setup.",
@@ -43,18 +49,12 @@ export async function generateChatResponse(
   const model = "anthropic/claude-3.5-sonnet"; // Use a reliable model that's definitely available
 
   let enhancedPrompt = moodyPrompt;
+  // Removed cinematic mode - keeping responses direct and natural
   enhancedPrompt += `
 
-CINEMATIC EXPERIENCE MODE:
-You are now in a full cinematic experience. Every response should feel like a scene from a film, with:
-- Emotional pacing and rhythm
-- Vivid sensory details and atmosphere
-- Character development and depth
-- Poetic language and metaphor
-- Emotional arcs that build and resolve
-- Cinematic dialogue and monologue structure
-
-This is not a quick chat - this is an emotional journey. Take your time. Build atmosphere. Create moments that linger.`;
+IMPORTANT: Do NOT add scene-setting text, cinematic descriptions, or italics formatting. 
+Respond directly and conversationally without any "*scene description*" or similar formatting.
+Keep responses natural, direct, and focused on the user's message.`;
 
   const messages: ChatCompletionMessageParam[] = [
     { role: "system", content: enhancedPrompt },
@@ -67,12 +67,13 @@ This is not a quick chat - this is an emotional journey. Take your time. Build a
 
  try {
 
-  console.log("Using model:", model, "for cinematic experience");
+  console.log("Using model:", model, "for natural conversation");
+  console.log("🔑 Sending request with API key:", apiKey.substring(0, 20) + "...");
 
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
       "HTTP-Referer": "https://moodybot.ai",
       "X-Title": "MoodyBotAI"
