@@ -231,7 +231,7 @@ The real answers? The insights that change your life? Those cost something. Not 
       // Increment question count for free users
       await storage.incrementQuestionCount(currentUserId);
 
-      const apiKey = process.env.OPENROUTER_API_KEY;
+      const apiKey = (process.env.OPENROUTER_API_KEY || "").trim();
       if (!apiKey) {
         return res.status(500).json({ error: "Server missing OPENROUTER_API_KEY" });
       }
@@ -258,13 +258,13 @@ Generate marketing copy in the exact JSON format specified above.`;
       const openRouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": "https://moodybot.ai",
-          "X-Title": "MoodyBotAI"
+          "Authorization": `Bearer ${apiKey}`,
+          "HTTP-Referer": "https://app.moodybot.ai",   // recommended by OpenRouter
+          "X-Title": "MoodyBot"                         // optional, nice to have
         },
         body: JSON.stringify({
-          model: "x-ai/grok-4",
+          model: "x-ai/grok-2-latest",  // safer, valid model slug
           messages: [
             { role: "system", content: copywriterPrompt },
             { role: "user", content: `Generate marketing copy for: ${description}` }

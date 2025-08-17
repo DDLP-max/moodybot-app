@@ -27,7 +27,7 @@ export async function generateChatResponse(
   imageData?: string
 ): Promise<{ aiReply: string; selectedMode: string; isAutoSelected: boolean }> {
   // Get API key from environment variable - REQUIRED for security
-  const apiKey = process.env.OPENROUTER_API_KEY;
+  const apiKey = (process.env.OPENROUTER_API_KEY || "").trim();
   
   if (!apiKey) {
     console.error("❌ OPENROUTER_API_KEY environment variable is not set");
@@ -41,6 +41,7 @@ export async function generateChatResponse(
   console.log("🔑 Using API key from environment variable:", apiKey.substring(0, 20) + "...");
   console.log("🔑 API key length:", apiKey.length);
   console.log("🔑 API key format check:", apiKey.startsWith("sk-or-v1-") ? "✅ Valid format" : "❌ Invalid format");
+  console.log("🔑 API key first/last 4 chars:", apiKey.substring(0, 4) + "..." + apiKey.substring(apiKey.length - 4));
 
   const selectedMode = mode === "savage" ? selectModeFromMessage(userMessage) : mode;
   const isAutoSelected = mode === "savage";
@@ -48,7 +49,7 @@ export async function generateChatResponse(
   const cinematicTemperature = 0.85;
   const cinematicMaxTokens = 1200;
 
-  const model = "x-ai/grok-4"; // Use a reliable model that's definitely available
+  const model = "x-ai/grok-2-latest"; // Use a safer, valid model slug
 
   let enhancedPrompt = moodyPrompt;
   // Removed cinematic mode - keeping responses direct and natural
@@ -75,10 +76,10 @@ Keep responses natural, direct, and focused on the user's message.`;
   const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
-      "HTTP-Referer": "https://moodybot.ai",
-      "X-Title": "MoodyBotAI"
+      "Authorization": `Bearer ${apiKey}`,
+      "HTTP-Referer": "https://app.moodybot.ai",   // recommended by OpenRouter
+      "X-Title": "MoodyBot"                         // optional, nice to have
     },
     body: JSON.stringify({
       model,
