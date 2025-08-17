@@ -10,13 +10,13 @@ const __dirname = path.dirname(__filename);
 // Load environment variables from the server folder
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 
-import fs from "fs";
+import { systemPromptManager } from "./systemPromptManager";
 import { postProcessMoodyResponse } from "../utils/moodybotPostProcess";
 import { appendToTextLog } from "./logger";
 import type { ChatCompletionMessageParam } from "openai/resources/chat";
 
-// Load system prompt from file
-const moodyPrompt = fs.readFileSync(path.resolve("server/system_prompt.txt"), "utf-8");
+// Get system prompt from manager
+const moodyPrompt = systemPromptManager.getSystemPrompt();
 
 export async function generateChatResponse(
   userMessage: string,
@@ -46,8 +46,9 @@ export async function generateChatResponse(
   const selectedMode = mode === "savage" ? selectModeFromMessage(userMessage) : mode;
   const isAutoSelected = mode === "savage";
 
-  const cinematicTemperature = 0.85;
-  const cinematicMaxTokens = 1200;
+  // Temperature and token settings based on mode
+  const temperature = mode === "copywriter" ? 0.5 : 0.85;
+  const maxTokens = mode === "copywriter" ? 1200 : 1200;
 
   const model = "x-ai/grok-4"; // Use Grok-4 as requested
 
@@ -59,8 +60,25 @@ IMPORTANT: Do NOT add scene-setting text, cinematic descriptions, or italics for
 Respond directly and conversationally without any "*scene description*" or similar formatting.
 Keep responses natural, direct, and focused on the user's message.`;
 
+  // Add developer message for mode routing
+  const developerMessage = {
+    role: "developer" as const,
+    content: JSON.stringify({
+      mode: selectedMode,
+      asset_types: selectedMode === "copywriter" ? ["headline", "hook", "cta", "caption_long"] : [],
+      max_assets_per_type: 5,
+      require_json: selectedMode === "copywriter",
+      brand_context: selectedMode === "copywriter" ? {
+        name: null,
+        niche: "business description provided",
+        audience: "target customers"
+      } : null
+    })
+  };
+
   const messages: ChatCompletionMessageParam[] = [
     { role: "system", content: enhancedPrompt },
+    developerMessage,
     ...conversationHistory.filter(msg => 
       typeof msg.content === 'string' || 
       (Array.isArray(msg.content) && msg.content.every(item => typeof item === 'object' && 'type' in item))
@@ -84,8 +102,8 @@ Keep responses natural, direct, and focused on the user's message.`;
     body: JSON.stringify({
       model,
       messages,
-      temperature: cinematicTemperature,
-      max_tokens: cinematicMaxTokens
+      temperature,
+      max_tokens: maxTokens
     }),
   });
 

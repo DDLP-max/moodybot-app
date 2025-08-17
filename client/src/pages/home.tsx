@@ -70,6 +70,8 @@ export default function Home() {
               No toxic positivity. No bullshit. Just brutal honesty and real growth.
             </p>
             
+
+            
             {/* Chat Options */}
             <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-8 w-full px-4">
               <Button 

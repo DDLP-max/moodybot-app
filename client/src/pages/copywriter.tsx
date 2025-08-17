@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +11,7 @@ interface CopyOutput {
   hooks: string[];
   ctas: string[];
   captions: string[];
+  captionsLong: string[];
 }
 
 export default function CopywriterPage() {
@@ -20,6 +21,18 @@ export default function CopywriterPage() {
   const [out, setOut] = useState<CopyOutput | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [questionLimit, setQuestionLimit] = useState<{ remaining: number; limit: number } | null>(null);
+
+  // Debug logging for out state
+  useEffect(() => {
+    if (out) {
+      console.log("🔍 out state updated:", out);
+      console.log("🔍 out.titles:", out.titles);
+      console.log("🔍 out.hooks:", out.hooks);
+      console.log("🔍 out.ctas:", out.ctas);
+      console.log("🔍 out.captions:", out.captions);
+      console.log("🔍 out.captionsLong:", out.captionsLong);
+    }
+  }, [out]);
 
   async function handleGenerate() {
     console.log("clicked"); // sanity ping
@@ -39,6 +52,15 @@ export default function CopywriterPage() {
       const data = await res.json();
       
       if (!res.ok) throw new Error(data.error || "Request failed");
+      
+      // Debug logging
+      console.log("🔍 Full API response:", data);
+      console.log("🔍 data.result:", data.result);
+      console.log("🔍 data.result.titles:", data.result?.titles);
+      console.log("🔍 data.result.hooks:", data.result?.hooks);
+      console.log("🔍 data.result.ctas:", data.result?.ctas);
+      console.log("🔍 data.result.captions:", data.result?.captions);
+      console.log("🔍 data.result.captionsLong:", data.result?.captionsLong);
       
       // Check if limit reached
       if (data.limitReached) {
@@ -101,7 +123,7 @@ export default function CopywriterPage() {
             Generate killer marketing copy with the Ogilvy module
           </p>
           <p className="text-sm text-muted-foreground">
-            Titles • Hooks • CTAs • Captions • Social Media Copy
+            Titles • Hooks • CTAs • Captions • Long-Form Storytelling Posts
           </p>
         </div>
 
@@ -145,13 +167,12 @@ export default function CopywriterPage() {
         {/* Input Section */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <MessageSquare className="h-5 w-5 text-green-500" />
-              <span>Business Description</span>
-            </CardTitle>
-            <CardDescription>
-              Describe your business, product, or service. Be specific about your target audience and what makes you unique.
-            </CardDescription>
+                      <CardTitle>
+            <span>👉 Give it to MoodyBot straight…</span>
+          </CardTitle>
+          <CardDescription>
+            Drop the raw version of your business, product, or service. No buzzwords. No padding. Just who it's for and why it matters.
+          </CardDescription>
           </CardHeader>
           <CardContent>
             <Textarea
@@ -172,12 +193,12 @@ export default function CopywriterPage() {
                     <Sparkles className="mr-2 h-4 w-4 animate-spin" />
                     Generating Copy...
                   </>
-                ) : (
-                  <>
-                    <Zap className="mr-2 h-4 w-4" />
-                    Generate Copy
-                  </>
-                )}
+                                 ) : (
+                   <>
+                     <Target className="mr-2 h-4 w-4" />
+                     Generate Copy
+                   </>
+                 )}
               </Button>
             </div>
           </CardContent>
@@ -192,175 +213,175 @@ export default function CopywriterPage() {
           </Card>
         )}
 
-        {/* Output Section */}
-        {out && (
-          <div className="space-y-6">
-            {/* Titles */}
-            {out.titles && out.titles.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Target className="h-5 w-5 text-primary" />
-                    <span>Headlines & Titles</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Compelling headlines that grab attention and communicate value
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {out.titles.map((title: string, index: number) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <p className="font-medium">{title}</p>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => copyToClipboard(title)}
-                          className="hover:bg-primary/10"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                 {/* Output Section */}
+         {out && (
+           <div className="space-y-6">
+             {/* Titles */}
+             {out.titles && out.titles.length > 0 && (
+               <Card>
+                 <CardHeader>
+                   <CardTitle className="flex items-center space-x-2">
+                     <Target className="h-5 w-5 text-primary" />
+                     <span>Headlines & Titles</span>
+                   </CardTitle>
+                   <CardDescription>
+                     Compelling headlines that grab attention and communicate value
+                   </CardDescription>
+                 </CardHeader>
+                 <CardContent>
+                   <div className="space-y-3">
+                     {out.titles.map((title: string, index: number) => (
+                       <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                         <p className="font-medium">{title}</p>
+                         <Button
+                           variant="ghost"
+                           size="icon"
+                           onClick={() => copyToClipboard(title)}
+                           className="hover:bg-primary/10"
+                         >
+                           <Copy className="h-4 w-4" />
+                         </Button>
+                       </div>
+                     ))}
+                   </div>
+                 </CardContent>
+               </Card>
+             )}
 
-            {/* Hooks */}
-            {out.hooks && out.hooks.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Zap className="h-5 w-5 text-primary" />
-                    <span>Hooks & Openers</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Attention-grabbing opening lines that pull readers in
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {out.hooks.map((hook: string, index: number) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <p className="font-medium">{hook}</p>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => copyToClipboard(hook)}
-                          className="hover:bg-primary/10"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+             {/* Hooks */}
+             {out.hooks && out.hooks.length > 0 && (
+               <Card>
+                 <CardHeader>
+                   <CardTitle className="flex items-center space-x-2">
+                     <Zap className="h-5 w-5 text-primary" />
+                     <span>Hooks & Openers</span>
+                   </CardTitle>
+                   <CardDescription>
+                     Attention-grabbing opening lines that pull readers in
+                   </CardDescription>
+                 </CardHeader>
+                 <CardContent>
+                   <div className="space-y-3">
+                     {out.hooks.map((hook: string, index: number) => (
+                       <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                         <p className="font-medium">{hook}</p>
+                         <Button
+                           variant="ghost"
+                           size="icon"
+                           onClick={() => copyToClipboard(hook)}
+                           className="hover:bg-primary/10"
+                         >
+                           <Copy className="h-4 w-4" />
+                         </Button>
+                       </div>
+                     ))}
+                   </div>
+                 </CardContent>
+               </Card>
+             )}
 
-            {/* CTAs */}
-            {out.ctas && out.ctas.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <MousePointer className="h-5 w-5 text-primary" />
-                    <span>Call-to-Actions</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Compelling CTAs that drive action and conversions
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {out.ctas.map((cta: string, index: number) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <p className="font-medium">{cta}</p>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => copyToClipboard(cta)}
-                          className="hover:bg-primary/10"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+             {/* CTAs */}
+             {out.ctas && out.ctas.length > 0 && (
+               <Card>
+                 <CardHeader>
+                   <CardTitle className="flex items-center space-x-2">
+                     <MousePointer className="h-5 w-5 text-primary" />
+                     <span>Call-to-Actions</span>
+                   </CardTitle>
+                   <CardDescription>
+                     Compelling CTAs that drive action and conversions
+                   </CardDescription>
+                 </CardHeader>
+                 <CardContent>
+                   <div className="space-y-3">
+                     {out.ctas.map((cta: string, index: number) => (
+                       <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                         <p className="font-medium">{cta}</p>
+                         <Button
+                           variant="ghost"
+                           size="icon"
+                           onClick={() => copyToClipboard(cta)}
+                           className="hover:bg-primary/10"
+                         >
+                           <Copy className="h-4 w-4" />
+                         </Button>
+                       </div>
+                     ))}
+                   </div>
+                 </CardContent>
+               </Card>
+             )}
 
-            {/* Captions */}
-            {out.captions && out.captions.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <MessageSquare className="h-5 w-5 text-primary" />
-                    <span>Social Media Captions</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Engaging captions for social media posts
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {out.captions.map((caption: string, index: number) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <p className="font-medium">{caption}</p>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => copyToClipboard(caption)}
-                          className="hover:bg-primary/10"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
+             {/* Captions */}
+             {out.captions && out.captions.length > 0 && (
+               <Card>
+                 <CardHeader>
+                   <CardTitle className="flex items-center space-x-2">
+                     <MessageSquare className="h-5 w-5 text-primary" />
+                     <span>Social Media Captions</span>
+                   </CardTitle>
+                   <CardDescription>
+                     Engaging captions for social media posts
+                   </CardDescription>
+                 </CardHeader>
+                 <CardContent>
+                   <div className="space-y-3">
+                     {out.captions.map((caption: string, index: number) => (
+                       <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                         <p className="font-medium">{caption}</p>
+                         <Button
+                           variant="ghost"
+                           size="icon"
+                           onClick={() => copyToClipboard(caption)}
+                           className="hover:bg-primary/10"
+                         >
+                           <Copy className="h-4 w-4" />
+                         </Button>
+                       </div>
+                     ))}
+                   </div>
+                 </CardContent>
+               </Card>
+             )}
 
-        {/* Tips Section */}
-        <div className="mt-12">
-          <Card className="bg-muted/30">
-            <CardHeader>
-              <CardTitle className="text-center">💡 Copywriting Tips</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <h4 className="font-semibold mb-2">🎯 Be Specific</h4>
-                  <p className="text-muted-foreground">
-                    Include your target audience, unique benefits, and specific pain points you solve.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">🔥 Create Urgency</h4>
-                  <p className="text-muted-foreground">
-                    Use time-sensitive language and scarcity to drive immediate action.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">💪 Focus on Benefits</h4>
-                  <p className="text-muted-foreground">
-                    Don't just list features - explain how they make your customer's life better.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold mb-2">🎭 Test & Iterate</h4>
-                  <p className="text-muted-foreground">
-                    Try different versions and track which ones perform best with your audience.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+             {/* Long-Form Captions */}
+             {out.captionsLong && out.captionsLong.length > 0 && (
+               <Card>
+                 <CardHeader>
+                   <CardTitle className="flex items-center space-x-2">
+                     <MessageSquare className="h-5 w-5 text-primary" />
+                     <span>Long-Form Storytelling Posts</span>
+                   </CardTitle>
+                   <CardDescription>
+                     200-300 word narrative captions perfect for carousel intros, Reel context, and LinkedIn brand storytelling
+                   </CardDescription>
+                 </CardHeader>
+                 <CardContent>
+                   <div className="space-y-4">
+                     {out.captionsLong.map((caption: string, index: number) => (
+                       <div key={index} className="p-4 bg-muted/50 rounded-lg">
+                         <div className="mb-3 flex items-center justify-between">
+                           <span className="text-xs font-medium text-muted-foreground bg-primary/10 px-2 py-1 rounded">
+                             Story #{index + 1}
+                           </span>
+                           <Button
+                             variant="ghost"
+                             size="icon"
+                             onClick={() => copyToClipboard(caption)}
+                             className="hover:bg-primary/10"
+                           >
+                             <Copy className="h-4 w-4" />
+                           </Button>
+                         </div>
+                         <p className="text-sm leading-relaxed whitespace-pre-wrap">{caption}</p>
+                       </div>
+                     ))}
+                   </div>
+                 </CardContent>
+               </Card>
+             )}
+           </div>
+         )}        
       </div>
     </div>
   );
