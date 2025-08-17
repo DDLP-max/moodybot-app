@@ -264,7 +264,7 @@ Generate marketing copy in the exact JSON format specified above.`;
           "X-Title": "MoodyBot"                         // optional, nice to have
         },
         body: JSON.stringify({
-          model: "xai/grok-beta",  // correct Grok model identifier (without hyphen)
+          model: "x-ai/grok-4",  // Use Grok-4 as requested
           messages: [
             { role: "system", content: copywriterPrompt },
             { role: "user", content: `Generate marketing copy for: ${description}` }
