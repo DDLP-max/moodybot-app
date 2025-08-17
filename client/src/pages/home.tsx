@@ -53,7 +53,7 @@ export default function Home() {
             
             {/* MoodyBot Character Image */}
             <motion.div
-              className="mb-6"
+              className="mb-6 px-4"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 1, delay: 0.3 }}
@@ -61,7 +61,7 @@ export default function Home() {
               <img
                 src="/moodybot-min.png"
                 alt="MoodyBot AI Character"
-                className="w-32 h-32 md:w-40 md:h-40 rounded-full mx-auto border-4 border-primary/20 shadow-2xl shadow-primary/20"
+                className="w-28 h-28 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full mx-auto border-4 border-primary/20 shadow-2xl shadow-primary/20"
               />
             </motion.div>
             
@@ -71,9 +71,9 @@ export default function Home() {
             </p>
             
             {/* Chat Options */}
-            <div className="flex justify-center items-center space-x-4 mb-8 w-full">
+            <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-8 w-full px-4">
               <Button 
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 px-8 py-4 font-black text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105"
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
                 onClick={() => setLocation("/dynamic")}
               >
                 <Eye className="mr-2 h-5 w-5" />
@@ -81,7 +81,7 @@ export default function Home() {
               </Button>
               
               <Button 
-                className="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 px-8 py-4 font-black text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105"
+                className="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
                 onClick={() => setLocation("/copywriter")}
               >
                 <Target className="mr-2 h-5 w-5" />
@@ -90,7 +90,7 @@ export default function Home() {
             </div>
             
             {/* Mode Descriptions */}
-            <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
               <div className="text-center p-4 bg-background/50 rounded-lg border border-primary/20">
                 <h3 className="font-bold text-blue-500 mb-2 flex items-center justify-center">
                   <Eye className="h-4 w-4 mr-2" />
