@@ -49,7 +49,7 @@ export async function generateChatResponse(
   const cinematicTemperature = 0.85;
   const cinematicMaxTokens = 1200;
 
-  const model = "x-ai/grok-2-latest"; // Use a safer, valid model slug
+  const model = "x-ai/grok-beta"; // Use the correct Grok model identifier
 
   let enhancedPrompt = moodyPrompt;
   // Removed cinematic mode - keeping responses direct and natural
