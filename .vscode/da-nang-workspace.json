@@ -1,0 +1,109 @@
+{
+  "da-nang.workspace": {
+    "name": "Da Nang Development Workspace",
+    "version": "1.0.0",
+    "description": "Independent development workspace for Da Nang related projects and experiments",
+    "projects": {
+      "main": {
+        "name": "Da Nang Main Project",
+        "path": "./da-nang",
+        "type": "development-workspace",
+        "technology": "Multi-Stack",
+        "description": "Main development area for Da Nang projects",
+        "entryPoint": "README.md",
+        "packageManager": "mixed",
+        "devCommand": "npm run dev",
+        "buildCommand": "npm run build",
+        "keywords": ["da-nang", "vietnam", "development", "workspace", "experiments", "projects", "multi-stack"]
+      },
+      "web": {
+        "name": "Da Nang Web Projects",
+        "path": "./da-nang/web",
+        "type": "web-development",
+        "technology": "HTML/CSS/JavaScript/React",
+        "description": "Web development projects for Da Nang",
+        "entryPoint": "index.html",
+        "packageManager": "npm",
+        "devCommand": "npm run dev",
+        "buildCommand": "npm run build",
+        "keywords": ["web", "frontend", "react", "javascript", "html", "css", "da-nang"]
+      },
+      "api": {
+        "name": "Da Nang API Services",
+        "path": "./da-nang/api",
+        "type": "backend-service",
+        "technology": "Node.js/Express/Python/FastAPI",
+        "description": "Backend API services for Da Nang projects",
+        "entryPoint": "server.js",
+        "packageManager": "npm",
+        "devCommand": "npm run dev",
+        "buildCommand": "npm run build",
+        "keywords": ["api", "backend", "nodejs", "express", "python", "fastapi", "da-nang"]
+      },
+      "data": {
+        "name": "Da Nang Data Projects",
+        "path": "./da-nang/data",
+        "type": "data-analysis",
+        "technology": "Python/Pandas/Jupyter",
+        "description": "Data analysis and machine learning projects",
+        "entryPoint": "main.py",
+        "packageManager": "pip",
+        "devCommand": "python main.py",
+        "requirementsFile": "requirements.txt",
+        "keywords": ["data", "analysis", "python", "pandas", "jupyter", "ml", "da-nang"]
+      }
+    },
+    "defaultProject": "main",
+    "projectDetection": {
+      "autoSwitch": true,
+      "contextKeywords": {
+        "main": ["da-nang", "main", "workspace", "development"],
+        "web": ["web", "frontend", "react", "javascript", "html", "css"],
+        "api": ["api", "backend", "nodejs", "express", "python", "fastapi"],
+        "data": ["data", "analysis", "python", "pandas", "jupyter", "ml"]
+      }
+    },
+    "paths": {
+      "root": "./da-nang",
+      "web": "./da-nang/web",
+      "api": "./da-nang/api",
+      "data": "./da-nang/data",
+      "docs": "./da-nang/docs",
+      "assets": "./da-nang/assets",
+      "config": "./da-nang/config"
+    },
+    "environment": {
+      "default": "development",
+      "configs": {
+        "development": {
+          "port": 3000,
+          "database": "local",
+          "debug": true
+        },
+        "production": {
+          "port": 8080,
+          "database": "production",
+          "debug": false
+        }
+      }
+    }
+  },
+  "files.associations": {
+    "*.py": "python",
+    "*.ts": "typescript",
+    "*.tsx": "typescriptreact",
+    "*.js": "javascript",
+    "*.jsx": "javascriptreact",
+    "*.json": "json",
+    "*.md": "markdown",
+    "*.html": "html",
+    "*.css": "css",
+    "*.ipynb": "jupyter"
+  },
+  "python.defaultInterpreterPath": "./da-nang/.venv/Scripts/python.exe",
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "emmet.includeLanguages": {
+    "typescript": "html",
+    "typescriptreact": "html"
+  }
+}

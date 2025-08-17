@@ -3,6 +3,7 @@ import Home from "@/pages/home";
 import Chat from "@/pages/chat";
 import SimplifiedChat from "@/components/SimplifiedChat";
 import Demo from "@/pages/demo";
+import Copywriter from "@/pages/copywriter";
 import NotFound from "@/pages/not-found"; // Optional fallback
 
 function Router() {
@@ -13,6 +14,7 @@ function Router() {
       <Route path="/chat/:sessionId" component={Chat} />
       <Route path="/dynamic" component={SimplifiedChat} />
       <Route path="/demo" component={Demo} />
+      <Route path="/copywriter" component={Copywriter} />
       <Route component={NotFound} />
     </Switch>
   );

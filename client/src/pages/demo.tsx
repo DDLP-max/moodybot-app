@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Sparkles, ArrowLeft } from "lucide-react";
+import { Eye, Sparkles, ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
 import { dynamicPersonaEngine, type PersonaAnalysis } from "@/lib/dynamicPersonaEngine";
 
@@ -50,7 +50,7 @@ export default function Demo() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center space-x-2">
-            <Brain className="text-blue-500 text-xl" />
+            <Eye className="text-blue-500 text-xl" />
             <span className="font-black text-xl">Dynamic Persona Engine Demo</span>
           </div>
         </div>
@@ -61,7 +61,7 @@ export default function Demo() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
-                  <Brain className="h-5 w-5 text-blue-500" />
+                  <Eye className="h-5 w-5 text-blue-500" />
                   <span>Test Input</span>
                 </CardTitle>
                 <CardDescription>
@@ -85,7 +85,7 @@ export default function Demo() {
                     className="w-full bg-blue-500 hover:bg-blue-600"
                     disabled={!userInput.trim()}
                   >
-                    <Brain className="h-4 w-4 mr-2" />
+                    <Eye className="h-4 w-4 mr-2" />
                     Analyze
                   </Button>
                 </div>
@@ -226,7 +226,7 @@ export default function Demo() {
               <Card>
                 <CardContent className="flex items-center justify-center h-32">
                   <div className="text-center text-muted-foreground">
-                    <Brain className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <Eye className="h-8 w-8 mx-auto mb-2 opacity-50" />
                     <p>Enter text above to see persona analysis</p>
                   </div>
                 </CardContent>

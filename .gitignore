@@ -1,6 +1,25 @@
+# Dependencies
 node_modules
 dist
+
+# Environment variables and secrets
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
+
+# Logs
+logs
+*.log
+
+# OS files
 .DS_Store
+Thumbs.db
+
+# Build files
 server/public
 vite.config.ts.*
-*.tar.gz"server/.env" 
+
+# Temporary files
+*.tar.gz 

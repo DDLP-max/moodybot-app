@@ -1,0 +1,177 @@
+{
+  "moodybot.workspace": {
+    "name": "MoodyBot Multi-Project Workspace",
+    "version": "1.0.0",
+    "description": "Workspace containing multiple MoodyBot-related projects",
+    "projects": {
+      "webapp": {
+        "name": "MoodyBot Web Application",
+        "path": "C:/Users/marin/OneDrive/Documents/moodybot-webapp",
+        "type": "web-application",
+        "technology": "TypeScript/React/Express",
+        "description": "Main web application for MoodyBot AI chatbot",
+        "entryPoint": "server/index.ts",
+        "packageManager": "npm",
+        "devCommand": "npm run dev",
+        "buildCommand": "npm run build",
+        "keywords": ["webapp", "web-app", "web", "app", "server", "api", "chatbot", "ai", "typescript", "react", "express"]
+      },
+      "crawler": {
+        "name": "MoodyBot Voice-of-Customer Crawler",
+        "path": "./moodybot-crawler",
+        "type": "data-crawler",
+        "technology": "Python",
+        "description": "Python crawler for analyzing public forum complaints and identifying opportunities",
+        "entryPoint": "enhanced_launcher.py",
+        "packageManager": "pip",
+        "devCommand": "python enhanced_launcher.py",
+        "requirementsFile": "requirements.txt",
+        "keywords": ["crawler", "crawl", "python", "data", "twitter", "reddit", "quora", "scraping", "analysis", "social", "media"]
+      },
+      "quiz": {
+        "name": "MoodyBot Quiz Application",
+        "path": "./quiz",
+        "type": "web-application",
+        "technology": "Python/Flask",
+        "description": "Flask-based quiz application with interactive questions",
+        "entryPoint": "app.py",
+        "packageManager": "pip",
+        "devCommand": "python app.py",
+        "requirementsFile": "requirements.txt",
+        "keywords": ["quiz", "flask", "python", "web", "app", "questions", "interactive", "assessment"]
+      },
+      "website": {
+        "name": "MoodyBot Static Website",
+        "path": "./website",
+        "type": "static-website",
+        "technology": "HTML/CSS/JavaScript",
+        "description": "Static website for MoodyBot with HTML, CSS, and JavaScript",
+        "entryPoint": "index.html",
+        "packageManager": "none",
+        "devCommand": "open index.html",
+        "buildCommand": "none",
+        "keywords": ["website", "static", "html", "css", "javascript", "web", "frontend", "landing"]
+      },
+      "cl": {
+        "name": "MoodyBot Craigslist Automation",
+        "path": "./CL",
+        "type": "automation",
+        "technology": "Python/Selenium",
+        "description": "Python automation for Craigslist using Selenium WebDriver",
+        "entryPoint": "cl.py",
+        "packageManager": "pip",
+        "devCommand": "python cl.py",
+        "requirementsFile": "requirements.txt",
+        "keywords": ["craigslist", "cl", "automation", "selenium", "python", "scraping", "webdriver", "chrome"]
+      },
+      "replit": {
+        "name": "MoodyBot Telegram Bot (Replit)",
+        "path": "C:/Users/marin/OneDrive/Documents/SIR/moodybot/replit",
+        "type": "telegram-bot",
+        "technology": "Python/Flask/Telegram",
+        "description": "Python Telegram bot for MoodyBot with Flask backend and dynamic persona engine",
+        "entryPoint": "main.py",
+        "packageManager": "pip",
+        "devCommand": "python main.py",
+        "requirementsFile": "requirements.txt",
+        "keywords": ["replit", "telegram", "bot", "flask", "python", "chatbot", "ai", "persona", "dynamic"]
+      },
+      "da-nang": {
+        "name": "Da Nang Workspace",
+        "path": "./da-nang",
+        "type": "development-workspace",
+        "technology": "Multi-Stack",
+        "description": "Development workspace for Da Nang related projects and experiments",
+        "entryPoint": "README.md",
+        "packageManager": "mixed",
+        "devCommand": "npm run dev",
+        "buildCommand": "npm run build",
+        "keywords": ["da-nang", "vietnam", "development", "workspace", "experiments", "projects", "multi-stack"]
+      }
+    },
+    "defaultProject": "webapp",
+    "projectDetection": {
+      "autoSwitch": true,
+      "contextKeywords": {
+        "webapp": ["web", "app", "server", "api", "chatbot", "typescript", "react", "express", "webapp", "web-app"],
+        "crawler": ["crawler", "crawl", "python", "data", "twitter", "reddit", "quora", "scraping", "analysis", "social", "media"],
+        "quiz": ["quiz", "flask", "questions", "assessment", "interactive", "test"],
+        "website": ["website", "static", "html", "css", "javascript", "landing", "frontend"],
+        "cl": ["craigslist", "cl", "automation", "selenium", "webdriver", "chrome", "scraping"],
+        "replit": ["replit", "telegram", "bot", "flask", "persona", "dynamic", "ai", "chatbot"],
+        "da-nang": ["da-nang", "vietnam", "development", "workspace", "experiments", "projects", "multi-stack"]
+      }
+    },
+    "paths": {
+      "webapp": {
+        "root": "C:/Users/marin/OneDrive/Documents/moodybot-webapp",
+        "server": "C:/Users/marin/OneDrive/Documents/moodybot-webapp/server",
+        "client": "C:/Users/marin/OneDrive/Documents/moodybot-webapp/client",
+        "shared": "C:/Users/marin/OneDrive/Documents/moodybot-webapp/shared"
+      },
+      "crawler": {
+        "root": "./moodybot-crawler",
+        "scripts": "./moodybot-crawler",
+        "config": "./moodybot-crawler"
+      },
+      "quiz": {
+        "root": "./quiz",
+        "templates": "./quiz/templates",
+        "static": "./quiz/static"
+      },
+      "website": {
+        "root": "./website",
+        "assets": "./website/assets",
+        "images": "./website/images"
+      },
+      "cl": {
+        "root": "./CL",
+        "scripts": "./CL"
+      },
+      "replit": {
+        "root": "C:/Users/marin/OneDrive/Documents/SIR/moodybot/replit",
+        "templates": "C:/Users/marin/OneDrive/Documents/SIR/moodybot/replit/templates",
+        "static": "C:/Users/marin/OneDrive/Documents/SIR/moodybot/replit/static",
+        "models": "C:/Users/marin/OneDrive/Documents/SIR/moodybot/replit"
+      },
+      "da-nang": {
+        "root": "./da-nang",
+        "projects": "./da-nang/projects",
+        "experiments": "./da-nang/experiments",
+        "docs": "./da-nang/docs"
+      }
+    }
+  },
+  "files.associations": {
+    "*.py": "python",
+    "*.ts": "typescript",
+    "*.tsx": "typescriptreact",
+    "*.js": "javascript",
+    "*.jsx": "javascriptreact",
+    "*.json": "json",
+    "*.md": "markdown",
+    "*.html": "html",
+    "*.css": "css",
+    "*.php": "php"
+  },
+  "python.defaultInterpreterPath": "./moodybot-crawler/.venv/Scripts/python.exe",
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "emmet.includeLanguages": {
+    "typescript": "html",
+    "typescriptreact": "html"
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.git": true,
+    "**/__pycache__": true,
+    "**/*.pyc": true
+  },
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.git": true,
+    "**/__pycache__": true,
+    "**/*.pyc": true
+  }
+}

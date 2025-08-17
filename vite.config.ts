@@ -34,4 +34,9 @@ export default defineConfig({
       deny: ["**/.*"],
     },
   },
+  define: {
+    // Inject environment variables for client-side use
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+    'process.env.VITE_APP_URL': JSON.stringify(process.env.VITE_APP_URL || 'https://app.moodybot.ai'),
+  },
 });

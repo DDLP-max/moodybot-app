@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Eye, Plus, Image, X, Upload, Sparkles, Brain } from "lucide-react";
+import { ArrowLeft, Eye, Plus, Image, X, Upload, Sparkles } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { dynamicPersonaEngine, type PersonaAnalysis } from "@/lib/dynamicPersonaEngine";
+import { getShareUrl } from "@/config/environment";
 
 interface Message {
   role: string;
@@ -149,6 +150,14 @@ export default function SimplifiedChat() {
 
       const data = await response.json();
       
+      // Update question limit with the response data
+      if (data.remaining !== undefined && data.limit !== undefined) {
+        setQuestionLimit({
+          remaining: data.remaining,
+          limit: data.limit
+        });
+      }
+      
       // Check if we got a proper AI response
       if (data.aiMessage && data.aiMessage.content) {
         return data.aiMessage.content;
@@ -291,7 +300,7 @@ export default function SimplifiedChat() {
   // Persona indicator component
   const PersonaIndicator = ({ analysis }: { analysis: PersonaAnalysis }) => (
     <div className="flex items-center space-x-2 text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded-full">
-      <Brain className="h-3 w-3" />
+                      <Eye className="h-3 w-3" />
       <span className="font-medium">{analysis.selectedPersonas.primary.name}</span>
       {analysis.selectedPersonas.secondary && (
         <>
@@ -353,15 +362,18 @@ export default function SimplifiedChat() {
             variant="ghost"
             size="sm"
             onClick={() => {
+              // Use environment-aware URL: production URL in production, current location in development
+              const shareUrl = getShareUrl();
+              
               if (navigator.share) {
                 navigator.share({
                   title: 'MoodyBot - AI Emotional Intelligence',
                   text: 'Check out MoodyBot - the AI that adapts to your emotional state and provides personalized support!',
-                  url: window.location.href
+                  url: shareUrl
                 });
               } else {
                 // Fallback for browsers that don't support navigator.share
-                navigator.clipboard.writeText(window.location.href);
+                navigator.clipboard.writeText(shareUrl);
                 // You could add a toast notification here
               }
             }}
@@ -441,8 +453,8 @@ export default function SimplifiedChat() {
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      // Use the actual MoodyBot app URL instead of localhost
-                      const shareUrl = 'https://app.moodybot.ai';
+                      // Use environment-aware URL: production URL in production, current location in development
+                      const shareUrl = getShareUrl();
                       const shareText = `"${message.content.substring(0, 100)}${message.content.length > 100 ? '...' : ''}"\n\n- MoodyBot AI\n\nTry it yourself: ${shareUrl}`;
                       
                       if (navigator.share) {

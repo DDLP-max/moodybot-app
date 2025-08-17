@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, User, TrendingDown, Zap, RotateCcw, Brain } from "lucide-react";
+import { ArrowLeft, User, TrendingDown, Zap, RotateCcw, Eye } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -93,7 +93,7 @@ export default function Profile() {
           disabled={analyzeMutation.isPending}
           className="text-accent hover:text-primary"
         >
-          <Brain className="h-5 w-5" />
+          <Eye className="h-5 w-5" />
         </Button>
       </div>
 
@@ -114,12 +114,12 @@ export default function Profile() {
             >
               {analyzeMutation.isPending ? (
                 <>
-                  <Brain className="mr-2 h-5 w-5 animate-pulse" />
+                  <Eye className="mr-2 h-5 w-5 animate-pulse" />
                   ANALYZING...
                 </>
               ) : (
                 <>
-                  <Brain className="mr-2 h-5 w-5" />
+                  <Eye className="mr-2 h-5 w-5" />
                   ANALYZE DAMAGE
                 </>
               )}

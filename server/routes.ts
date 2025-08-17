@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { generateChatResponse } from "./moodybot"; // or "./openai" if that's still the active filename
+import { generateChatResponse } from "./moodybot";
 import { insertChatSessionSchema, insertChatMessageSchema, insertUserSchema } from "@shared/schema";
 import type { ChatCompletionMessageParam } from "openai/resources/chat";
 
@@ -19,32 +19,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/test", (req, res) => {
     res.json({ message: "MoodyBot server is running", timestamp: new Date().toISOString() });
   });
-
-  // TODO: Re-enable when OpenRouter supports vision models
-  // Image test endpoint
-  // app.post("/api/test-image", async (req, res) => {
-  //   try {
-  //     const { image } = req.body;
-  //     if (!image) {
-  //       return res.status(400).json({ error: "No image provided" });
-  //     }
-  //     
-  //     console.log("Testing image processing:", {
-  //       hasImage: !!image,
-  //       imageLength: image.length,
-  //       imageStartsWithData: image.startsWith('data:')
-  //     });
-  //     
-  //     res.json({ 
-  //       message: "Image received successfully", 
-  //       imageLength: image.length,
-  //       imageFormat: image.startsWith('data:') ? 'data-url' : 'base64'
-  //     });
-  //   } catch (error) {
-  //     console.error("Image test error:", error);
-  //     res.status(500).json({ error: "Image test failed" });
-  //   }
-  // });
 
   // Create user
   app.post("/api/users", async (req, res) => {
@@ -100,15 +74,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(session);
     } catch (error) {
       console.error("Session creation error:", error);
-      if (error instanceof Error) {
-        res.status(400).json({ error: error.message });
-      } else {
-        res.status(400).json({ error: "Invalid session data" });
-      }
+      res.status(500).json({ error: "Failed to create chat session" });
     }
   });
 
-  // Fetch messages from a session
+  // Fetch messages for a session
   app.get("/api/chat/messages/:sessionId", async (req, res) => {
     try {
       const sessionId = parseInt(req.params.sessionId);
@@ -119,133 +89,246 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Send user message and generate AI reply
+  // Send message and get AI response
   app.post("/api/chat/messages", async (req, res) => {
     try {
-      const messageData = insertChatMessageSchema.parse(req.body);
+      const { message, userId, sessionId, imageData } = req.body;
       
-      if (messageData.role === "user") {
-        const session = await storage.getChatSession(messageData.sessionId);
-        if (!session) return res.status(404).json({ error: "Session not found" });
+      if (!message || message.trim().length === 0) {
+        return res.status(400).json({ error: "Message cannot be empty" });
+      }
 
-        // Check question limit for free users
-        const limitCheck = await storage.checkQuestionLimit(session.userId);
-        
-        if (!limitCheck.canAsk) {
-          // User has reached the limit, return subscription prompt
-          const subscriptionMessage = await storage.createChatMessage({
-            sessionId: messageData.sessionId,
-            role: "assistant",
-            content: `*Camera pans to a dimly lit corner where shadows dance on empty walls*
+      // Default to user ID 1 if not provided (for now)
+      const currentUserId = userId || 1;
 
-You've reached the end of your free trial, wanderer. Three questions. That's all the universe gives for free.
+      // Ensure user exists in storage
+      let user = await storage.getUser(currentUserId);
+      if (!user) {
+        // Create new user if they don't exist
+        user = await storage.createUser({
+          username: `user_${currentUserId}`,
+          password: 'temp_password_123' // Temporary password for demo
+        });
+      }
 
-*Close-up on weathered hands, turning over a coin*
+      // Check question limit for free users
+      const limitCheck = await storage.checkQuestionLimit(currentUserId);
+      
+      if (!limitCheck.canAsk) {
+        // User has reached the limit, return subscription prompt
+        return res.json({
+          limitReached: true,
+          remaining: limitCheck.remaining,
+          limit: limitCheck.limit,
+          subscriptionMessage: `You've reached the end of your free trial, wanderer. Three questions. That's all the universe gives for free.
 
-The real conversations? The ones that cut deep enough to bleed truth? Those cost something. Not money. Commitment. The willingness to sit in the dark with your own demons.
-
-*Wide shot of an empty room, one chair waiting*
-
-MoodyBot isn't a chatbot. It's a mirror that shows you what you're afraid to see. And mirrors don't work for free.
+The real answers? The insights that change your life? Those cost something. Not money. Commitment. The willingness to invest in your growth.
 
 **Subscribe to MoodyBot Premium** and unlock unlimited access to:
-• 🔶 Brutal clarity, validation, roast therapy
-• 🎴 Premium quote card drops  
-• 🧠 Custom MoodyBot replies
-• 🧃 Emotional Damage Audit access
-• 🎧 Early access to voice drops and story packs
+• 🔶 All AI modes and personalities
+• 🎴 Advanced conversation features
+• 🧠 Custom prompt engineering
+• 🧃 Priority response times
+• 🎧 Early access to new features
 • 🛰 Access to the Premium Telegram channel
 
-**$9/month** - The emotional intelligence upgrade your ex was never ready for.
+**$9/month** - The AI upgrade your competitors wish they had.
 
 [Subscribe Now](https://moodybot.gumroad.com/l/moodybot-webapp)
 
-@MoodyBotAI
-
-*Fade to black*`
-          });
-
-          return res.json({
-            userMessage: messageData,
-            aiMessage: subscriptionMessage,
-            limitReached: true,
-            remaining: limitCheck.remaining,
-            limit: limitCheck.limit
-          });
-        }
-
-        // Increment question count for free users
-        await storage.incrementQuestionCount(session.userId);
-
-        const userMessage = await storage.createChatMessage(messageData);
-
-        const history = await storage.getChatMessages(messageData.sessionId);
-        const conversation: ChatCompletionMessageParam[] = history.map(msg => ({
-          role: msg.role as "user" | "assistant" | "system",
-          content: msg.content
-        }));
-
-        // TODO: Re-enable when OpenRouter supports vision models
-        // Check if there's an image in the request
-        // const imageData = req.body.image;
-        let enhancedMessage = messageData.content;
-        
-        // console.log("Route processing:", {
-        //   hasImage: !!imageData,
-        //   imageLength: imageData?.length,
-        //   originalMessage: messageData.content
-        // });
-        
-        // if (imageData) {
-        //   // Validate image data format
-        //   if (typeof imageData !== 'string' || imageData.length === 0) {
-        //     return res.status(400).json({ error: "Invalid image data" });
-        //   }
-        //   
-        //   // Add image context to the message
-        //   enhancedMessage = `[Image attached] ${messageData.content || "Analyze this image"}`;
-        // }
-        
-        // Ensure we have some content for the message
-        if (!enhancedMessage.trim()) {
-          return res.status(400).json({ error: "Message content is required" });
-        }
-
-        const { aiReply, selectedMode, isAutoSelected } = await generateChatResponse(
-          enhancedMessage,
-          session.mode || "savage",
-          session.userId,
-          messageData.sessionId,
-          conversation
-          // TODO: Re-enable when OpenRouter supports vision models
-          // imageData // Pass image data to the AI function
-        );
-
-        const aiMessage = await storage.createChatMessage({
-          sessionId: messageData.sessionId,
-          role: "assistant",
-          content: aiReply
+@MoodyBotAI`
         });
+      }
 
-        // Return the selected mode along with the messages
-        res.json({ 
-          userMessage, 
-          aiMessage,
-          selectedMode: selectedMode,
-          isAutoSelected: isAutoSelected,
-          remaining: limitCheck.remaining - 1,
-          limit: limitCheck.limit
+      // Increment question count for free users
+      await storage.incrementQuestionCount(currentUserId);
+
+      // Get or create session
+      let currentSessionId = sessionId;
+      if (!currentSessionId) {
+        const session = await storage.createChatSession({
+          userId: currentUserId,
+          mode: "savage",
+          title: message.substring(0, 50) + (message.length > 50 ? "..." : "")
         });
-      } else {
-        res.json({ userMessage: messageData });
+        currentSessionId = session.id;
       }
-    } catch (error) {
-      console.error("Chat message error:", error);
-      if (error instanceof Error) {
-        res.status(500).json({ error: error.message });
-      } else {
-        res.status(500).json({ error: "Failed to process chat message" });
+
+      // Save user message
+      const userMessage = await storage.createChatMessage({
+        sessionId: currentSessionId,
+        role: "user",
+        content: message
+      });
+
+      // Get AI response
+      const { aiReply, selectedMode, isAutoSelected } = await generateChatResponse(
+        message,
+        "savage", // Let it auto-select mode
+        currentUserId,
+        currentSessionId,
+        [], // No conversation history for now
+        imageData
+      );
+
+      // Save AI message
+      const aiMessage = await storage.createChatMessage({
+        sessionId: currentSessionId,
+        role: "assistant",
+        content: aiReply
+      });
+
+      res.json({
+        ok: true,
+        message: aiReply,
+        selectedMode,
+        isAutoSelected,
+        sessionId: currentSessionId,
+        remaining: limitCheck.remaining - 1,
+        limit: limitCheck.limit
+      });
+    } catch (error: any) {
+      console.error("Chat API error:", error);
+      res.status(500).json({ 
+        error: error.message || "Failed to process message" 
+      });
+    }
+  });
+
+  // Copywriter API endpoint
+  app.post("/api/copywriter", async (req, res) => {
+    try {
+      const { description, userId } = req.body;
+      
+      if (!description || description.trim().length === 0) {
+        return res.status(400).json({ error: "Missing business description" });
       }
+
+      // Default to user ID 1 if not provided (for now)
+      const currentUserId = userId || 1;
+
+      // Ensure user exists in storage
+      let user = await storage.getUser(currentUserId);
+      if (!user) {
+        user = await storage.createUser({
+          username: `user_${currentUserId}`,
+          password: 'temp_password_123'
+        });
+      }
+
+      // Check question limit for free users
+      const limitCheck = await storage.checkQuestionLimit(currentUserId);
+      
+      if (!limitCheck.canAsk) {
+        return res.json({
+          limitReached: true,
+          remaining: limitCheck.remaining,
+          limit: limitCheck.limit,
+          subscriptionMessage: `You've reached the end of your free trial, wanderer. Three copywriting requests. That's all the universe gives for free.`
+        });
+      }
+
+      // Increment question count for free users
+      await storage.incrementQuestionCount(currentUserId);
+
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "Server missing OPENROUTER_API_KEY" });
+      }
+
+      // Structured prompt that demands JSON
+      const copywriterPrompt = `You are an expert copywriter using Ogilvy + Kennedy principles. You MUST return ONLY valid JSON in this exact format:
+
+{
+  "titles": ["headline 1", "headline 2", "headline 3"],
+  "hooks": ["hook 1", "hook 2", "hook 3"],
+  "captions": ["caption 1", "caption 2", "caption 3"],
+  "ctas": ["cta 1", "cta 2", "cta 3"]
+}
+
+Rules:
+- Return ONLY valid JSON, no other text
+- Each array must contain 3-5 compelling marketing copy elements
+- Use the business description to create relevant, specific copy
+
+Business: ${description}
+
+Generate marketing copy in the exact JSON format specified above.`;
+
+      const openRouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://moodybot.ai",
+          "X-Title": "MoodyBotAI"
+        },
+        body: JSON.stringify({
+          model: "x-ai/grok-4",
+          messages: [
+            { role: "system", content: copywriterPrompt },
+            { role: "user", content: `Generate marketing copy for: ${description}` }
+          ],
+          temperature: 0.7,
+          max_tokens: 800
+        }),
+      });
+
+      if (!openRouterRes.ok) {
+        const errorText = await openRouterRes.text();
+        console.error("OpenRouter API error:", errorText);
+        throw new Error(`OpenRouter API error: ${openRouterRes.status}`);
+      }
+
+      const json = await openRouterRes.json();
+      const aiReply = json.choices?.[0]?.message?.content || "Failed to generate copy";
+
+      // Parse the JSON response with fallback
+      let parsed: any;
+      try {
+        parsed = JSON.parse(aiReply);
+      } catch {
+        // Fallback: try to extract JSON from the response
+        const jsonMatch = aiReply.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          try {
+            parsed = JSON.parse(jsonMatch[0]);
+          } catch {
+            parsed = { 
+              titles: [aiReply.substring(0, 100) + "..."],
+              hooks: [],
+              ctas: [],
+              captions: []
+            };
+          }
+        } else {
+          parsed = { 
+            titles: [aiReply.substring(0, 100) + "..."],
+            hooks: [],
+            ctas: [],
+            captions: []
+          };
+        }
+      }
+
+      // Ensure we have the expected structure
+      const titles = parsed.titles || [];
+      const hooks = parsed.hooks || [];
+      const ctas = parsed.ctas || [];
+      const captions = parsed.captions || [];
+
+      res.json({
+        ok: true,
+        result: { titles, hooks, ctas, captions },
+        raw: aiReply,
+        remaining: limitCheck.remaining - 1,
+        limit: limitCheck.limit
+      });
+    } catch (error: any) {
+      console.error("Copywriter API error:", error);
+      res.status(500).json({ 
+        error: error.message || "Failed to generate copy" 
+      });
     }
   });
 

@@ -26,19 +26,19 @@ export async function generateChatResponse(
   conversationHistory: ChatCompletionMessageParam[] = [],
   imageData?: string
 ): Promise<{ aiReply: string; selectedMode: string; isAutoSelected: boolean }> {
-  // Use the API key directly since .env loading is having issues - UPDATED 2025-08-13
-  const apiKey = "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";
-  
-  console.log("🔑 Using hardcoded API key:", apiKey.substring(0, 20) + "...");
+  // Get API key from environment variable - REQUIRED for security
+  const apiKey = process.env.OPENROUTER_API_KEY;
   
   if (!apiKey) {
-    console.error("OPENROUTER_API_KEY is not configured");
+    console.error("❌ OPENROUTER_API_KEY environment variable is not set");
     return {
-      aiReply: "MoodyBot is not properly configured. Please check the API key setup.",
+      aiReply: "MoodyBot is not properly configured. Please set the OPENROUTER_API_KEY environment variable.",
       selectedMode: mode,
       isAutoSelected: mode === "savage"
     };
   }
+  
+  console.log("🔑 Using API key from environment variable:", apiKey.substring(0, 20) + "...");
 
   const selectedMode = mode === "savage" ? selectModeFromMessage(userMessage) : mode;
   const isAutoSelected = mode === "savage";
@@ -46,7 +46,7 @@ export async function generateChatResponse(
   const cinematicTemperature = 0.85;
   const cinematicMaxTokens = 1200;
 
-  const model = "anthropic/claude-3.5-sonnet"; // Use a reliable model that's definitely available
+  const model = "x-ai/grok-4"; // Use a reliable model that's definitely available
 
   let enhancedPrompt = moodyPrompt;
   // Removed cinematic mode - keeping responses direct and natural
@@ -95,7 +95,8 @@ Keep responses natural, direct, and focused on the user's message.`;
     
     // Provide more specific error messages
     if (res.status === 401) {
-      throw new Error("API key is invalid or missing. Please check your OPENROUTER_API_KEY configuration.");
+      console.error("❌ API key authentication failed. Please check your OpenRouter API key.");
+      throw new Error("API key is invalid or expired. Please check your OpenRouter API key configuration.");
     } else if (res.status === 429) {
       throw new Error("Rate limit exceeded. Please try again in a moment.");
     } else if (res.status === 400) {
@@ -148,7 +149,7 @@ Keep responses natural, direct, and focused on the user's message.`;
 
   if (error.response?.status === 401) {
     return {
-      aiReply: "MoodyBot's API key is invalid. Please contact support.",
+      aiReply: "MoodyBot's API key is invalid or expired. Please contact support to fix this issue.",
       selectedMode,
       isAutoSelected
     };
@@ -212,6 +213,7 @@ function selectModeFromMessage(message: string): string {
   if (lowerMessage.includes('/dark')) return 'dark';
   if (lowerMessage.includes('/moodyfy')) return 'moodyfy';
   if (lowerMessage.includes('/dale-yolo')) return 'dale-yolo';
+  if (lowerMessage.includes('/copywriter')) return 'copywriter';
 
   // Emotional state detection for automatic mode selection
   const emotionalKeywords = {
@@ -234,7 +236,9 @@ function selectModeFromMessage(message: string): string {
     // Spiral, overthinking
     spiral: ['overthinking', 'spiral', 'loop', 'stuck', 'trapped', 'can\'t stop', 'obsessed'],
     // Confession, vulnerability
-    confession: ['confess', 'secret', 'truth', 'real', 'honest', 'vulnerable', 'weak', 'ashamed']
+    confession: ['confess', 'secret', 'truth', 'real', 'honest', 'vulnerable', 'weak', 'ashamed'],
+    // Copywriting, business, marketing
+    copywriting: ['business', 'marketing', 'ad', 'advertisement', 'copy', 'copywriting', 'title', 'headline', 'hook', 'cta', 'call to action', 'sales', 'product', 'service', 'brand', 'company', 'startup', 'entrepreneur', 'sell', 'conversion', 'revenue', 'profit', 'customer', 'audience', 'target market', 'campaign', 'promotion', 'offer', 'deal', 'discount', 'launch', 'launching', 'website', 'landing page', 'email', 'social media', 'facebook', 'instagram', 'tiktok', 'youtube', 'linkedin', 'twitter', 'x']
   };
 
   // Count emotional signals
@@ -276,6 +280,8 @@ function selectModeFromMessage(message: string): string {
         return 'cbt';
       case 'confession':
         return 'mirror';
+      case 'copywriting':
+        return 'copywriter';
     }
   }
 

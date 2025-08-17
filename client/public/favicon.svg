@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Background circle -->
+  <circle cx="16" cy="16" r="16" fill="#8b5cf6"/>
+  
+  <!-- Eye icon -->
+  <path d="M16 8C10 8 5 12 3 16C5 20 10 24 16 24C22 24 27 20 29 16C27 12 22 8 16 8Z" fill="white"/>
+  <circle cx="16" cy="16" r="3" fill="#8b5cf6"/>
+  <circle cx="16" cy="16" r="1.5" fill="white"/>
+  
+  <!-- Glow effect -->
+  <circle cx="16" cy="16" r="14" fill="none" stroke="#a78bfa" stroke-width="1" opacity="0.3"/>
+</svg>
+
