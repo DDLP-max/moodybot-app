@@ -50,6 +50,21 @@ export default function Home() {
             >
               <span className="gradient-text text-shadow-neon">MoodyBot</span>
             </motion.h1>
+            
+            {/* MoodyBot Character Image */}
+            <motion.div
+              className="mb-6"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1, delay: 0.3 }}
+            >
+              <img
+                src="/moodybot-min.png"
+                alt="MoodyBot AI Character"
+                className="w-32 h-32 md:w-40 md:h-40 rounded-full mx-auto border-4 border-primary/20 shadow-2xl shadow-primary/20"
+              />
+            </motion.div>
+            
             <p className="text-xl md:text-2xl font-bold mb-2 text-muted-foreground">AI FOR THE REAL YOU</p>
             <p className="text-sm text-muted-foreground mb-8 max-w-sm mx-auto">
               No toxic positivity. No bullshit. Just brutal honesty and real growth.
