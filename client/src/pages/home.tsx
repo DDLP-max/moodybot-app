@@ -37,7 +37,7 @@ export default function Home() {
           </div>
           
           <motion.div 
-            className="relative z-10 text-center px-6"
+            className="relative z-10 text-center px-6 w-full max-w-6xl mx-auto"
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1 }}
@@ -56,7 +56,7 @@ export default function Home() {
             </p>
             
             {/* Chat Options */}
-            <div className="flex justify-center items-center space-x-4 mb-8">
+            <div className="flex justify-center items-center space-x-4 mb-8 w-full">
               <Button 
                 className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 px-8 py-4 font-black text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105"
                 onClick={() => setLocation("/dynamic")}
