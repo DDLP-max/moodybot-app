@@ -321,7 +321,7 @@ Generate marketing copy in the exact JSON format specified above.`;
         ok: true,
         result: { titles, hooks, ctas, captions },
         raw: aiReply,
-        remaining: limitCheck.remaining - 1,
+        remaining: limitCheck.remaining,
         limit: limitCheck.limit
       });
     } catch (error: any) {

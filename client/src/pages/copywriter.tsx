@@ -80,12 +80,12 @@ export default function CopywriterPage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center space-x-2">
-              <Target className="text-primary text-xl" />
+              <Target className="text-green-500 text-xl" />
               <span className="font-black text-lg">Copywriter Mode</span>
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <Sparkles className="text-primary h-5 w-5" />
+            <Sparkles className="text-green-500 h-5 w-5" />
             <span className="text-sm text-muted-foreground">Powered by Grok-4</span>
           </div>
         </div>
@@ -94,7 +94,7 @@ export default function CopywriterPage() {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Hero Section */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-black mb-4 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-black mb-4 bg-gradient-to-r from-green-500 to-teal-600 bg-clip-text text-transparent">
             Copywriter Mode
           </h1>
           <p className="text-xl text-muted-foreground mb-2">
@@ -146,7 +146,7 @@ export default function CopywriterPage() {
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <MessageSquare className="h-5 w-5 text-primary" />
+              <MessageSquare className="h-5 w-5 text-green-500" />
               <span>Business Description</span>
             </CardTitle>
             <CardDescription>
@@ -165,7 +165,7 @@ export default function CopywriterPage() {
                 type="button"
                 onClick={handleGenerate}
                 disabled={loading}
-                className="bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700"
+                className="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700"
               >
                 {loading ? (
                   <>
