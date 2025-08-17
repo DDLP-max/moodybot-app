@@ -137,8 +137,7 @@ export default function SimplifiedChat() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionId: currentSession.sessionId,
-          role: "user", // Add the missing role field
-          content: messageText,
+          message: messageText, // Changed from 'content' to 'message' to match backend
           mode: selectedMode, // Use dynamically selected mode
         }),
       });
@@ -493,7 +492,7 @@ export default function SimplifiedChat() {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyPress={(e) => {
-              if (e.key === "Enter") {
+              if (e.key === "Enter" && message.trim()) {
                 handleSendMessage();
               }
             }}

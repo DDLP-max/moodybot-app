@@ -92,7 +92,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Send message and get AI response
   app.post("/api/chat/messages", async (req, res) => {
     try {
-      const { message, userId, sessionId, imageData } = req.body;
+      const { message, userId, sessionId, imageData, mode } = req.body;
       
       if (!message || message.trim().length === 0) {
         return res.status(400).json({ error: "Message cannot be empty" });
@@ -148,7 +148,7 @@ The real answers? The insights that change your life? Those cost something. Not 
       if (!currentSessionId) {
         const session = await storage.createChatSession({
           userId: currentUserId,
-          mode: "savage",
+          mode: mode || "savage",
           title: message.substring(0, 50) + (message.length > 50 ? "..." : "")
         });
         currentSessionId = session.id;
@@ -164,7 +164,7 @@ The real answers? The insights that change your life? Those cost something. Not 
       // Get AI response
       const { aiReply, selectedMode, isAutoSelected } = await generateChatResponse(
         message,
-        "savage", // Let it auto-select mode
+        mode || "savage", // Use mode from request or default to savage
         currentUserId,
         currentSessionId,
         [], // No conversation history for now
@@ -180,7 +180,7 @@ The real answers? The insights that change your life? Those cost something. Not 
 
       res.json({
         ok: true,
-        message: aiReply,
+        aiMessage: { content: aiReply, role: "assistant" },
         selectedMode,
         isAutoSelected,
         sessionId: currentSessionId,

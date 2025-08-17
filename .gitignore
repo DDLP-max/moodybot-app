@@ -8,6 +8,8 @@ dist
 .env.development
 .env.production
 .env.*.local
+*.env
+server/.env
 
 # Logs
 logs
@@ -19,7 +21,17 @@ Thumbs.db
 
 # Build files
 server/public
-vite.config.ts.*
+
+# Editor files (optional)
+.vscode/
+.idea/
+
+# Coverage reports
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
 
 # Temporary files
 *.tar.gz 

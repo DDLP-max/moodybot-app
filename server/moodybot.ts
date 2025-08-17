@@ -39,6 +39,8 @@ export async function generateChatResponse(
   }
   
   console.log("🔑 Using API key from environment variable:", apiKey.substring(0, 20) + "...");
+  console.log("🔑 API key length:", apiKey.length);
+  console.log("🔑 API key format check:", apiKey.startsWith("sk-or-v1-") ? "✅ Valid format" : "❌ Invalid format");
 
   const selectedMode = mode === "savage" ? selectModeFromMessage(userMessage) : mode;
   const isAutoSelected = mode === "savage";
@@ -92,10 +94,13 @@ Keep responses natural, direct, and focused on the user's message.`;
   if (!res.ok) {
     const errorText = await res.text();
     console.error("OpenRouter API error response:", errorText);
+    console.error("Response status:", res.status);
+    console.error("Response headers:", Object.fromEntries(res.headers.entries()));
     
     // Provide more specific error messages
     if (res.status === 401) {
       console.error("❌ API key authentication failed. Please check your OpenRouter API key.");
+      console.error("This usually means the key is expired, cancelled, or invalid.");
       throw new Error("API key is invalid or expired. Please check your OpenRouter API key configuration.");
     } else if (res.status === 429) {
       throw new Error("Rate limit exceeded. Please try again in a moment.");
@@ -109,8 +114,21 @@ Keep responses natural, direct, and focused on the user's message.`;
   const json = await res.json();
   console.log("OpenRouter response data:", json);
   
-  const aiRaw = json.choices?.[0]?.message?.content || "MoodyBot has gone quiet.";
+  if (!json.choices || !json.choices[0] || !json.choices[0].message) {
+    console.error("❌ Invalid OpenRouter response structure:", json);
+    throw new Error("Invalid response structure from OpenRouter API");
+  }
+  
+  const aiRaw = json.choices[0].message.content;
+  console.log("Raw AI response:", aiRaw);
+  
+  if (!aiRaw || aiRaw.trim().length === 0) {
+    console.error("❌ Empty AI response from OpenRouter");
+    throw new Error("Empty response from AI model");
+  }
+  
   const finalReply = postProcessMoodyResponse(aiRaw);
+  console.log("Post-processed response:", finalReply);
 
   appendToTextLog(
     `Mode: ${selectedMode} (Auto: ${isAutoSelected})\nUser: ${userId ?? "anon"}\nMessage: ${userMessage}${imageData ? ' [with image]' : ''}\nReply: ${finalReply}`
@@ -166,6 +184,7 @@ Keep responses natural, direct, and focused on the user's message.`;
   // Log the specific error for debugging
   console.error("Specific error message:", error.message);
   console.error("Error stack:", error.stack);
+  console.error("Full error object:", JSON.stringify(error, null, 2));
 
   return {
     aiReply: "MoodyBot is in a bad mood. Try again later.",
