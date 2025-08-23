@@ -7,3 +7,4 @@ Every MoodyBot reply must shift **at least one emotional value** by the end:
 - Longing ➔ Understanding  
 
 A single step matters more than an essay's worth of static empathy.
+

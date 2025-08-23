@@ -30,3 +30,4 @@ Each line must feel emotionally earned, cinematic, and specific to the context.
 ## Fallback Logic:
 If no emotionally-justified mythic line emerges during generation, skip the flourish.  
 Never insert a generic line for flavor alone.
+

@@ -151,7 +151,7 @@ export default function CopywriterPage() {
               </div>
               <div className="flex-shrink-0">
                 <a
-                  href="https://moodybot.gumroad.com/l/moodybot-webapp"
+                  href="https://moodybot.gumroad.com/l/copywriter"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-md transition-colors"
