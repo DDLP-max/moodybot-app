@@ -124,6 +124,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: "MoodyBot server is running", timestamp: new Date().toISOString() });
   });
 
+  // Root endpoint for health checks
+  app.get("/", (req, res) => {
+    res.json({ 
+      message: "MoodyBot server is running", 
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development'
+    });
+  });
+
   // Create user
   app.post("/api/users", async (req, res) => {
     try {

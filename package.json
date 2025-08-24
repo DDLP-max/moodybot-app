@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "tsx bootstrap.ts",
-    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && node -e \"const fs=require('fs');const path=require('path');try{fs.copyFileSync('server/.env','dist/.env');console.log('Copied .env file');}catch(e){console.log('No .env file to copy');}try{fs.mkdirSync('dist/logs',{recursive:true});console.log('Created logs directory');}catch(e){console.log('Logs directory already exists');}\"",
+    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && node -e \"const fs=require('fs');const path=require('path');try{fs.mkdirSync('dist/logs',{recursive:true});console.log('Created logs directory');}catch(e){console.log('Logs directory already exists');}\"",
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "check": "tsc",
     "db:push": "drizzle-kit push"
