@@ -1,14 +1,10 @@
-import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// FORCE RECOMPILATION - REMOVED CINEMATIC MODE AND SCENE-SETTING 2025-08-13 10:40 AM
+// FORCE RECOMPILATION - REMOVED CINEMATIC MODE AND SCENE-SETTING 2025-08-13 10:40:40 AM
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// Load environment variables from the server folder
-dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 import fs from "fs";
 import { postProcessMoodyResponse } from "../utils/moodybotPostProcess";

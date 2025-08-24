@@ -1,15 +1,11 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// Load environment variables from the server folder (for production, it's in the same directory as the built index.js)
-dotenv.config({ path: path.resolve(__dirname, ".env") });
 import http from "http";
 import cors from "cors";
 
