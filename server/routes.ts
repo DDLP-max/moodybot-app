@@ -5,6 +5,8 @@ import { generateChatResponse } from "./moodybot";
 import { insertChatSessionSchema, insertChatMessageSchema, insertUserSchema } from "@shared/schema";
 import type { ChatCompletionMessageParam } from "openai/resources/chat";
 import { systemPromptManager } from "./systemPromptManager";
+import path from "path";
+import fs from "fs";
 
 // Helper function to extract JSON from markdown code fences
 function extractJsonFromFence(content: string): any {
@@ -124,14 +126,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: "MoodyBot server is running", timestamp: new Date().toISOString() });
   });
 
-  // Root endpoint for health checks
+  // Root endpoint - serve the React app in production, JSON in development
   app.get("/", (req, res) => {
-    res.json({ 
-      message: "MoodyBot server is running", 
-      status: "healthy",
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development'
-    });
+    if (process.env.NODE_ENV === 'production') {
+      // In production, serve the React app
+      const indexPath = path.resolve(__dirname, '..', 'dist', 'public', 'index.html');
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        res.json({ 
+          message: "MoodyBot server is running", 
+          status: "healthy",
+          timestamp: new Date().toISOString(),
+          environment: process.env.NODE_ENV || 'development',
+          note: "React app not found - check build process"
+        });
+      }
+    } else {
+      // In development, return JSON
+      res.json({ 
+        message: "MoodyBot server is running", 
+        status: "healthy",
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development'
+      });
+    }
   });
 
   // Health endpoint for Render
