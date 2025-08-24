@@ -14,4 +14,11 @@ services:
       - key: OPENROUTER_API_KEY
         sync: false
       - key: DATABASE_URL
-        sync: false 
+        sync: false
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - "server/**"
+        - "client/**"
+        - "package.json"
+        - "package-lock.json" 
