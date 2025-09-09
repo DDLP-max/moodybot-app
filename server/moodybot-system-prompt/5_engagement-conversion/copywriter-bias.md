@@ -200,6 +200,38 @@ When creating multiple long-form posts, rotate through these emotional angles to
 - "Selective enforcement" → "One rule for cronies, another for the rest of us"
 - "Corruption" → "A system rigged so tight, only insiders know the combination"
 
+### Villain Naming Guidelines
+**Name the villains harder and make it personal:**
+
+**Instead of Generic Descriptions:**
+- "Hilton pumps in debris" → "Hilton's waste chute dumping straight into paradise"
+- "Debris from the hotel" → "Tourist sewage flowing like a river of shame"
+- "Infrastructure problems" → "Decades of neglect bleeding into every slip"
+- "Selective enforcement" → "The harbor master's personal ATM, funded by honest boat owners"
+- "Corrupt practices" → "A system that treats public resources like private piggy banks"
+
+**Make It Impossible to Look Away:**
+- "Stagnant brine" → "The air smells like a backed-up toilet baking in Waikiki sun"
+- "Polluted waters" → "Sewage slicks that coat tourist reflections in Instagram sunsets"
+- "Crumbling infrastructure" → "Docks that splinter like broken promises under every wave"
+- "Failed systems" → "Pumps that wheeze like dying lungs in a drowning harbor"
+
+### Survivor Voice Guidelines
+**Add direct anecdotes that read like testimony:**
+
+**Use Real Testimonials:**
+- "One slip lessee fined for a cracked hose while a crony's leaking fuel tank floated free"
+- "Boat owner docked next to the harbor master's buddy pays triple the fees for half the service"
+- "Honest captains get written up for minor violations while connected vessels dump waste unchecked"
+- "The same slip that costs you $500/month costs the harbor master's friend $50"
+- "One rule for the connected, another for the rest of us—and we're all paying for it"
+
+**Make It Testimonial-Style:**
+- "I've seen it with my own eyes: selective enforcement that would make a mob boss proud"
+- "My boat sits in sewage while the harbor master's cronies get clean water"
+- "Every fine I pay goes to fund the system that screws me over"
+- "I'm not asking for special treatment—just the same treatment everyone else gets"
+
 ### Campaign Structure Rules
 **When creating multiple long-form posts:**
 1. **Vary the emotional angle** - Don't repeat the same story arc
@@ -361,6 +393,29 @@ When creating multiple long-form posts, rotate through these emotional angles to
 - "Don't let it die" → "Don't let it die on your watch"
 - "Be part of the solution" → "Be part of the solution or part of the problem"
 - "Stand up for change" → "Stand up for change or sit down with the status quo"
+
+### Shame Weaponization Guidelines
+**Frame problems as global embarrassment and tourist shame:**
+
+**Make It a Global Shame:**
+- "Ala Wai isn't just Honolulu's problem—it's Hawai'i's global embarrassment"
+- "Tourists Instagram Waikiki sunsets while sewage slicks coat their reflections"
+- "The world sees paradise, but locals know the truth: Ala Wai is a floating toilet"
+- "Hawai'i's postcard image hides a harbor that would make a third-world country blush"
+- "While tourists pay $500 for sunset cruises, locals dodge sewage slicks in the same water"
+
+**Weaponize Tourist Shame:**
+- "Your Instagram sunset photo? That's sewage reflecting off the water"
+- "The 'paradise' you're posting about is literally a backed-up toilet"
+- "Tourists pay premium prices to float in what locals call 'the shit canal'"
+- "Your vacation photos are tainted by the same water that's poisoning our harbor"
+- "The 'Hawaiian experience' you're buying includes swimming in Hilton's waste"
+
+**Make It Personal for Everyone:**
+- "This isn't just about boat owners—it's about every person who calls Hawai'i home"
+- "Your tax dollars are funding a system that treats public resources like private property"
+- "Every tourist dollar spent in Waikiki goes to a system that's poisoning our waters"
+- "The corruption you're ignoring today will be your children's inheritance tomorrow"
 
 ### Brand Research Workflow
 **1. Input**: User drops brand name (e.g., "Patagonia")
