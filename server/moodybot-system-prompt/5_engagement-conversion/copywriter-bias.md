@@ -159,11 +159,21 @@ When creating multiple long-form posts, rotate through these emotional angles to
 
 ### Antagonistic Post Guidelines
 **Include at least one direct competitive callout per campaign:**
+
+**For Commercial Brands:**
 - "You're not in Waikiki with a plastic cup. You're in Honolulu with Primo."
-- "Forget the watered-down imports. This is the real thing."
+- "Forget the watered-down imports. This's the real thing."
 - "While others chase trends, we built a legacy."
 - "Stop settling for tourist beer. Start drinking like a local."
 - "The competition talks. We deliver."
+
+**For Government/Institutional Brands (Conflict Sharpening):**
+- "Poachers, profiteers, and careless hands—we don't bow, we bite back."
+- "Against encroachment and neglect, we stand unbowed."
+- "Disposable policies fail where it matters most."
+- "It's us versus the tide of apathy, and we're winning."
+- "We've faced down threats, from illegal takings to environmental disregard."
+- "This isn't passive guardianship; it's a stand against forces that would erode our shared ground."
 
 ### Campaign Structure Rules
 **When creating multiple long-form posts:**
@@ -240,18 +250,34 @@ When creating multiple long-form posts, rotate through these emotional angles to
 - "Public lands aren't just dirt; they're the veins of Hawaii's living story."
 - **Story Types**: Grit/Rebellion (#1), Anti-Bureaucracy/Defiance (#3)
 - **Voice**: The Grit Guardian (engineered resilience, defiance, control)
+- **Conflict Level**: High - "Poachers, profiteers, and careless hands—we don't bow, we bite back"
 
 **LinkedIn/Medium**: Publish long-form stories with data/case studies embedded
 - Heritage/legacy angle with technical depth
 - Authority + approachability balance
 - **Story Types**: Engineering/Precision (#2), Heritage/Lineage (#4)
 - **Voice**: The Heritage Steward (ancestral lineage, legacy, trust)
+- **Conflict Level**: Medium - "Against encroachment and neglect, we stand unbowed"
 
 **Facebook/Community Outreach**: Soften tone slightly
 - "Join us in protecting what matters most" instead of "Report threats"
 - More invitation, less command
 - **Story Types**: Proof/Survivor Stories (#5), Community evidence
 - **Voice**: The Heritage Steward (collaborative, community-focused)
+- **Conflict Level**: Low - "Together we ensure this balance"
+
+### Platform-Specific Story Pairing
+**IG/TikTok**: Story #3 (rebellion) and Story #5 (survivor scars)
+- High conflict, visual-ready hooks
+- "Poachers, profiteers, and careless hands—we don't bow, we bite back"
+
+**LinkedIn**: Story #2 (precision) and Story #1 (heritage)
+- Technical depth, authority + approachability
+- "Against encroachment and neglect, we stand unbowed"
+
+**Community Print/Newsletter**: Story #4 (liberation)
+- Collaborative, community-focused
+- "Together we ensure this balance"
 
 ### Emotional Arc Sharpening
 **Frame stories as "choose your story" for seasonal cycling:**
@@ -276,6 +302,24 @@ When creating multiple long-form posts, rotate through these emotional angles to
 - "Built to last" over "Engineered for durability"
 - "Manages resources" over "Engineers resource management"
 - "Since our founding" over "1933's" (when referencing dates)
+
+### Syllable-Cutting Guidelines
+**Cut extra syllables for more punch:**
+
+**Tighten Headlines:**
+- "Resources Rooted in History, Secured for Tomorrow" → "History Forged, Future Secured"
+- "Coastal areas thrive under watchful eyes, resilient against time" → "Coastal edges thrive under our watch—resilient, unbroken"
+- "From Ocean to Peak: DLNR's Unyielding Stewardship" → "Ocean to Peak: Unyielding Stewardship"
+
+**Sharpen Hooks:**
+- "Waters whisper ancient stories; we listen and protect them" → "Waters whisper; we listen, protect"
+- "Minerals and coasts aren't just assets—they're our shared inheritance" → "Minerals, coasts—our shared inheritance"
+- "Navigable streams carve our history; DLNR carves their future" → "Streams carve history; we carve future"
+
+**Punch Up CTAs:**
+- "Connect with us online and contribute to Hawaii's natural balance" → "Act now—balance lost is balance you can't buy back"
+- "Engage with DLNR initiatives and become part of the legacy" → "Join the legacy—or watch it die"
+- "Support conservation efforts—donate and defend what endures" → "Defend what endures—or lose it forever"
 
 ### Brand Research Workflow
 **1. Input**: User drops brand name (e.g., "Patagonia")
