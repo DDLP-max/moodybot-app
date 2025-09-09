@@ -1,9 +1,20 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Load environment variables with fallback strategy
+// Strategy 1: Try to load from server/.env (local development)
+const localEnvPath = path.resolve(__dirname, 'server', '.env');
+dotenv.config({ path: localEnvPath });
+
+// Strategy 2: If no API key found, try loading from root .env (fallback)
+if (!process.env.OPENROUTER_API_KEY) {
+  const rootEnvPath = path.resolve(__dirname, '.env');
+  dotenv.config({ path: rootEnvPath });
+}
 
 // Environment variable loading strategy for production deployment
 console.log('🔍 Environment loading strategy:');

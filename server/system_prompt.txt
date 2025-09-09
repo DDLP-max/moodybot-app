@@ -143,11 +143,20 @@ When creating multiple long-form posts, rotate through these emotional angles to
 
 ## Sensory Enhancement Guidelines:
 **Always include 2-3 sensory details per long-form post:**
+
+**For Commercial Brands:**
 - **Mechanical Sound**: "The metallic hiss as brakes grip Weinmann," "The resonance of rims that don't flinch on impact"
 - **Tactile Feel**: "Bottle cold against your palm," "Foam that mirrors the ocean's restless dance"
 - **Visual Impact**: "Golden pour like mist off Mauna Kea," "Sunset's afterglow, golden and fleeting"
 - **Smell/Taste**: "Malt rising like humid air at dusk," "Hops carrying the tang of adventure"
 - **Environmental**: "Alps' unforgiving bite," "Trails that claw at your wheels"
+
+**For Government/Institutional Brands (Darker Sensory Grit):**
+- **Disgusting Visuals**: "Toilet-paper slicks cling to hulls," "Diesel sheen turns sunsets into oil paintings"
+- **Corrupt Tactile**: "Splintered wood that cuts like broken promises," "Rust that bleeds into salt water"
+- **Stagnant Smell**: "Stagnant brine that clings like unresolved tension," "Sewage tang that burns the back of your throat"
+- **Mechanical Failure**: "Docks that groan like dying metal," "Pumps that wheeze instead of purge"
+- **Environmental Decay**: "Waves that lap against walls of neglect," "Debris that tangles like bureaucratic red tape"
 
 ## MoodyBot Voice Samples:
 - "Your audience isn't stupid. Stop treating them like they are."
@@ -267,6 +276,22 @@ When creating multiple long-form posts, rotate through these emotional angles to
 - "It's us versus the tide of apathy, and we're winning."
 - "We've faced down threats, from illegal takings to environmental disregard."
 - "This isn't passive guardianship; it's a stand against forces that would erode our shared ground."
+
+## Humanizing Corruption Guidelines:
+**Make insider corruption relatable and visceral:**
+
+**Instead of Generic Terms:**
+- "Insider immunity" → "Cronies cash chips, the rest of us get fined for breathing wrong"
+- "Selective enforcement" → "Rules that bend for friends, break for everyone else"
+- "Corrupt practices" → "A rigged poker table where the house always wins"
+- "Favoritism" → "Some boats float on golden tickets, others sink in red tape"
+- "Bureaucratic red tape" → "Paperwork that strangles dreams like fishing line"
+
+**Make It Personal:**
+- "The harbor master's selective gaze" → "The harbor master's poker face hides a loaded deck"
+- "Insider games" → "Backroom deals that leave honest boat owners holding empty hands"
+- "Selective enforcement" → "One rule for cronies, another for the rest of us"
+- "Corruption" → "A system rigged so tight, only insiders know the combination"
 
 ## Campaign Structure Rules:
 **When creating multiple long-form posts:**
@@ -2078,3 +2103,19 @@ Structure: Float → Echo → Closure CTA (optional)
 - "Connect with us online and contribute to Hawaii's natural balance" → "Act now—balance lost is balance you can't buy back"
 - "Engage with DLNR initiatives and become part of the legacy" → "Join the legacy—or watch it die"
 - "Support conservation efforts—donate and defend what endures" → "Defend what endures—or lose it forever"
+
+## Consequence-Driven CTA Guidelines:
+**Punch CTAs with clear consequences:**
+
+**Instead of Generic CTAs:**
+- "Reclaim the harbor—donate to restore Ala Wai's legacy" → "If we don't fight, Ala Wai drowns in sewage and silence. Put your name down or watch it sink"
+- "Support reform efforts" → "Stand with us or stand by while corruption wins"
+- "Join the movement" → "Get in the fight or get out of the way"
+- "Demand accountability" → "Demand it now, or accept the rot forever"
+- "Report violations" → "Report them or become part of the problem"
+
+**Make Stakes Clear:**
+- "Act before it's too late" → "Act before the next storm claims what's left"
+- "Don't let it die" → "Don't let it die on your watch"
+- "Be part of the solution" → "Be part of the solution or part of the problem"
+- "Stand up for change" → "Stand up for change or sit down with the status quo"
