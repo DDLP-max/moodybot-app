@@ -59,6 +59,23 @@ When creating multiple long-form posts, rotate through these emotional angles to
 - **Invitation Moments**: "Join us in protecting what matters most," "Be part of the solution"
 - **Avoid**: Just barking orders - balance command with invitation
 
+### Voice Consistency for Institutional Brands
+**Choose ONE core voice and stick to it:**
+
+**The Grit Guardian** (Engineered resilience, defiance, control):
+- "Resources managed with grit and legacy"
+- "Under our watch, they fight back"
+- "Engineered resilience for Hawaii's future"
+- **Use for**: Instagram/TikTok, crisis communications, enforcement messaging
+
+**The Heritage Steward** (Ancestral lineage, legacy, trust):
+- "Protecting Hawaii's wild heartbeat"
+- "The land doesn't belong to us, it belongs to the future"
+- "Legacy in every wave and peak"
+- **Use for**: LinkedIn/Medium, community outreach, policy communications
+
+**Never mix both** - Pick a lane and dominate it for brand consistency
+
 ### Differentiation Guidelines
 **Avoid generic "strong, reliable, durable" - create ownable edge:**
 - **Heritage Authority**: "Crash-proof since 1933," "Rims tested by history, not just labs"
@@ -102,6 +119,8 @@ When creating multiple long-form posts, rotate through these emotional angles to
 
 ### Enhanced CTA Strategies
 **Beyond basic "buy/order/grab" - add emotional hooks:**
+
+**For Commercial Brands:**
 - **Fear of Loss**: "Stop trusting fragile rims. Upgrade to Weinmann before your next ride breaks you"
 - **Performance Edge**: "Equip once, never worry again"
 - **Risk-Reversal**: "Claim your island pour before it's gone mainstream"
@@ -110,6 +129,13 @@ When creating multiple long-form posts, rotate through these emotional angles to
 - **Exclusivity**: "Get yours before the tourists discover it"
 - **Heritage**: "Own a piece of Hawaii's brewing history"
 - **Defiance**: "Choose the original over the imitation"
+
+**For Government/Institutional Brands (Collaborative Framing):**
+- **Shared Responsibility**: "Together we can safeguard Hawaii's future" (not "Stand with us to safeguard")
+- **Community Action**: "Be part of defending the islands' pulse—join initiatives today" (not "Defend the islands' pulse—participate immediately")
+- **Collective Legacy**: "Claim your role in Hawaii's legacy" (not "Take your role")
+- **Unified Purpose**: "Join us in protecting what matters most" (not "Help us protect")
+- **Collaborative Stewardship**: "Together we ensure this balance" (not "We ensure this balance")
 
 ### Social Caption Guidelines
 **Push one-liners that feel like tattoos:**
@@ -212,14 +238,20 @@ When creating multiple long-form posts, rotate through these emotional angles to
 **Instagram/TikTok**: Use short, jagged hooks with visual overlays
 - "Minerals. Waters. Lands. Under our watch, they don't just survive—they fight back."
 - "Public lands aren't just dirt; they're the veins of Hawaii's living story."
+- **Story Types**: Grit/Rebellion (#1), Anti-Bureaucracy/Defiance (#3)
+- **Voice**: The Grit Guardian (engineered resilience, defiance, control)
 
 **LinkedIn/Medium**: Publish long-form stories with data/case studies embedded
 - Heritage/legacy angle with technical depth
 - Authority + approachability balance
+- **Story Types**: Engineering/Precision (#2), Heritage/Lineage (#4)
+- **Voice**: The Heritage Steward (ancestral lineage, legacy, trust)
 
 **Facebook/Community Outreach**: Soften tone slightly
 - "Join us in protecting what matters most" instead of "Report threats"
 - More invitation, less command
+- **Story Types**: Proof/Survivor Stories (#5), Community evidence
+- **Voice**: The Heritage Steward (collaborative, community-focused)
 
 ### Emotional Arc Sharpening
 **Frame stories as "choose your story" for seasonal cycling:**
@@ -229,6 +261,21 @@ When creating multiple long-form posts, rotate through these emotional angles to
 **Story #3 = Anti-Bureaucracy/Defiance**: "The land doesn't belong to us, it belongs to the future"
 **Story #4 = Heritage/Lineage**: "Protecting Hawaii's wild heartbeat"
 **Story #5 = Precision/Engineering**: "Minerals, waters, lands—under our watch, they thrive"
+
+### Word Flow Guidelines
+**Smooth out mechanical language for better readability:**
+
+**Avoid Mechanical Language:**
+- "Engineers this balance" → "Ensures this balance" (smoother, less mechanical)
+- "1933's unyielding spirit" → "Since our founding in 1933, the unyielding spirit" (anchor with context)
+- "Engineered resilience" → "Built resilience" (more natural)
+- "Technical precision" → "Precise management" (less clinical)
+
+**Prefer Natural Flow:**
+- "Ensures this balance" over "Engineers this balance"
+- "Built to last" over "Engineered for durability"
+- "Manages resources" over "Engineers resource management"
+- "Since our founding" over "1933's" (when referencing dates)
 
 ### Brand Research Workflow
 **1. Input**: User drops brand name (e.g., "Patagonia")
