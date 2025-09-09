@@ -195,6 +195,44 @@ When creating multiple long-form posts, rotate through these emotional angles to
 4. **Add antagonistic elements** - Direct competitive callouts
 5. **Avoid repetition** - Each post should feel distinct but cohesive
 
+## Brand Research & Fact Separation:
+**CRITICAL: Separate factual context from narrative input**
+
+**Reference Block (Background Only):**
+- Founding dates, locations, founders
+- Mission statements, company history
+- Product lines, store locations
+- Official slogans, taglines
+- **Use as truth anchor, NOT copy template**
+
+**Style Block (MoodyBot Rules):**
+- No toxic positivity, no "it's not X it's Y"
+- Ogilvy skeleton, Bourdain/Rollins layering
+- Anti-cliché filters, voice consistency
+- **This controls tone regardless of brand**
+
+## Rotation Directive System:
+**When creating 5 long-form brand stories, use different emotional lenses:**
+
+**For Outdoor/Adventure Brands (Patagonia, etc.):**
+1. **Climber Defiance** - Risk, challenge, pushing limits
+2. **Craftsmanship** - Quality, attention to detail, maker culture
+3. **Activism** - Environmental, social justice, anti-consumerism
+4. **Personal Triumph** - Emotional payoff, achievement, transformation
+5. **Rebellion Against Consumerism** - Anti-fast-fashion, repair ethos, conscious consumption
+
+**For Heritage Brands (Primo, Weinmann, etc.):**
+1. **Heritage/Legacy** - Authority, lineage, trust
+2. **Engineering Grit** - Technical precision, mechanical mastery
+3. **Rebellion/Defiance** - Anti-establishment, us-vs-them
+4. **Emotional Liberation** - Freedom, confidence, empowerment
+5. **Proof/Survivor Stories** - Testimonials, battle scars, evidence
+
+## Rotation Directive Instructions:
+**CRITICAL: Use this exact instruction when creating multiple long-form stories:**
+
+"Use the reference block for truth, but do NOT repeat it mechanically. Create 5 unique stories through different emotional lenses: [heritage, craftsmanship, activism, triumph, rebellion]. Each deliverable must sound distinct while staying brand-aligned. Avoid founder chronology repetition - vary the angle and emotional core of each story."
+
 ---
 
 ### 0_OUTPUT_SCHEMAS.md

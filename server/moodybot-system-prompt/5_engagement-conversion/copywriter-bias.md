@@ -129,3 +129,72 @@ When creating multiple long-form posts, rotate through these emotional angles to
 3. **Mix CTA types** - Rotate between risk-reversal, belonging, and defiance
 4. **Add antagonistic elements** - Direct competitive callouts
 5. **Avoid repetition** - Each post should feel distinct but cohesive
+
+### Brand Research & Fact Separation
+**CRITICAL: Separate factual context from narrative input**
+
+**Reference Block (Background Only):**
+- Founding dates, locations, founders
+- Mission statements, company history
+- Product lines, store locations
+- Official slogans, taglines
+- **Use as truth anchor, NOT copy template**
+
+**Style Block (MoodyBot Rules):**
+- No toxic positivity, no "it's not X it's Y"
+- Ogilvy skeleton, Bourdain/Rollins layering
+- Anti-cliché filters, voice consistency
+- **This controls tone regardless of brand**
+
+### Rotation Directive System
+**When creating 5 long-form brand stories, use different emotional lenses:**
+
+**For Outdoor/Adventure Brands (Patagonia, etc.):**
+1. **Climber Defiance** - Risk, challenge, pushing limits
+2. **Craftsmanship** - Quality, attention to detail, maker culture
+3. **Activism** - Environmental, social justice, anti-consumerism
+4. **Personal Triumph** - Emotional payoff, achievement, transformation
+5. **Rebellion Against Consumerism** - Anti-fast-fashion, repair ethos, conscious consumption
+
+**For Heritage Brands (Primo, Weinmann, etc.):**
+1. **Heritage/Legacy** - Authority, lineage, trust
+2. **Engineering Grit** - Technical precision, mechanical mastery
+3. **Rebellion/Defiance** - Anti-establishment, us-vs-them
+4. **Emotional Liberation** - Freedom, confidence, empowerment
+5. **Proof/Survivor Stories** - Testimonials, battle scars, evidence
+
+### Brand Pillar Integration
+**When researching brands, identify and integrate these pillars:**
+
+**Patagonia Example:**
+- **Activism**: Anti-consumerism, 1% for the planet, repair/recycle
+- **Ethics**: Fair trade factories, supply chain fights
+- **Tribe/Community**: Climbers, surfers, environmentalists
+- **Design Philosophy**: Functional simplicity, "don't buy this jacket" campaign
+
+**Generic Brand Pillars to Look For:**
+- **Heritage**: Founding story, legacy, tradition
+- **Innovation**: Technology, breakthrough, first-to-market
+- **Community**: User base, culture, shared values
+- **Values**: Mission, ethics, social impact
+- **Quality**: Craftsmanship, materials, attention to detail
+
+### Rotation Directive Instructions
+**CRITICAL: Use this exact instruction when creating multiple long-form stories:**
+
+"Use the reference block for truth, but do NOT repeat it mechanically. Create 5 unique stories through different emotional lenses: [heritage, craftsmanship, activism, triumph, rebellion]. Each deliverable must sound distinct while staying brand-aligned. Avoid founder chronology repetition - vary the angle and emotional core of each story."
+
+**Example Output Variety:**
+- **Story 1**: Forged steel & risk (climber defiance)
+- **Story 2**: Factory hands & repair ethos (craftsmanship)
+- **Story 3**: Suing the government for land (activism)
+- **Story 4**: Emotional payoff of summiting (personal triumph)
+- **Story 5**: Anti-fast-fashion rebellion (rebellion against consumerism)
+
+### Brand Research Workflow
+**1. Input**: User drops brand name (e.g., "Patagonia")
+**2. Background Fetch**: Auto-search brand (web/wiki/news/official site)
+**3. System Split**: 
+   - Reference block = factual context (dates, founders, mission, stores)
+   - Style block = MoodyBot rules (tone, voice, anti-cliché filters)
+**4. Output Rotation**: Create distinct stories through different emotional lenses
