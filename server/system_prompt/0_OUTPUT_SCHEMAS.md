@@ -13,7 +13,7 @@
      "hooks": string[],
      "ctas": string[],
      "captions_short": string[],    // 1-2 lines for quick social posts
-     "captions_long": string[]      // 200-300 words for storytelling posts, carousel intros, Reel context
+     "captions_long": string[]      // 200-500 words for storytelling posts, carousel intros, Reel context
   },
   "notes": string[]
 }
