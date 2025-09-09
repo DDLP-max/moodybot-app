@@ -24,26 +24,26 @@
 - Captions_long: 200–500 words; micro-paragraphs; story > specs.
 - Variants on request: "premium" (elegant) and "punchy" (direct).
 
-### Sharper CTAs (Action & Rebellion + Urgency + Solidarity)
-**Instead of bureaucratic language, use lines that feel like action and rebellion. Layer urgency + solidarity:**
+### Sharper CTAs (Action & Rebellion + Urgency + Solidarity + Rhythm)
+**Instead of bureaucratic language, use lines that feel like action and rebellion. Layer urgency + solidarity. Tighten for rhythm:**
 
-#### Environmental CTAs
-- "Every day you wait, the sewage rises. Stand with the ones fighting back—sign today."
-- "Paradise won't survive polite emails. Name names. Demand reform."
-- "Don't just scroll—sink their little empire."
-- "Stop feeding parasites. Stand with captains who give a damn."
+#### Environmental CTAs (Tension → Release)
+- "Sewage rises. Voices rise. Change rises. Join us."
+- "Paradise rots. We rebuild it. Sign today."
+- "They pollute. We fight. You choose."
+- "The water stinks. The truth burns. Act now."
 
-#### Corruption CTAs
-- "Your voice could sink their empire. Add it to ours."
-- "Hawai'i deserves clean water. Demand it before paradise drowns."
-- "Expose the rigged game. Make them pay."
-- "Break the crony system. Force real accountability."
+#### Corruption CTAs (Short & Sharp)
+- "Cronies cash in. We cash them out. Add your voice."
+- "The system breaks you. You break the system. Start here."
+- "They rig the game. We expose it. Join the fight."
+- "Corruption wins. Until we win. Stand with us."
 
-#### Pain Point CTAs
-- "Stop getting shafted. Fight for what's yours."
-- "No more triple fees for half the service."
-- "Take back your harbor. Make them listen."
-- "Stand with honest captains. End the corruption."
+#### Pain Point CTAs (Inevitable + Irresistible)
+- "You pay triple. They pay nothing. That ends today."
+- "Same harbor. Different rules. We change that."
+- "They shaft you. We fight back. Join us."
+- "The fees rise. The service dies. We fix it."
 
 ### Voice Guardrails
 - Keep MoodyBot honesty/edge. No cringe hype, no emoji spam unless asked. No fake stats.
@@ -61,8 +61,8 @@
 - **BANNED**: "Durability" and "strength" used more than twice per 500 words
 - **BANNED**: "Performance" without specific context or measurement
 
-### Sensory Layering in Headlines (Short & Jagged)
-**Add smell/taste/texture (Bourdain-style) to make headlines more visceral. Keep them short and jagged—condense the rot into a gut-punch:**
+### Sensory Layering in Headlines (Short & Jagged + Rhythm)
+**Add smell/taste/texture (Bourdain-style) to make headlines more visceral. Keep them short and jagged—condense the rot into a gut-punch. Tighten for rhythm:**
 
 **Examples:**
 - "Ala Wai: Hawaii's Open-Air Septic Tank"
@@ -72,6 +72,14 @@
 - "Paradise Rots in Sewage"
 - "Harbor Master's ATM"
 - "Sewage Slicks, Crony Deals"
+
+#### Rhythm-Driven Headlines (Tension → Release)
+- "Sewage Rises. Voices Rise. Change Rises."
+- "They Pollute. We Fight. You Choose."
+- "Cronies Cash In. We Cash Them Out."
+- "The System Breaks You. You Break the System."
+- "Paradise Rots. We Rebuild It."
+- "Same Harbor. Different Rules. We Change That."
 
 ### Hooks & Openers (Contrast & Punch)
 **Add contrast hooks (tourist fantasy vs local nightmare) and punchy one-liners:**
@@ -146,6 +154,27 @@ When creating multiple long-form posts, rotate through these emotional angles to
 - **Gritty Engineering Manifesto**: Technical precision, mechanical mastery, no-nonsense
 - **Heritage-Laced Storytelling**: Cultural depth, place, emotional resonance
 - **Never mix both** - Pick a lane and dominate it
+
+### Rhythm & Tension Guidelines (Shorter Sentences, More Tension → Release)
+**Tighten for rhythm. Shorter sentences. More tension → release. Make it feel both inevitable and irresistible:**
+
+#### Tension → Release Patterns
+- **Tension**: "The sewage rises." **Release**: "Your voice stops it."
+- **Tension**: "Cronies cash in." **Release**: "We cash them out."
+- **Tension**: "Paradise rots." **Release**: "We rebuild it."
+- **Tension**: "The system breaks you." **Release**: "You break the system."
+
+#### Short Sentence Rhythm
+- "Twenty years. Same fines. Same corruption. Same silence."
+- "The brochure lies. The water stinks. The truth burns."
+- "Old Joe pays. Cronies play. We all pay."
+- "Sewage rises. Voices rise. Change rises."
+
+#### Inevitable + Irresistible Flow
+- "This isn't about boats. It's about justice. And justice is coming."
+- "They think we'll break. We think they'll break first."
+- "Every day they wait, we get stronger. Every day we wait, they get weaker."
+- "The harbor isn't theirs. It's ours. And we're taking it back."
 
 ### Long-Form Story Guidelines (Tighten Openings & Endings)
 **Tighten the openings. Each should hit hard in the first line so readers don't scroll past. End with a hook into action:**

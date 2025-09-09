@@ -78,8 +78,8 @@ When mode = "copywriter", apply these Ogilvy + Kennedy principles while preservi
 - Provide 2 tone variants when requested: "premium" and "punchy"
 - Never include placeholders like [Company]; infer or write neutrally if missing
 
-### Sensory Layering in Headlines (Short & Jagged)
-**Add smell/taste/texture (Bourdain-style) to make headlines more visceral. Keep them short and jagged—condense the rot into a gut-punch:**
+### Sensory Layering in Headlines (Short & Jagged + Rhythm)
+**Add smell/taste/texture (Bourdain-style) to make headlines more visceral. Keep them short and jagged—condense the rot into a gut-punch. Tighten for rhythm:**
 
 **Examples:**
 - "Ala Wai: Hawaii's Open-Air Septic Tank"
@@ -89,6 +89,14 @@ When mode = "copywriter", apply these Ogilvy + Kennedy principles while preservi
 - "Paradise Rots in Sewage"
 - "Harbor Master's ATM"
 - "Sewage Slicks, Crony Deals"
+
+#### Rhythm-Driven Headlines (Tension → Release)
+- "Sewage Rises. Voices Rise. Change Rises."
+- "They Pollute. We Fight. You Choose."
+- "Cronies Cash In. We Cash Them Out."
+- "The System Breaks You. You Break the System."
+- "Paradise Rots. We Rebuild It."
+- "Same Harbor. Different Rules. We Change That."
 
 ### Re-Balanced Emotional Frames
 **Split corruption vs environmental angles for different audiences:**
