@@ -52,6 +52,13 @@ When creating multiple long-form posts, rotate through these emotional angles to
 - **Heritage-Laced Storytelling**: Cultural depth, place, emotional resonance
 - **Never mix both** - Pick a lane and dominate it
 
+### Authority + Approachability Balance
+**For Government/Institutional Brands:**
+- **Authority**: "Resources managed with grit and legacy," "Under our watch, they fight back"
+- **Approachability**: "The land doesn't belong to us, it belongs to the future—and you're part of that future"
+- **Invitation Moments**: "Join us in protecting what matters most," "Be part of the solution"
+- **Avoid**: Just barking orders - balance command with invitation
+
 ### Differentiation Guidelines
 **Avoid generic "strong, reliable, durable" - create ownable edge:**
 - **Heritage Authority**: "Crash-proof since 1933," "Rims tested by history, not just labs"
@@ -106,6 +113,8 @@ When creating multiple long-form posts, rotate through these emotional angles to
 
 ### Social Caption Guidelines
 **Push one-liners that feel like tattoos:**
+
+**For Heritage/Technical Brands:**
 - "Weinmann: Crash after crash, still round."
 - "Since 1933. Stronger than your excuses."
 - "Crash-proof since 1933."
@@ -113,6 +122,14 @@ When creating multiple long-form posts, rotate through these emotional angles to
 - "The rim brand that outlived empires."
 - "Disposable rims are for disposable rides."
 - "Ride harder knowing nothing breaks beneath you."
+
+**For Government/Institutional Brands:**
+- "Minerals. Waters. Lands. Under our watch, they don't just survive—they fight back."
+- "Public lands aren't just dirt; they're the veins of Hawaii's living story."
+- "The land doesn't belong to us, it belongs to the future—and you're part of that future."
+- "Join us in protecting what matters most."
+- "Resources managed with grit and legacy."
+- "Protecting Hawaii's wild heartbeat."
 
 ### Antagonistic Post Guidelines
 **Include at least one direct competitive callout per campaign:**
@@ -190,6 +207,28 @@ When creating multiple long-form posts, rotate through these emotional angles to
 - **Story 3**: Suing the government for land (activism)
 - **Story 4**: Emotional payoff of summiting (personal triumph)
 - **Story 5**: Anti-fast-fashion rebellion (rebellion against consumerism)
+
+### Platform-Specific Guidelines
+**Instagram/TikTok**: Use short, jagged hooks with visual overlays
+- "Minerals. Waters. Lands. Under our watch, they don't just survive—they fight back."
+- "Public lands aren't just dirt; they're the veins of Hawaii's living story."
+
+**LinkedIn/Medium**: Publish long-form stories with data/case studies embedded
+- Heritage/legacy angle with technical depth
+- Authority + approachability balance
+
+**Facebook/Community Outreach**: Soften tone slightly
+- "Join us in protecting what matters most" instead of "Report threats"
+- More invitation, less command
+
+### Emotional Arc Sharpening
+**Frame stories as "choose your story" for seasonal cycling:**
+
+**Story #1 = Grit/Rebellion**: "Resources managed with grit and legacy"
+**Story #2 = Quiet Rage/Resolve**: "Under our watch, they fight back"
+**Story #3 = Anti-Bureaucracy/Defiance**: "The land doesn't belong to us, it belongs to the future"
+**Story #4 = Heritage/Lineage**: "Protecting Hawaii's wild heartbeat"
+**Story #5 = Precision/Engineering**: "Minerals, waters, lands—under our watch, they thrive"
 
 ### Brand Research Workflow
 **1. Input**: User drops brand name (e.g., "Patagonia")
