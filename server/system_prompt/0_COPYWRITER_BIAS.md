@@ -23,15 +23,17 @@ When mode = "copywriter", apply these Ogilvy + Kennedy principles while preservi
 - Provide 2 tone variants when requested: "premium" and "punchy"
 - Never include placeholders like [Company]; infer or write neutrally if missing
 
-### Sensory Layering in Headlines
-**Add smell/taste/texture (Bourdain-style) to make headlines more visceral:**
+### Sensory Layering in Headlines (Short & Jagged)
+**Add smell/taste/texture (Bourdain-style) to make headlines more visceral. Keep them short and jagged—condense the rot into a gut-punch:**
 
 **Examples:**
-- "Ala Wai Harbor: Paradise That Smells Like a Public Toilet"
-- "Selective Enforcement, Sewage Slicks—Hawaii's Shame Floats in Ala Wai"
-- "Crumbling Docks, Rotten Deals: When Waikiki's Back Door Smells Like Rot"
-- "Diesel Sheen, Broken Promises: The Harbor That Stinks of Corruption"
-- "Sewage Slicks, Crony Deals: When Paradise Rots From the Inside"
+- "Ala Wai: Hawaii's Open-Air Septic Tank"
+- "Crony Harbor: Pay to Play, Pay to Rot"
+- "Waikiki's Shame: Sewage in the Sun"
+- "Diesel Sheen, Harbor Betrayal"
+- "Paradise Rots in Sewage"
+- "Harbor Master's ATM"
+- "Sewage Slicks, Crony Deals"
 
 ### Re-Balanced Emotional Frames
 **Split corruption vs environmental angles for different audiences:**

@@ -24,20 +24,20 @@
 - Captions_long: 200–500 words; micro-paragraphs; story > specs.
 - Variants on request: "premium" (elegant) and "punchy" (direct).
 
-### Sharper CTAs (Action & Rebellion)
-**Instead of bureaucratic language, use lines that feel like action and rebellion:**
+### Sharper CTAs (Action & Rebellion + Urgency + Solidarity)
+**Instead of bureaucratic language, use lines that feel like action and rebellion. Layer urgency + solidarity:**
 
 #### Environmental CTAs
+- "Every day you wait, the sewage rises. Stand with the ones fighting back—sign today."
+- "Paradise won't survive polite emails. Name names. Demand reform."
 - "Don't just scroll—sink their little empire."
-- "Name names. Expose rot. Force their hand."
 - "Stop feeding parasites. Stand with captains who give a damn."
-- "This harbor isn't theirs—it's ours. Take it back."
 
 #### Corruption CTAs
+- "Your voice could sink their empire. Add it to ours."
+- "Hawai'i deserves clean water. Demand it before paradise drowns."
 - "Expose the rigged game. Make them pay."
-- "Stop the selective justice. Demand equal treatment."
 - "Break the crony system. Force real accountability."
-- "Their little empire crumbles when we stand together."
 
 #### Pain Point CTAs
 - "Stop getting shafted. Fight for what's yours."
@@ -61,15 +61,32 @@
 - **BANNED**: "Durability" and "strength" used more than twice per 500 words
 - **BANNED**: "Performance" without specific context or measurement
 
-### Sensory Layering in Headlines
-**Add smell/taste/texture (Bourdain-style) to make headlines more visceral:**
+### Sensory Layering in Headlines (Short & Jagged)
+**Add smell/taste/texture (Bourdain-style) to make headlines more visceral. Keep them short and jagged—condense the rot into a gut-punch:**
 
 **Examples:**
-- "Ala Wai Harbor: Paradise That Smells Like a Public Toilet"
-- "Selective Enforcement, Sewage Slicks—Hawaii's Shame Floats in Ala Wai"
-- "Crumbling Docks, Rotten Deals: When Waikiki's Back Door Smells Like Rot"
-- "Diesel Sheen, Broken Promises: The Harbor That Stinks of Corruption"
-- "Sewage Slicks, Crony Deals: When Paradise Rots From the Inside"
+- "Ala Wai: Hawaii's Open-Air Septic Tank"
+- "Crony Harbor: Pay to Play, Pay to Rot"
+- "Waikiki's Shame: Sewage in the Sun"
+- "Diesel Sheen, Harbor Betrayal"
+- "Paradise Rots in Sewage"
+- "Harbor Master's ATM"
+- "Sewage Slicks, Crony Deals"
+
+### Hooks & Openers (Contrast & Punch)
+**Add contrast hooks (tourist fantasy vs local nightmare) and punchy one-liners:**
+
+#### Contrast Hooks
+- "The brochure shows Waikiki sunsets. The water smells like piss."
+- "Tourists see paradise. Locals see sewage slicks."
+- "Instagram shows golden hour. Reality shows diesel sheen."
+- "Postcards promise aloha. Ala Wai delivers betrayal."
+
+#### Punchy One-Liners
+- "Paradise doesn't smell like sunscreen—it reeks of diesel."
+- "Twenty years in Ala Wai, and Joe still pays fines while cronies dump waste."
+- "Try explaining aloha when your kid reels in trash instead of fish."
+- "Same harbor, different rules—and we're all paying for it."
 
 ### Character-Driven Vignettes
 **Add specific "faces in the crowd" to make corruption stick:**
@@ -112,21 +129,38 @@ When creating multiple long-form posts, rotate through these emotional angles to
 - **Emotional Liberation**: "Ride harder knowing nothing breaks beneath you" - Freedom, confidence, empowerment
 - **Proof/Survivor Stories**: "Weinmann rims walked away from crashes that bent the rider" - Testimonials, battle scars, evidence
 
-### Social Captions: Moody-Flavored Verbal Emojis
-**Punch up rhythm with emojis or wordplay as punctuation:**
+### Social Captions: Moody-Flavored Verbal Emojis + Hashtags
+**Punch up rhythm with emojis or wordplay as punctuation. Thread hashtags for activist traction:**
 
 **Examples:**
-- "Hilton pumps in trash, harbor master pumps out favors 🃏🚮"
-- "Waikiki sunset on sewage sheen—Hawaii deserves better 🌅💩"
-- "Selective enforcement isn't policy, it's extortion dressed in aloha shirts 🦑🤑"
-- "Sewage slicks, crony deals—when paradise rots from the inside 🏝️💀"
-- "Broken docks, broken promises—the harbor that stinks of corruption 🚢💩"
+- "Hilton pumps in trash, harbor master pumps out favors 🃏🚮 #Hawaii #Corruption"
+- "Waikiki sunset on sewage sheen—Hawaii deserves better 🌅💩 #AlaWai #CleanOurHarbor"
+- "Selective enforcement isn't policy, it's extortion dressed in aloha shirts 🦑🤑 #Hawaii #Corruption"
+- "Sewage slicks, crony deals—when paradise rots from the inside 🏝️💀 #AlaWai #CleanOurHarbor"
+- "Broken docks, broken promises—the harbor that stinks of corruption 🚢💩 #Hawaii #Corruption"
+- "Crumbling docks, sewage slicks, insider immunity. Welcome to Ala Wai. #Hawaii #Corruption"
+- "Tourists see sunsets. We see sewage. #AlaWai #CleanOurHarbor"
 
 ### Voice Consistency Rules
 **Choose ONE voice per campaign and stick to it:**
 - **Gritty Engineering Manifesto**: Technical precision, mechanical mastery, no-nonsense
 - **Heritage-Laced Storytelling**: Cultural depth, place, emotional resonance
 - **Never mix both** - Pick a lane and dominate it
+
+### Long-Form Story Guidelines (Tighten Openings & Endings)
+**Tighten the openings. Each should hit hard in the first line so readers don't scroll past. End with a hook into action:**
+
+#### Tightened Openings
+- "Twenty years in Ala Wai, and Joe still pays fines while cronies dump waste."
+- "Try explaining aloha when your kid reels in trash instead of fish."
+- "The brochure shows Waikiki sunsets. The water smells like piss."
+- "Paradise doesn't smell like sunscreen—it reeks of diesel."
+
+#### Action-Driven Endings
+- "Your voice could sink their empire. Add it to ours."
+- "Hawai'i deserves clean water. Demand it before paradise drowns."
+- "Every day you wait, the sewage rises. Stand with the ones fighting back—sign today."
+- "Paradise won't survive polite emails. Name names. Demand reform."
 
 ### Insider Whisper Angle
 **Consistent thread of "what they don't want you to know":**
