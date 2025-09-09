@@ -109,7 +109,7 @@ export default function Home() {
                   Copywriter Mode
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Professional marketing copy generation using Ogilvy + Kennedy principles. Create compelling titles, hooks, CTAs, and captions.
+                  From Ogilvy to Outlaw: MoodyBot's Copy Engine. Create compelling titles, hooks, CTAs, and captions with brutal honesty.
                 </p>
               </div>
             </div>

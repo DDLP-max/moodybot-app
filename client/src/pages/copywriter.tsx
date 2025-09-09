@@ -120,7 +120,7 @@ export default function CopywriterPage() {
             Copywriter Mode
           </h1>
           <p className="text-xl text-muted-foreground mb-2">
-            Generate killer marketing copy with the Ogilvy module
+            From Ogilvy to Outlaw: MoodyBot's Copy Engine
           </p>
           <p className="text-sm text-muted-foreground">
             Titles • Hooks • CTAs • Captions • Long-Form Storytelling Posts
