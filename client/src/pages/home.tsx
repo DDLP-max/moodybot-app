@@ -10,7 +10,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
       {/* Fixed Navigation Bar */}
-      <nav className="fixed top-0 w-full z-50 bg-background/90 backdrop-blur-sm border-b border-primary/20">
+      <nav className="fixed top-0 w-full z-50 bg-background/90 backdrop-blur-sm border-b border-primary/20" style={{ paddingTop: 'max(env(safe-area-inset-top), 0.75rem)' }}>
         <div className="flex items-center justify-between px-4 py-3">
           <a 
             href="https://moodybot.ai" 
@@ -29,9 +29,9 @@ export default function Home() {
         </div>
       </nav>
 
-      <div className="pt-16">
+      <div className="pt-16" style={{ paddingTop: 'calc(4rem + max(env(safe-area-inset-top), 0.75rem))' }}>
         {/* Hero Section */}
-        <section className="relative h-screen flex items-center justify-center overflow-hidden">
+        <section className="relative h-screen flex items-center justify-center overflow-hidden" style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}>
           <div className="absolute inset-0 bg-gradient-to-b from-background/50 to-background">
             <div className="w-full h-full bg-gradient-to-br from-primary/10 via-background to-accent/5" />
           </div>
@@ -53,16 +53,27 @@ export default function Home() {
             
             {/* MoodyBot Character Image */}
             <motion.div
-              className="mb-6 px-4"
+              className="mb-6 px-4 hero-avatar-container"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 1, delay: 0.3 }}
             >
-              <img
-                src="/moodybot-min.png"
-                alt="MoodyBot AI Character"
-                className="w-28 h-28 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full mx-auto border-4 border-primary/20 shadow-2xl shadow-primary/20"
-              />
+              <div className="relative mx-auto rounded-full ring-1 ring-white/10 shadow-lg overflow-visible hero-avatar" 
+                   style={{ 
+                     width: 'clamp(72px, 22vw, 112px)', 
+                     height: 'clamp(72px, 22vw, 112px)',
+                     aspectRatio: '1 / 1'
+                   }}>
+                <div className="p-1 rounded-full bg-gradient-to-b from-violet-500/10 to-transparent h-full w-full">
+                  <img
+                    src="/moodybot-min.png"
+                    alt="MoodyBot AI Character"
+                    className="w-full h-full object-contain rounded-full block"
+                    loading="eager"
+                    decoding="async"
+                  />
+                </div>
+              </div>
             </motion.div>
             
             <p className="text-xl md:text-2xl font-bold mb-2 text-muted-foreground">AI FOR THE REAL YOU</p>

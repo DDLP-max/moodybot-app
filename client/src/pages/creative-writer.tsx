@@ -44,12 +44,12 @@ export default function CreativeWriterPage() {
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
   const [activePreset, setActivePreset] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { questionLimit, refreshQuestionLimit, quotaError } = useQuestionLimit();
+  const { questionLimit, refreshQuestionLimit, quotaError, setQuestionLimit } = useQuestionLimit();
 
   // Refresh question limit on component mount (non-blocking)
   useEffect(() => {
     refreshQuestionLimit(1); // Using default user ID 1
-  }, [refreshQuestionLimit]);
+  }, []); // Empty dependency array to prevent infinite loop
 
   // Auto-Selection Routing Functions (moved up to avoid TDZ)
   const autoSelectCreative = (prompt: string, manualStyle?: string, manualGenre?: string, manualPOV?: string, lengthHint?: number) => {
@@ -214,8 +214,14 @@ export default function CreativeWriterPage() {
         routing: data.personaResolved
       });
       
-      // Refresh question limit from server (non-blocking)
-      refreshQuestionLimit(1).catch(console.error);
+      // Update question limit from response data (no need to refetch)
+      if (data.remaining !== undefined && data.limit !== undefined) {
+        setQuestionLimit({
+          remaining: data.remaining,
+          limit: data.limit,
+          canAsk: data.remaining > 0
+        });
+      }
     } catch (error) {
       if (error instanceof FetchError) {
         if (error.code === 'RATE_LIMIT_EXCEEDED') {

@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useRef } from 'react';
 
 interface QuestionLimit {
   remaining: number;
@@ -15,6 +15,11 @@ interface QuestionLimitContextType {
 }
 
 const QuestionLimitContext = createContext<QuestionLimitContextType | undefined>(undefined);
+
+// Cache for quota data to prevent duplicate requests
+const quotaCache = new Map<string, { data: QuestionLimit; timestamp: number }>();
+const CACHE_DURATION = 60000; // 1 minute cache
+const inFlightRequests = new Map<string, Promise<QuestionLimit>>();
 
 // Retry utility with exponential backoff
 async function retryWithBackoff<T>(
@@ -47,35 +52,77 @@ export function QuestionLimitProvider({ children }: { children: ReactNode }) {
   const [questionLimit, setQuestionLimit] = useState<QuestionLimit | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [quotaError, setQuotaError] = useState<string | null>(null);
+  const lastFetchTime = useRef<number>(0);
+  const fetchCooldown = 5000; // 5 second cooldown between fetches
 
-  const refreshQuestionLimit = async (userId: number) => {
+  const refreshQuestionLimit = useCallback(async (userId: number) => {
+    const now = Date.now();
+    const cacheKey = `quota-${userId}`;
+    
+    // Check cache first
+    const cached = quotaCache.get(cacheKey);
+    if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+      setQuestionLimit(cached.data);
+      return;
+    }
+    
+    // Check cooldown to prevent rapid successive calls
+    if (now - lastFetchTime.current < fetchCooldown) {
+      console.log('Quota fetch cooldown active, skipping request');
+      return;
+    }
+    
+    // Check if request is already in flight
+    if (inFlightRequests.has(cacheKey)) {
+      console.log('Quota request already in flight, waiting for result');
+      try {
+        const result = await inFlightRequests.get(cacheKey);
+        setQuestionLimit(result);
+        return;
+      } catch (error) {
+        // Let the original request handle the error
+        return;
+      }
+    }
+    
+    lastFetchTime.current = now;
     setIsLoading(true);
     setQuotaError(null);
     
-    try {
-      const limitData = await retryWithBackoff(async () => {
-        const response = await fetch(`/api/users/${userId}/limit`, {
-          credentials: 'include',
-          headers: {
-            'x-request-id': `quota-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-          }
-        });
-        
-        if (!response.ok) {
-          if (response.status === 401 || response.status === 403) {
-            throw new Error('quota-auth');
-          }
-          throw new Error(`quota-${response.status}`);
+    const fetchPromise = retryWithBackoff(async () => {
+      const response = await fetch(`/api/users/${userId}/limit`, {
+        credentials: 'include',
+        headers: {
+          'x-request-id': `quota-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
         }
-        
-        return response.json();
-      }, 3, 1000);
+      });
       
-      setQuestionLimit({
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('quota-auth');
+        }
+        throw new Error(`quota-${response.status}`);
+      }
+      
+      return response.json();
+    }, 2, 1000); // Reduced retries to prevent spam
+    
+    // Store the promise to prevent duplicate requests
+    inFlightRequests.set(cacheKey, fetchPromise);
+    
+    try {
+      const limitData = await fetchPromise;
+      
+      const quotaData = {
         remaining: limitData.remaining,
         limit: limitData.limit,
         canAsk: limitData.canAsk
-      });
+      };
+      
+      // Cache the result
+      quotaCache.set(cacheKey, { data: quotaData, timestamp: now });
+      
+      setQuestionLimit(quotaData);
     } catch (error: any) {
       console.error('Error fetching question limit:', error);
       
@@ -96,8 +143,10 @@ export function QuestionLimitProvider({ children }: { children: ReactNode }) {
       setQuestionLimit(null);
     } finally {
       setIsLoading(false);
+      // Remove from in-flight requests
+      inFlightRequests.delete(cacheKey);
     }
-  };
+  }, []);
 
   return (
     <QuestionLimitContext.Provider value={{

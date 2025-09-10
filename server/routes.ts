@@ -190,7 +190,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Check user question limit
+  // Check user question limit (session-based)
+  app.get("/api/users/me/limit", async (req, res) => {
+    const requestId = req.headers['x-request-id'] || `limit-${Date.now()}`;
+    
+    try {
+      // For now, use default user ID 1, but this should be replaced with session-based auth
+      const userId = 1; // TODO: Replace with actual session user ID
+      
+      console.log(`[${requestId}] Checking limit for user ${userId}`);
+      const limitCheck = await storage.checkQuestionLimit(userId);
+      const resetAt = new Date();
+      resetAt.setDate(resetAt.getDate() + 1); // Reset daily
+      
+      console.log(`[${requestId}] User ${userId} limit: ${limitCheck.remaining}/${limitCheck.limit}`);
+      
+      // Add cache headers to prevent excessive requests
+      res.set({
+        'Cache-Control': 'private, max-age=30', // 30 second cache
+        'Vary': 'x-request-id'
+      });
+      
+      res.json({
+        total: limitCheck.limit,
+        remaining: limitCheck.remaining,
+        canAsk: limitCheck.canAsk,
+        resetAt: resetAt.toISOString()
+      });
+    } catch (error) {
+      console.error(`[${requestId}] Limit check error:`, error);
+      res.status(500).json({ 
+        code: "INTERNAL_ERROR", 
+        message: "Failed to check question limit" 
+      });
+    }
+  });
+
+  // Legacy endpoint for backward compatibility
   app.get("/api/users/:userId/limit", async (req, res) => {
     const requestId = req.headers['x-request-id'] || `limit-${Date.now()}`;
     const userId = parseInt(req.params.userId);
@@ -210,6 +246,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       resetAt.setDate(resetAt.getDate() + 1); // Reset daily
       
       console.log(`[${requestId}] User ${userId} limit: ${limitCheck.remaining}/${limitCheck.limit}`);
+      
+      // Add cache headers to prevent excessive requests
+      res.set({
+        'Cache-Control': 'private, max-age=30', // 30 second cache
+        'Vary': 'x-request-id'
+      });
       
       res.json({
         total: limitCheck.limit,

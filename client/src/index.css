@@ -43,6 +43,11 @@
 
   body {
     @apply bg-background text-foreground font-sans m-0;
+    /* Safe area support for mobile devices */
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   a,
@@ -141,4 +146,32 @@
 /* Ensure all dropdown content has proper z-index */
 [data-radix-popper-content-wrapper] {
   z-index: 1000 !important;
+}
+
+/* Mobile safe area and avatar clipping fixes */
+@media (max-width: 420px) {
+  .hero-avatar {
+    margin-top: 0 !important;
+    transform: none !important;
+  }
+  
+  /* Ensure avatar container doesn't clip */
+  .hero-avatar-container {
+    overflow: visible !important;
+    margin: 0.5rem 0 !important;
+  }
+}
+
+/* Safe area fallback for older iOS */
+@supports (padding: max(0px)) {
+  .safe-area-top {
+    padding-top: max(env(safe-area-inset-top), 1rem);
+  }
+}
+
+/* Fallback for older browsers */
+@supports not (padding: max(0px)) {
+  .safe-area-top {
+    padding-top: 1rem;
+  }
 }
