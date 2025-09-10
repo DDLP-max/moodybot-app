@@ -40,6 +40,8 @@ export default function CreativeWriterPage() {
   const [result, setResult] = useState<CreativeWriterResult | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [rateLimited, setRateLimited] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
   const { questionLimit, refreshQuestionLimit } = useQuestionLimit();
 
   // Refresh question limit on component mount
@@ -215,6 +217,32 @@ export default function CreativeWriterPage() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
   };
+
+  // Helper function to create tooltip button
+  const createTooltipButton = (tooltipId: string, ariaLabel: string, content: string) => (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      aria-describedby={`tt-${tooltipId}`}
+      className="relative inline-flex h-4 w-4 items-center justify-center rounded-full bg-amber-500/20 text-xs text-amber-400 hover:bg-amber-500/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+      onFocus={() => setActiveTooltip(tooltipId)}
+      onBlur={() => setActiveTooltip(null)}
+      onMouseEnter={() => setActiveTooltip(tooltipId)}
+      onMouseLeave={() => setActiveTooltip(null)}
+      onClick={() => setActiveTooltip(activeTooltip === tooltipId ? null : tooltipId)}
+    >
+      ?
+      {activeTooltip === tooltipId && (
+        <div
+          id={`tt-${tooltipId}`}
+          role="tooltip"
+          className="absolute left-1/2 z-50 mt-2 w-64 -translate-x-1/2 rounded-md border border-red-900/30 bg-red-900/95 p-2 text-xs text-white shadow-lg pointer-events-none"
+        >
+          {content}
+        </div>
+      )}
+    </button>
+  );
 
   const getModeIcon = (mode: string) => {
     switch (mode) {
@@ -625,14 +653,28 @@ export default function CreativeWriterPage() {
                 <div>
                   <div className="flex items-center space-x-2 mb-3">
                     <Label className="text-sm font-medium">Content Type</Label>
-                    <div className="group relative">
-                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
-                        <span className="text-xs text-amber-400">?</span>
-                      </div>
-                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
-                        {getModeDescription(mode)}
-                      </div>
-                    </div>
+                    <button
+                      type="button"
+                      aria-label="Content Type help"
+                      aria-describedby="tt-content-type"
+                      className="relative inline-flex h-4 w-4 items-center justify-center rounded-full bg-amber-500/20 text-xs text-amber-400 hover:bg-amber-500/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                      onFocus={() => setActiveTooltip('content-type')}
+                      onBlur={() => setActiveTooltip(null)}
+                      onMouseEnter={() => setActiveTooltip('content-type')}
+                      onMouseLeave={() => setActiveTooltip(null)}
+                      onClick={() => setActiveTooltip(activeTooltip === 'content-type' ? null : 'content-type')}
+                    >
+                      ?
+                      {activeTooltip === 'content-type' && (
+                        <div
+                          id="tt-content-type"
+                          role="tooltip"
+                          className="absolute left-1/2 z-50 mt-2 w-64 -translate-x-1/2 rounded-md border border-red-900/30 bg-red-900/95 p-2 text-xs text-white shadow-lg pointer-events-none"
+                        >
+                          {getModeDescription(mode)}
+                        </div>
+                      )}
+                    </button>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div 
@@ -780,14 +822,7 @@ export default function CreativeWriterPage() {
                 <div>
                   <div className="flex items-center space-x-2 mb-2">
                     <Label htmlFor="topic" className="text-sm font-medium">Topic/Premise</Label>
-                    <div className="group relative">
-                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
-                        <span className="text-xs text-amber-400">?</span>
-                      </div>
-                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
-                        Describe your story concept, article topic, or creative premise. Be specific about the core idea.
-                      </div>
-                    </div>
+                    {createTooltipButton('topic', 'Topic/Premise help', 'Describe your story concept, article topic, or creative premise. Be specific about the core idea.')}
                   </div>
                   <Textarea
                     id="topic"
@@ -801,14 +836,7 @@ export default function CreativeWriterPage() {
                 <div>
                   <div className="flex items-center space-x-2 mb-2">
                     <Label htmlFor="audience" className="text-sm font-medium">Target Audience</Label>
-                    <div className="group relative">
-                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
-                        <span className="text-xs text-amber-400">?</span>
-                      </div>
-                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
-                        Who should this feel written for? Be specific: "YA fantasy readers", "digital marketers", etc.
-                      </div>
-                    </div>
+                    {createTooltipButton('audience', 'Target Audience help', 'Who should this feel written for? Be specific: "YA fantasy readers", "digital marketers", etc.')}
                   </div>
                   <Textarea
                     id="audience"
@@ -823,14 +851,7 @@ export default function CreativeWriterPage() {
                 <div>
                   <div className="flex items-center space-x-2 mb-3">
                     <Label className="text-sm font-medium">Word Count Range</Label>
-                    <div className="group relative">
-                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
-                        <span className="text-xs text-amber-400">?</span>
-                      </div>
-                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
-                        Set your target word count. The AI will aim for this range with a maximum limit.
-                      </div>
-                    </div>
+                    {createTooltipButton('word-count', 'Word Count Range help', 'Set your target word count. The AI will aim for this range with a maximum limit.')}
                   </div>
                   
                   <div className="space-y-4">
@@ -888,19 +909,33 @@ export default function CreativeWriterPage() {
 
                 <div>
                   <div className="flex items-center space-x-2 mb-2">
-                    <Label htmlFor="instructions" className="text-sm font-medium">Instructions (Optional)</Label>
-                    <div className="group relative">
-                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
-                        <span className="text-xs text-amber-400">?</span>
-                      </div>
-                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
-                        Specific instructions for style, pacing, or content. For example: "Focus on dialogue", "Keep it under 800 words", "Use present tense"
-                      </div>
-                    </div>
+                    <Label htmlFor="instructions" className="text-sm font-medium">Extra Instructions (Optional)</Label>
+                    <button
+                      type="button"
+                      aria-label="Extra Instructions help"
+                      aria-describedby="tt-instructions"
+                      className="relative inline-flex h-4 w-4 items-center justify-center rounded-full bg-amber-500/20 text-xs text-amber-400 hover:bg-amber-500/30 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                      onFocus={() => setActiveTooltip('instructions')}
+                      onBlur={() => setActiveTooltip(null)}
+                      onMouseEnter={() => setActiveTooltip('instructions')}
+                      onMouseLeave={() => setActiveTooltip(null)}
+                      onClick={() => setActiveTooltip(activeTooltip === 'instructions' ? null : 'instructions')}
+                    >
+                      ?
+                      {activeTooltip === 'instructions' && (
+                        <div
+                          id="tt-instructions"
+                          role="tooltip"
+                          className="absolute left-1/2 z-50 mt-2 w-64 -translate-x-1/2 rounded-md border border-red-900/30 bg-red-900/95 p-2 text-xs text-white shadow-lg pointer-events-none"
+                        >
+                          Natural language instructions for style and tone. Examples: "Write it darker and more cinematic", "Keep the dialogue snappy", "Make the setting gothic"
+                        </div>
+                      )}
+                    </button>
                   </div>
                   <Textarea
                     id="instructions"
-                    placeholder="Specific instructions for style, pacing, or content..."
+                    placeholder="e.g., Write it darker and more cinematic, keep the dialogue snappy, make the setting gothic."
                     value={structure}
                     onChange={(e) => setStructure(e.target.value)}
                     className="mt-1"
@@ -910,14 +945,7 @@ export default function CreativeWriterPage() {
                 <div>
                   <div className="flex items-center space-x-2 mb-2">
                     <Label htmlFor="extras" className="text-sm font-medium">Extras (Optional)</Label>
-                    <div className="group relative">
-                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
-                        <span className="text-xs text-amber-400">?</span>
-                      </div>
-                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
-                        Additional instructions like "include dialogue", "use subheads", "present tense", etc.
-                      </div>
-                    </div>
+                    {createTooltipButton('extras', 'Extras help', 'Additional instructions like "include dialogue", "use subheads", "present tense", etc.')}
                   </div>
                   <Textarea
                     id="extras"
@@ -1046,14 +1074,7 @@ export default function CreativeWriterPage() {
                 <div>
                   <div className="flex items-center space-x-2 mb-2">
                     <Label className="text-sm font-medium">Mood</Label>
-                    <div className="group relative">
-                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
-                        <span className="text-xs text-amber-400">?</span>
-                      </div>
-                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
-                        The overall emotional tone and writing style
-                      </div>
-                    </div>
+                    {createTooltipButton('mood', 'Mood help', 'The overall emotional tone and writing style')}
                   </div>
                   <Select value={mood} onValueChange={setMood}>
                     <SelectTrigger className="mt-1">
@@ -1075,14 +1096,7 @@ export default function CreativeWriterPage() {
                 <div>
                   <div className="flex items-center space-x-2 mb-2">
                     <Label className="text-sm font-medium">Intensity: {intensity[0]}/5</Label>
-                    <div className="group relative">
-                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
-                        <span className="text-xs text-amber-400">?</span>
-                      </div>
-                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
-                        Sentence compression, vividness, and tempo. Higher = more intense writing.
-                      </div>
-                    </div>
+                    {createTooltipButton('intensity', 'Intensity help', 'Sentence compression, vividness, and tempo. Higher = more intense writing.')}
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                     <span>🟦 Subtle</span>
@@ -1104,14 +1118,7 @@ export default function CreativeWriterPage() {
                 <div>
                   <div className="flex items-center space-x-2 mb-2">
                     <Label className="text-sm font-medium">Edge: {edge[0]}/5</Label>
-                    <div className="group relative">
-                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
-                        <span className="text-xs text-amber-400">?</span>
-                      </div>
-                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
-                        Spice/roast level. Keep ≤3 for brand-safe content.
-                      </div>
-                    </div>
+                    {createTooltipButton('edge', 'Edge help', 'Spice/roast level. Keep ≤3 for brand-safe content.')}
                   </div>
                   <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                     <span>✨ Polite</span>
@@ -1133,14 +1140,7 @@ export default function CreativeWriterPage() {
                 <div>
                   <div className="flex items-center space-x-2 mb-2">
                     <Label className="text-sm font-medium">Carebear to Policehorse: {carebearToPolicehorse[0]}/10</Label>
-                    <div className="group relative">
-                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
-                        <span className="text-xs text-amber-400">?</span>
-                      </div>
-                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
-                        Softness vs. brutality scale. 0 = gentle, 10 = harsh.
-                      </div>
-                    </div>
+                    {createTooltipButton('carebear', 'Carebear to Policehorse help', 'Softness vs. brutality scale. 0 = gentle, 10 = harsh.')}
                   </div>
                   <Slider
                     value={carebearToPolicehorse}
@@ -1163,14 +1163,7 @@ export default function CreativeWriterPage() {
                   />
                   <div className="flex items-center space-x-2">
                     <Label htmlFor="gothic-flourish" className="text-sm font-medium">Gothic Flourish</Label>
-                    <div className="group relative">
-                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
-                        <span className="text-xs text-amber-400">?</span>
-                      </div>
-                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
-                        Add dark, atmospheric imagery and poetic language
-                      </div>
-                    </div>
+                    {createTooltipButton('gothic', 'Gothic Flourish help', 'Add dark, atmospheric imagery and poetic language')}
                   </div>
                 </div>
               </CardContent>
