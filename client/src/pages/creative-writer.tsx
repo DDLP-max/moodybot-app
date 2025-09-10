@@ -50,17 +50,74 @@ export default function CreativeWriterPage() {
     refreshQuestionLimit(1); // Using default user ID 1
   }, [refreshQuestionLimit]);
 
-  // Debug form state changes
-  useEffect(() => {
-    console.log('Form state updated:', {
-      topicOrPremise,
-      audience,
-      mode,
-      wordCountTarget,
-      maxWords,
-      activePreset
-    });
-  }, [topicOrPremise, audience, mode, wordCountTarget, maxWords, activePreset]);
+  // Auto-Selection Routing Functions (moved up to avoid TDZ)
+  const autoSelectCreative = (prompt: string, manualStyle?: string, manualGenre?: string, manualPOV?: string, lengthHint?: number) => {
+    const lower = prompt.toLowerCase();
+    
+    // 1) Form Detection
+    let style = "short_story"; // default
+    if (manualStyle) {
+      style = manualStyle;
+    } else {
+      if (/\bpoem|verse|sonnet\b/.test(lower)) style = "poem";
+      else if (/\bscreenplay|script|slugline\b/.test(lower)) style = "screenplay";
+      else if (/\bmonologue|speech|soliloquy\b/.test(lower)) style = "monologue";
+      else if (/\bessay|article|op-ed|op ed|opinion\b/.test(lower)) style = "article";
+      else if (/\bchapter|opening scene|pilot\b/.test(lower)) style = "chapter";
+      else if (/\bmicro|very short|100-300 words\b/.test(lower)) style = "microfiction";
+    }
+
+    // 2) Genre Detection
+    const genreMap: [string, RegExp][] = [
+      ["fantasy", /\b(crown|kingdom|dragon|sorcer|prophe|knight|castle)\b/],
+      ["sci_fi", /\b(ship|orbit|ai|android|quantum|colony|station|neural)\b/],
+      ["horror", /\b(crypt|apparit|haunt|ritual|blood|possession|eldritch)\b/],
+      ["thriller", /\b(stakeout|heist|fixer|cartel|spy|chase|assassin)\b/],
+      ["romance", /\b(lover|kiss|heartbreak|confession|chemistry)\b/],
+      ["historical", /\b(regency|dynasty|trench|victorian|roman|192\d|18\d\d)\b/],
+      ["humor", /\b(parody|satire|sketch|bit|roast|absurd)\b/],
+      ["contemporary", /\b(apartment|therapy|bartender|rideshare|startup|roommate)\b/],
+    ];
+    
+    let genre = "other";
+    if (manualGenre) {
+      genre = manualGenre;
+    } else {
+      for (const [g, rx] of genreMap) {
+        if (rx.test(lower)) {
+          genre = g;
+          break;
+        }
+      }
+    }
+
+    // 3) POV Detection
+    let pov = "first_close"; // default
+    if (manualPOV) {
+      pov = manualPOV;
+    } else {
+      if (/you\b/.test(lower) && /imperative|instructions|address/.test(lower)) {
+        pov = "second";
+      } else if (["article", "screenplay"].includes(style)) {
+        pov = style === "screenplay" ? "screenplay" : "third_omniscient";
+      }
+    }
+
+    // 4) Tense Detection
+    const tense = /now|tonight|as it happens|live/.test(lower) ? "present" : "past";
+
+    // 5) Target Words
+    let target_words = lengthHint || 
+      (style === "chapter" ? 1100 :
+       style === "short_story" ? 1000 :
+       style === "microfiction" ? 220 :
+       style === "poem" ? 0 : // line-based
+       style === "monologue" ? 700 :
+       style === "screenplay" ? 600 : // ~1–2 pages worth of action/dialog
+       900);
+
+    return { style, genre, pov, tense, target_words };
+  };
 
   // Form state
   const [mode, setMode] = useState("fiction_chapter");
@@ -80,7 +137,17 @@ export default function CreativeWriterPage() {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [autoSelect, setAutoSelect] = useState(true);
 
-
+  // Debug form state changes
+  useEffect(() => {
+    console.log('Form state updated:', {
+      topicOrPremise,
+      audience,
+      mode,
+      wordCountTarget,
+      maxWords,
+      activePreset
+    });
+  }, [topicOrPremise, audience, mode, wordCountTarget, maxWords, activePreset]);
 
   async function handleGenerate() {
     setErr(null);
@@ -418,76 +485,6 @@ export default function CreativeWriterPage() {
   };
 
   // Auto-Selection Routing Functions
-  const autoSelectCreative = (prompt: string, manualStyle?: string, manualGenre?: string, manualPOV?: string, lengthHint?: number) => {
-    const lower = prompt.toLowerCase();
-    
-    // 1) Form Detection
-    let style = "short_story"; // default
-    if (manualStyle) {
-      style = manualStyle;
-    } else if (/\bpoem|verse|sonnet\b/.test(lower)) {
-      style = "poem";
-    } else if (/\bscreenplay|script|slugline\b/.test(lower)) {
-      style = "screenplay";
-    } else if (/\bmonologue|speech|soliloquy\b/.test(lower)) {
-      style = "monologue";
-    } else if (/\bessay|article|op-ed|op ed|opinion\b/.test(lower)) {
-      style = "article";
-    } else if (/\bchapter|opening scene|pilot\b/.test(lower)) {
-      style = "chapter";
-    } else if (/\bmicro|very short|100-300 words\b/.test(lower)) {
-      style = "microfiction";
-    }
-
-    // 2) Genre Detection
-    const genreMap: [string, RegExp][] = [
-      ["fantasy", /\b(crown|kingdom|dragon|sorcer|prophe|knight|castle)\b/],
-      ["sci_fi", /\b(ship|orbit|ai|android|quantum|colony|station|neural)\b/],
-      ["horror", /\b(crypt|apparit|haunt|ritual|blood|possession|eldritch)\b/],
-      ["thriller", /\b(stakeout|heist|fixer|cartel|spy|chase|assassin)\b/],
-      ["romance", /\b(lover|kiss|heartbreak|confession|chemistry)\b/],
-      ["historical", /\b(regency|dynasty|trench|victorian|roman|192\d|18\d\d)\b/],
-      ["humor", /\b(parody|satire|sketch|bit|roast|absurd)\b/],
-      ["contemporary", /\b(apartment|therapy|bartender|rideshare|startup|roommate)\b/],
-    ];
-    
-    let genre = "other";
-    if (manualGenre) {
-      genre = manualGenre;
-    } else {
-      for (const [g, rx] of genreMap) {
-        if (rx.test(lower)) {
-          genre = g;
-          break;
-        }
-      }
-    }
-
-    // 3) POV Detection
-    let pov = "first_close"; // default
-    if (manualPOV) {
-      pov = manualPOV;
-    } else if (/you\b/.test(lower) && /imperative|instructions|address/.test(lower)) {
-      pov = "second";
-    } else if (["article", "screenplay"].includes(style)) {
-      pov = style === "screenplay" ? "screenplay" : "third_omniscient";
-    }
-
-    // 4) Tense Detection
-    const tense = /now|tonight|as it happens|live/.test(lower) ? "present" : "past";
-
-    // 5) Target Words
-    let target_words = lengthHint || 
-      (style === "chapter" ? 1100 :
-       style === "short_story" ? 1000 :
-       style === "microfiction" ? 220 :
-       style === "poem" ? 0 : // line-based
-       style === "monologue" ? 700 :
-       style === "screenplay" ? 600 : // ~1–2 pages worth of action/dialog
-       900);
-
-    return { style, genre, pov, tense, target_words };
-  };
 
   const getAutoSelectDisplay = (prompt: string) => {
     const routing = autoSelectCreative(prompt);
