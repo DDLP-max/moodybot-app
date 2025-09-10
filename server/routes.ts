@@ -591,7 +591,7 @@ Generate the ${mode} in MoodyBot voice. Obey structure and word counts. No meta 
             { role: "user", content: creativeWriterPrompt }
           ],
           temperature: 0.7,
-          max_tokens: Math.min(max_words * 2, 4000) // Rough token estimation
+          max_tokens: Math.min(max_words * 1.5, 8000) // Better token estimation: ~1.5 tokens per word
         }),
       });
 
@@ -625,15 +625,74 @@ Generate the ${mode} in MoodyBot voice. Obey structure and word counts. No meta 
       const json = await openRouterRes.json();
       const aiReply = json.choices?.[0]?.message?.content || "Failed to generate creative content";
       const usage = json.usage || { total_tokens: 0 };
+      const finishReason = json.choices?.[0]?.finish_reason || "unknown";
 
-      console.log(`[${requestId}] Generated content (${usage.total_tokens} tokens)`);
+      // Count actual words in generated content
+      const actualWordCount = aiReply.trim().split(/\s+/).length;
+      const isTruncated = finishReason === "length" || actualWordCount < (word_count_target * 0.8);
+      
+      console.log(`[${requestId}] Generated content: ${actualWordCount} words (target: ${word_count_target}), finish_reason: ${finishReason}, truncated: ${isTruncated}`);
 
+      // If content is truncated, attempt to complete it
+      let finalContent = aiReply;
+      if (isTruncated && finishReason === "length") {
+        console.log(`[${requestId}] Content truncated due to token limit, attempting completion...`);
+        
+        try {
+          // Get the last 100 words as context for completion
+          const words = aiReply.trim().split(/\s+/);
+          const contextWords = words.slice(-100).join(' ');
+          
+          const completionPrompt = `Complete this ${mode} that was cut off mid-sentence. Continue naturally from where it left off and provide a proper conclusion. Do not repeat any previous content.
+
+Context: "${contextWords}"
+
+Complete the ${mode} to reach approximately ${word_count_target} words total.`;
+
+          const completionRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${apiKey}`,
+              "HTTP-Referer": "https://app.moodybot.ai",
+              "X-Title": "MoodyBot"
+            },
+            body: JSON.stringify({
+              model: "x-ai/grok-4",
+              messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: completionPrompt }
+              ],
+              temperature: 0.7,
+              max_tokens: Math.min((word_count_target - actualWordCount) * 1.5, 2000)
+            }),
+          });
+
+          if (completionRes.ok) {
+            const completionJson = await completionRes.json();
+            const completion = completionJson.choices?.[0]?.message?.content || "";
+            if (completion.trim()) {
+              finalContent = aiReply + " " + completion.trim();
+              console.log(`[${requestId}] Completion added: ${completion.trim().split(/\s+/).length} additional words`);
+            }
+          }
+        } catch (completionError) {
+          console.error(`[${requestId}] Completion failed:`, completionError);
+        }
+      }
+
+      const finalWordCount = finalContent.trim().split(/\s+/).length;
+      
       const responseData = {
         id: `gen_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        text: aiReply,
+        text: finalContent,
         personaResolved: req.body.auto_selected ? req.body.routing : null,
         usage: {
-          tokens: usage.total_tokens || 0
+          tokens: usage.total_tokens || 0,
+          words: finalWordCount,
+          target_words: word_count_target,
+          completion_status: isTruncated ? (finalContent !== aiReply ? "completed" : "truncated") : "complete",
+          finish_reason: finishReason
         },
         remaining: updatedLimitCheck.remaining,
         limit: updatedLimitCheck.limit
@@ -660,6 +719,94 @@ Generate the ${mode} in MoodyBot voice. Obey structure and word counts. No meta 
           message: "An unexpected error occurred"
         });
       }
+    }
+  });
+
+  // Creative Writer Resume endpoint
+  app.post("/api/creative-writer/resume", async (req, res) => {
+    const requestId = req.headers['x-request-id'] || `resume-${Date.now()}`;
+    
+    try {
+      const { 
+        mode, 
+        context, 
+        target_words, 
+        current_words,
+        userId 
+      } = req.body;
+      
+      console.log(`[${requestId}] Resume request: mode=${mode}, current_words=${current_words}, target_words=${target_words}`);
+      
+      if (!mode || !context || !target_words || !current_words) {
+        return res.status(400).json({ 
+          code: "MISSING_FIELDS",
+          message: "Missing required fields: mode, context, target_words, current_words" 
+        });
+      }
+
+      const apiKey = (process.env.OPENROUTER_API_KEY || "").trim();
+      if (!apiKey) {
+        return res.status(500).json({ error: "Server missing OPENROUTER_API_KEY" });
+      }
+
+      const systemPrompt = systemPromptManager.getSystemPrompt();
+      const remainingWords = Math.max(0, target_words - current_words);
+      
+      const resumePrompt = `Complete this ${mode} that was cut off. Continue naturally from where it left off and provide a proper conclusion. Do not repeat any previous content.
+
+Context: "${context}"
+
+Complete the ${mode} to reach approximately ${target_words} words total (you need to add about ${remainingWords} more words).`;
+
+      const openRouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+          "HTTP-Referer": "https://app.moodybot.ai",
+          "X-Title": "MoodyBot"
+        },
+        body: JSON.stringify({
+          model: "x-ai/grok-4",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: resumePrompt }
+          ],
+          temperature: 0.7,
+          max_tokens: Math.min(remainingWords * 1.5, 2000)
+        }),
+      });
+
+      if (!openRouterRes.ok) {
+        const errorText = await openRouterRes.text();
+        console.error(`[${requestId}] OpenRouter API error (${openRouterRes.status}):`, errorText);
+        return res.status(502).json({
+          code: "AI_SERVICE_ERROR",
+          message: "AI service returned an error"
+        });
+      }
+
+      const json = await openRouterRes.json();
+      const completion = json.choices?.[0]?.message?.content || "";
+      const usage = json.usage || { total_tokens: 0 };
+      const completionWordCount = completion.trim().split(/\s+/).length;
+
+      console.log(`[${requestId}] Resume completion: ${completionWordCount} words added`);
+
+      res.json({
+        id: `resume_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        text: completion,
+        usage: {
+          tokens: usage.total_tokens || 0,
+          words: completionWordCount
+        }
+      });
+    } catch (error: any) {
+      console.error(`[${requestId}] Resume API error:`, error);
+      res.status(500).json({
+        code: "INTERNAL_ERROR",
+        message: "An unexpected error occurred"
+      });
     }
   });
 

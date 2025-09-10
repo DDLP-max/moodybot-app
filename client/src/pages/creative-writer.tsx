@@ -32,6 +32,14 @@ interface CreativeWriterResult {
     tense: string;
     target_words: number;
   };
+  usage?: {
+    tokens: number;
+    words: number;
+    target_words: number;
+    completion_status: string;
+    finish_reason: string;
+  };
+  completion_status?: string;
 }
 
 export default function CreativeWriterPage() {
@@ -150,6 +158,60 @@ export default function CreativeWriterPage() {
     });
   }, [topicOrPremise, audience, mode, wordCountTarget, maxWords, activePreset]);
 
+  async function handleResume() {
+    if (!result?.content || result.completion_status !== "truncated") {
+      return;
+    }
+    
+    setLoading(true);
+    setIsSubmitting(true);
+    setErr(null);
+    
+    try {
+      // Get the last 100 words as context
+      const words = result.content.trim().split(/\s+/);
+      const contextWords = words.slice(-100).join(' ');
+      
+      const data = await fetchJSON("/api/creative-writer/resume", {
+        method: "POST",
+        body: JSON.stringify({
+          mode: result.mode,
+          context: contextWords,
+          target_words: result.word_count_target,
+          current_words: words.length,
+          userId: 1
+        }),
+      });
+      
+      // Append the resumed content
+      setResult(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          content: prev.content + " " + data.text,
+          completion_status: "completed",
+          usage: {
+            tokens: (prev.usage?.tokens || 0) + (data.usage?.tokens || 0),
+            words: (prev.usage?.words || 0) + (data.usage?.words || 0),
+            target_words: prev.usage?.target_words || prev.word_count_target,
+            completion_status: "completed",
+            finish_reason: "completed"
+          }
+        };
+      });
+      
+    } catch (error) {
+      if (error instanceof FetchError) {
+        setErr(error.message);
+      } else {
+        setErr("Failed to resume content. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+      setIsSubmitting(false);
+    }
+  }
+
   async function handleGenerate() {
     // Prevent multiple rapid clicks
     if (isSubmitting || loading) {
@@ -211,7 +273,9 @@ export default function CreativeWriterPage() {
           carebear_to_policehorse: carebearToPolicehorse[0]
         },
         auto_selected: data.personaResolved ? true : false,
-        routing: data.personaResolved
+        routing: data.personaResolved,
+        usage: data.usage || {},
+        completion_status: data.usage?.completion_status || "complete"
       });
       
       // Update question limit from response data (no need to refetch)
@@ -1548,10 +1612,35 @@ export default function CreativeWriterPage() {
                       >
                         🔄 Regenerate
                       </Button>
+                      {result.completion_status === "truncated" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleResume}
+                          className="text-xs border-yellow-900/30 hover:bg-yellow-800/20 ml-2"
+                        >
+                          ➕ Resume
+                        </Button>
+                      )}
                     </div>
                   </CardTitle>
                   <CardDescription className="text-muted-foreground">
                     {getModeDescription(result.mode)} • {result.word_count_target} words target
+                    {result.usage?.words && (
+                      <span className="ml-2 text-green-400">
+                        ({result.usage.words} words generated)
+                      </span>
+                    )}
+                    {result.completion_status === "truncated" && (
+                      <div className="mt-2 text-xs text-yellow-300 bg-yellow-900/20 px-2 py-1 rounded">
+                        ⚠️ Content was truncated due to length limits
+                      </div>
+                    )}
+                    {result.completion_status === "completed" && (
+                      <div className="mt-2 text-xs text-green-300 bg-green-900/20 px-2 py-1 rounded">
+                        ✅ Content completed automatically
+                      </div>
+                    )}
                     {result.auto_selected && result.routing && (
                       <div className="mt-2 text-xs text-indigo-300 bg-indigo-900/20 px-2 py-1 rounded">
                         Auto-selected: {result.routing.style} • {result.routing.genre} • {result.routing.pov} • {result.routing.tense}
