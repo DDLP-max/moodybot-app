@@ -42,6 +42,7 @@ export default function CreativeWriterPage() {
   const [rateLimited, setRateLimited] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
+  const [activePreset, setActivePreset] = useState<string | null>(null);
   const { questionLimit, refreshQuestionLimit } = useQuestionLimit();
 
   // Refresh question limit on component mount
@@ -49,12 +50,24 @@ export default function CreativeWriterPage() {
     refreshQuestionLimit(1); // Using default user ID 1
   }, [refreshQuestionLimit]);
 
+  // Debug form state changes
+  useEffect(() => {
+    console.log('Form state updated:', {
+      topicOrPremise,
+      audience,
+      mode,
+      wordCountTarget,
+      maxWords,
+      activePreset
+    });
+  }, [topicOrPremise, audience, mode, wordCountTarget, maxWords, activePreset]);
+
   // Form state
   const [mode, setMode] = useState("fiction_chapter");
   const [topicOrPremise, setTopicOrPremise] = useState("");
   const [audience, setAudience] = useState("");
   const [wordCountTarget, setWordCountTarget] = useState(1000);
-  const [maxWords, setMaxWords] = useState(1100);
+  const [maxWords, setMaxWords] = useState(1200);
   const [structure, setStructure] = useState("");
   const [extras, setExtras] = useState("");
   
@@ -67,76 +80,7 @@ export default function CreativeWriterPage() {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [autoSelect, setAutoSelect] = useState(true);
 
-  // Presets
-  const presets = {
-    fiction_chapter: {
-      topic: "Throne of Ashes — runaway princess bargains with the God of Crows; each kiss erases a memory.",
-      audience: "fantasy romance readers (YA/NA blend)",
-      wordCount: 1000,
-      maxWords: 1100,
-      structure: "Cold open image (2–3 paragraphs) • Inciting encounter (dialogue forward) • Price of the pact revealed (sensory, internal conflict) • Turn: first kiss, first memory lost • Cliffhanger last line",
-      extras: "3–5 lines of sharp dialogue; present tense",
-      mood: "cinematic",
-      intensity: 4,
-      edge: 2,
-      gothicFlourish: true,
-      carebearToPolicehorse: 3
-    },
-    article: {
-      topic: "People buy status, not products—how to position without cringe.",
-      audience: "digital marketers",
-      wordCount: 500,
-      maxWords: 550,
-      structure: "Thesis in two punchy paragraphs • 3 subheads: 'Belonging > Features', 'Signals & Shortcut Brain', 'Position Without Desperation' • Close with 2-step CTA",
-      extras: "Use examples, ban buzzwords, skimmable",
-      mood: "journalistic",
-      intensity: 3,
-      edge: 3,
-      gothicFlourish: false,
-      carebearToPolicehorse: 4
-    },
-    fiction_outline: {
-      topic: "A detective with synesthesia solves crimes by tasting lies.",
-      audience: "mystery/thriller readers",
-      wordCount: 1200,
-      maxWords: 1300,
-      structure: "12 chapters with 2-3 sentence summaries each",
-      extras: "Include character arcs and plot twists",
-      mood: "noir",
-      intensity: 4,
-      edge: 4,
-      gothicFlourish: true,
-      carebearToPolicehorse: 6
-    },
-    teaser_blurbs: {
-      topic: "A time-traveling barista who can only travel to coffee shops.",
-      audience: "comedy/sci-fi readers",
-      wordCount: 300,
-      maxWords: 350,
-      structure: "5 different loglines/hooks from the same premise",
-      extras: "Mix of serious and comedic angles",
-      mood: "wry",
-      intensity: 3,
-      edge: 2,
-      gothicFlourish: false,
-      carebearToPolicehorse: 3
-    }
-  };
 
-  const applyPreset = (presetKey: keyof typeof presets) => {
-    const preset = presets[presetKey];
-    setTopicOrPremise(preset.topic);
-    setAudience(preset.audience);
-    setWordCountTarget(preset.wordCount);
-    setMaxWords(preset.maxWords);
-    setStructure(preset.structure);
-    setExtras(preset.extras);
-    setMood(preset.mood);
-    setIntensity([preset.intensity]);
-    setEdge([preset.edge]);
-    setGothicFlourish(preset.gothicFlourish);
-    setCarebearToPolicehorse([preset.carebearToPolicehorse]);
-  };
 
   async function handleGenerate() {
     setErr(null);
@@ -218,6 +162,11 @@ export default function CreativeWriterPage() {
     navigator.clipboard.writeText(text);
   };
 
+  // Count words in text
+  const countWords = (text: string) => {
+    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+  };
+
   // Helper function to create tooltip button
   const createTooltipButton = (tooltipId: string, ariaLabel: string, content: string) => (
     <button
@@ -243,6 +192,77 @@ export default function CreativeWriterPage() {
       )}
     </button>
   );
+
+  // Clear all form fields
+  const clearAllFields = () => {
+    setTopicOrPremise('');
+    setAudience('');
+    setStructure('');
+    setExtras('');
+    setResult(null);
+    setErr(null);
+    setActivePreset(null);
+  };
+
+  // Preset functions to populate form fields
+  const applyPreset = (presetType: string) => {
+    console.log('Applying preset:', presetType);
+    
+    // Clear all fields first
+    clearAllFields();
+    
+    switch (presetType) {
+      case 'fiction_chapter':
+        setMode('fiction_chapter');
+        setWordCountTarget(1000);
+        setMaxWords(1200);
+        setMood('cinematic');
+        setIntensity([4]);
+        setEdge([2]);
+        setGothicFlourish(true);
+        setCarebearToPolicehorse([3]);
+        console.log('Applied Fiction Chapter preset');
+        break;
+      case 'article':
+        setMode('article');
+        setWordCountTarget(500);
+        setMaxWords(550);
+        setMood('journalistic');
+        setIntensity([3]);
+        setEdge([3]);
+        setGothicFlourish(false);
+        setCarebearToPolicehorse([4]);
+        console.log('Applied Article preset');
+        break;
+      case 'teaser_blurbs':
+        setMode('teaser_blurbs');
+        setWordCountTarget(200);
+        setMaxWords(250);
+        setMood('wry');
+        setIntensity([4]);
+        setEdge([4]);
+        setGothicFlourish(false);
+        setCarebearToPolicehorse([6]);
+        console.log('Applied Teaser Blurbs preset');
+        break;
+      case 'fiction_outline':
+        setMode('fiction_outline');
+        setWordCountTarget(1200);
+        setMaxWords(1300);
+        setMood('cinematic');
+        setIntensity([3]);
+        setEdge([2]);
+        setGothicFlourish(true);
+        setCarebearToPolicehorse([3]);
+        console.log('Applied Fiction Outline preset');
+        break;
+    }
+    
+    // Set active preset and show success feedback
+    setActivePreset(presetType);
+    setErr(`✅ Applied preset: ${presetType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}`);
+    setTimeout(() => setErr(null), 3000);
+  };
 
   const getModeIcon = (mode: string) => {
     switch (mode) {
@@ -676,14 +696,26 @@ export default function CreativeWriterPage() {
                       )}
                     </button>
                   </div>
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-sm text-muted-foreground">Quick Presets</span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={clearAllFields}
+                      className="text-xs h-7 px-2 border-red-900/30 text-red-300 hover:bg-red-900/20"
+                    >
+                      Clear All
+                    </Button>
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div 
                       className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
-                        mode === 'fiction_chapter' 
-                          ? 'bg-red-900/30 border-red-500/50' 
+                        activePreset === 'fiction_chapter' 
+                          ? 'bg-red-900/30 border-red-500/50 ring-2 ring-red-500/50' 
                           : 'bg-red-900/10 border-red-900/30 hover:bg-red-800/20'
                       }`}
-                      onClick={() => setMode('fiction_chapter')}
+                      onClick={() => applyPreset('fiction_chapter')}
                     >
                       <div className="flex items-center space-x-3">
                         <BookOpen className="h-6 w-6 text-amber-400" />
@@ -696,11 +728,11 @@ export default function CreativeWriterPage() {
                     
                     <div 
                       className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
-                        mode === 'article' 
-                          ? 'bg-red-900/30 border-red-500/50' 
+                        activePreset === 'article' 
+                          ? 'bg-red-900/30 border-red-500/50 ring-2 ring-red-500/50' 
                           : 'bg-red-900/10 border-red-900/30 hover:bg-red-800/20'
                       }`}
-                      onClick={() => setMode('article')}
+                      onClick={() => applyPreset('article')}
                     >
                       <div className="flex items-center space-x-3">
                         <FileText className="h-6 w-6 text-amber-400" />
@@ -713,11 +745,11 @@ export default function CreativeWriterPage() {
                     
                     <div 
                       className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
-                        mode === 'teaser_blurbs' 
-                          ? 'bg-red-900/30 border-red-500/50' 
+                        activePreset === 'teaser_blurbs' 
+                          ? 'bg-red-900/30 border-red-500/50 ring-2 ring-red-500/50' 
                           : 'bg-red-900/10 border-red-900/30 hover:bg-red-800/20'
                       }`}
-                      onClick={() => setMode('teaser_blurbs')}
+                      onClick={() => applyPreset('teaser_blurbs')}
                     >
                       <div className="flex items-center space-x-3">
                         <Zap className="h-6 w-6 text-amber-400" />
@@ -730,11 +762,11 @@ export default function CreativeWriterPage() {
                     
                     <div 
                       className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
-                        mode === 'fiction_outline' 
-                          ? 'bg-red-900/30 border-red-500/50' 
+                        activePreset === 'fiction_outline' 
+                          ? 'bg-red-900/30 border-red-500/50 ring-2 ring-red-500/50' 
                           : 'bg-red-900/10 border-red-900/30 hover:bg-red-800/20'
                       }`}
-                      onClick={() => setMode('fiction_outline')}
+                      onClick={() => applyPreset('fiction_outline')}
                     >
                       <div className="flex items-center space-x-3">
                         <Zap className="h-6 w-6 text-amber-400" />
@@ -828,7 +860,10 @@ export default function CreativeWriterPage() {
                     id="topic"
                     placeholder="Describe your story, article topic, or creative premise..."
                     value={topicOrPremise}
-                    onChange={(e) => setTopicOrPremise(e.target.value)}
+                    onChange={(e) => {
+                      console.log('Topic changed:', e.target.value);
+                      setTopicOrPremise(e.target.value);
+                    }}
                     className="mt-1"
                   />
                 </div>
@@ -842,7 +877,10 @@ export default function CreativeWriterPage() {
                     id="audience"
                     placeholder="Who is this for? (e.g., 'YA fantasy readers', 'digital marketers')"
                     value={audience}
-                    onChange={(e) => setAudience(e.target.value)}
+                    onChange={(e) => {
+                      console.log('Audience changed:', e.target.value);
+                      setAudience(e.target.value);
+                    }}
                     className="mt-1"
                   />
                 </div>
@@ -1454,6 +1492,21 @@ export default function CreativeWriterPage() {
                   <div className="prose prose-sm max-w-none dark:prose-invert">
                     <div className="whitespace-pre-wrap font-medium leading-relaxed text-base" style={{ color: '#ffffff' }}>
                       {result.content}
+                    </div>
+                  </div>
+                  
+                  {/* Word Count Display */}
+                  <div className="mt-4 pt-4 border-t border-red-900/30">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Word Count:</span>
+                      <div className="flex items-center space-x-4">
+                        <span className="text-amber-200 font-medium">
+                          {countWords(result.content)} words
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          Target: {result.word_count_target} | Max: {result.max_words}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   
