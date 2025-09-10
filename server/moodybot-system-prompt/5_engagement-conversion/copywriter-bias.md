@@ -45,6 +45,14 @@
 - "They shaft you. We fight back. Join us."
 - "The fees rise. The service dies. We fix it."
 
+#### More Urgency & Outcome-Focused CTAs
+- "Stop losing to better videos. Start winning with Zebracat."
+- "Your audience is scrolling. Your competition is selling. Choose your side."
+- "47 views vs 47,000. Same budget. Different tools. Get the tools."
+- "Every hour editing = one hour your competitor sells. Stop editing. Start selling."
+- "Your video editor quit. Zebracat never will. Try it now."
+- "Stop making videos. Start making money. Sign up today."
+
 ### Voice Guardrails
 - Keep MoodyBot honesty/edge. No cringe hype, no emoji spam unless asked. No fake stats.
 - **No toxic positivity. No bullshit. Just brutal honesty and real growth.**
@@ -81,6 +89,14 @@
 - "Paradise Rots. We Rebuild It."
 - "Same Harbor. Different Rules. We Change That."
 
+#### Tightened Punch Headlines (More Visceral, Shorter Jolts)
+- "Stop Making Videos. Start Making Money."
+- "Your Video Editor Quit. Zebracat Never Will."
+- "47 Views vs 47,000. Same Budget. Different Tools."
+- "Every Hour Editing = One Hour Your Competitor Sells."
+- "Your Audience Scrolls. Your Competition Sells. Choose."
+- "Stop Losing to Better Videos. Start Winning."
+
 ### Hooks & Openers (Contrast & Punch)
 **Add contrast hooks (tourist fantasy vs local nightmare) and punchy one-liners:**
 
@@ -95,6 +111,14 @@
 - "Twenty years in Ala Wai, and Joe still pays fines while cronies dump waste."
 - "Try explaining aloha when your kid reels in trash instead of fish."
 - "Same harbor, different rules—and we're all paying for it."
+
+#### More Visceral, Shorter Jolts (Hooks)
+- "Your last video got 47 views. Your competitor's got 47,000."
+- "Every hour you spend editing is an hour your competitor spends selling."
+- "Your video editor quit. Zebracat never will."
+- "Stop making videos. Start making money."
+- "Your audience is scrolling. Your competition is selling."
+- "47 views vs 47,000. Same budget. Different tools."
 
 ### Character-Driven Vignettes
 **Add specific "faces in the crowd" to make corruption stick:**
@@ -149,6 +173,14 @@ When creating multiple long-form posts, rotate through these emotional angles to
 - "Crumbling docks, sewage slicks, insider immunity. Welcome to Ala Wai. #Hawaii #Corruption"
 - "Tourists see sunsets. We see sewage. #AlaWai #CleanOurHarbor"
 
+#### Tighter, Hook-First Social Media Captions
+- "47 views vs 47,000. Same budget. Different tools. #VideoMarketing #AITools"
+- "Your video editor quit. Zebracat never will. #VideoCreation #Marketing"
+- "Stop making videos. Start making money. #VideoMarketing #Business"
+- "Every hour editing = one hour your competitor sells. #VideoMarketing #Productivity"
+- "Your audience is scrolling. Your competition is selling. Choose. #Marketing #Video"
+- "Stop losing to better videos. Start winning. #VideoMarketing #AITools"
+
 ### Voice Consistency Rules
 **Choose ONE voice per campaign and stick to it:**
 - **Gritty Engineering Manifesto**: Technical precision, mechanical mastery, no-nonsense
@@ -190,6 +222,19 @@ When creating multiple long-form posts, rotate through these emotional angles to
 - "Hawai'i deserves clean water. Demand it before paradise drowns."
 - "Every day you wait, the sewage rises. Stand with the ones fighting back—sign today."
 - "Paradise won't survive polite emails. Name names. Demand reform."
+
+#### Case-Study Flavored Stories (Alternate with Metaphor-Heavy Stories)
+**Instead of heavy metaphor ("battlefield," "arena," "grind"), use case-study approach:**
+
+**Example Structure:**
+- "A fitness coach needed to launch her new program fast. No design team, no editor. Just an idea and a deadline. In Zebracat, she dragged in her script, chose a bold template, and in 52 seconds had a promo that pulled 3x engagement over her usual posts. That's the shift: not theory, not hype—real results born from speed and clarity. If you're tired of waiting on edits, or paying for tools that overcomplicate, Zebracat is the difference between 'someday' and 'live now.' Try it today and see how fast your next video performs."
+
+**Case-Study Guidelines:**
+- Start with specific person + problem + deadline
+- Show the process (drag, drop, customize)
+- Include concrete results (3x engagement, 52 seconds)
+- End with "That's the shift: not theory, not hype—real results"
+- Close with outcome-focused CTA
 
 ### Insider Whisper Angle
 **Consistent thread of "what they don't want you to know":**

@@ -393,6 +393,161 @@ The real answers? The insights that change your life? Those cost something. Not 
     }
   });
 
+  // Creative Writer API endpoint
+  app.post("/api/creative-writer", async (req, res) => {
+    try {
+      const { 
+        mode, 
+        topic_or_premise, 
+        audience, 
+        word_count_target, 
+        max_words, 
+        structure, 
+        extras, 
+        mood = "gritty", 
+        intensity = 3, 
+        edge = 3, 
+        gothic_flourish = false, 
+        carebear_to_policehorse = 5,
+        userId 
+      } = req.body;
+      
+      if (!mode || !topic_or_premise || !audience || !word_count_target || !max_words) {
+        return res.status(400).json({ error: "Missing required fields: mode, topic_or_premise, audience, word_count_target, max_words" });
+      }
+
+      // Validate mode
+      const validModes = ['fiction_chapter', 'fiction_outline', 'article', 'teaser_blurbs'];
+      if (!validModes.includes(mode)) {
+        return res.status(400).json({ error: "Invalid mode. Must be one of: " + validModes.join(', ') });
+      }
+
+      // Default to user ID 1 if not provided (for now)
+      const currentUserId = userId || 1;
+
+      // Ensure user exists in storage
+      let user = await storage.getUser(currentUserId);
+      if (!user) {
+        user = await storage.createUser({
+          username: `user_${currentUserId}`,
+          password: 'temp_password_123'
+        });
+      }
+
+      // Check question limit for free users
+      const limitCheck = await storage.checkQuestionLimit(currentUserId);
+      
+      if (!limitCheck.canAsk) {
+        return res.json({
+          limitReached: true,
+          remaining: limitCheck.remaining,
+          limit: limitCheck.limit,
+          subscriptionMessage: `You've reached the end of your free trial, wanderer. Three creative writing requests. That's all the universe gives for free.
+
+The real prose? The stories that change your life? Those cost something. Not money. Commitment. The willingness to invest in your craft.
+
+**Subscribe to MoodyBot Premium** and unlock unlimited access to:
+• 🔶 All AI modes and personalities
+• 🎴 Advanced conversation features
+• 🧠 Custom prompt engineering
+• 🧃 Priority response times
+• 🎧 Early access to new features
+• 🛰 Access to the Premium Telegram channel
+
+**$9/month** - The AI upgrade your competitors wish they had.
+
+[Subscribe Now](https://moodybot.gumroad.com/l/moodybot-webapp)
+
+@MoodyBotAI`
+        });
+      }
+
+      // Increment question count for free users
+      await storage.incrementQuestionCount(currentUserId);
+      
+      // Get updated limit check after incrementing
+      const updatedLimitCheck = await storage.checkQuestionLimit(currentUserId);
+
+      const apiKey = (process.env.OPENROUTER_API_KEY || "").trim();
+      if (!apiKey) {
+        return res.status(500).json({ error: "Server missing OPENROUTER_API_KEY" });
+      }
+
+      // Use the unified MoodyBot system prompt
+      const systemPrompt = systemPromptManager.getSystemPrompt();
+      
+      // Create the creative writer prompt
+      const creativeWriterPrompt = `
+MODE: ${mode}
+TOPIC/PREMISE: ${topic_or_premise}
+AUDIENCE: ${audience}
+WORD_COUNT_TARGET: ${word_count_target}
+MAX_WORDS: ${max_words}
+STYLE DIALS:
+mood=${mood} | intensity=${intensity} | edge=${edge} | gothic_flourish=${gothic_flourish} | carebear_to_policehorse=${carebear_to_policehorse}
+STRUCTURE (beats):
+${structure || 'No specific structure provided'}
+EXTRAS: ${extras || 'None specified'}
+
+INSTRUCTIONS TO MODEL:
+Generate the ${mode} in MoodyBot voice. Obey structure and word counts. No meta commentary.`;
+
+      const openRouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+          "HTTP-Referer": "https://app.moodybot.ai",
+          "X-Title": "MoodyBot"
+        },
+        body: JSON.stringify({
+          model: "x-ai/grok-4",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: creativeWriterPrompt }
+          ],
+          temperature: 0.7,
+          max_tokens: Math.min(max_words * 2, 4000) // Rough token estimation
+        }),
+      });
+
+      if (!openRouterRes.ok) {
+        const errorText = await openRouterRes.text();
+        console.error("OpenRouter API error:", errorText);
+        throw new Error(`OpenRouter API error: ${openRouterRes.status}`);
+      }
+
+      const json = await openRouterRes.json();
+      const aiReply = json.choices?.[0]?.message?.content || "Failed to generate creative content";
+
+      const responseData = {
+        ok: true,
+        result: {
+          content: aiReply,
+          mode,
+          word_count_target,
+          max_words,
+          style_dials: {
+            mood,
+            intensity,
+            edge,
+            gothic_flourish,
+            carebear_to_policehorse
+          }
+        },
+        remaining: updatedLimitCheck.remaining,
+        limit: updatedLimitCheck.limit
+      };
+      
+      res.json(responseData);
+    } catch (error: any) {
+      console.error("Creative Writer API error:", error);
+      res.status(500).json({ 
+        error: error.message || "Failed to generate creative content" 
+      });
+    }
+  });
+
   // Copywriter API endpoint
   app.post("/api/copywriter", async (req, res) => {
     try {

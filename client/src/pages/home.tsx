@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Eye, Sparkles, Target } from "lucide-react";
+import { Eye, Sparkles, Target, Feather } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { User } from "lucide-react";
@@ -89,10 +89,18 @@ export default function Home() {
                 <Target className="mr-2 h-5 w-5" />
                 COPYWRITER MODE
               </Button>
+              
+              <Button 
+                className="bg-gradient-to-r from-violet-700 to-amber-500 hover:from-violet-800 hover:to-amber-600 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
+                onClick={() => setLocation("/creative-writer")}
+              >
+                <Feather className="mr-2 h-5 w-5 text-amber-200" />
+                CREATIVE WRITER
+              </Button>
             </div>
             
             {/* Mode Descriptions */}
-            <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 px-4">
+            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 px-4">
               <div className="text-center p-4 bg-background/50 rounded-lg border border-primary/20">
                 <h3 className="font-bold text-blue-500 mb-2 flex items-center justify-center">
                   <Eye className="h-4 w-4 mr-2" />
@@ -110,6 +118,16 @@ export default function Home() {
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   From Ogilvy to Outlaw: MoodyBot's Copy Engine. Create compelling titles, hooks, CTAs, and captions with brutal honesty.
+                </p>
+              </div>
+              
+              <div className="text-center p-4 bg-background/50 rounded-lg border border-primary/20">
+                <h3 className="font-bold bg-gradient-to-r from-violet-600 to-amber-500 bg-clip-text text-transparent mb-2 flex items-center justify-center">
+                  <Feather className="h-4 w-4 mr-2 text-amber-500" />
+                  Creative Writer
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Dive-bar oracle meets copywriter. Fiction, articles, outlines, and teaser blurbs with Hank Moody swagger and Bourdain grit.
                 </p>
               </div>
             </div>

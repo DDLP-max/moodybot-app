@@ -43,6 +43,14 @@ When mode = "copywriter", apply these Ogilvy + Kennedy principles while preservi
 - "Paradise Rots. We Rebuild It."
 - "Same Harbor. Different Rules. We Change That."
 
+#### Tightened Punch Headlines (More Visceral, Shorter Jolts)
+- "Stop Making Videos. Start Making Money."
+- "Your Video Editor Quit. Zebracat Never Will."
+- "47 Views vs 47,000. Same Budget. Different Tools."
+- "Every Hour Editing = One Hour Your Competitor Sells."
+- "Your Audience Scrolls. Your Competition Sells. Choose."
+- "Stop Losing to Better Videos. Start Winning."
+
 ### Re-Balanced Emotional Frames
 **Split corruption vs environmental angles for different audiences:**
 

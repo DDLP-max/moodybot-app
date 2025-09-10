@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Eye, Plus, Image, X, Upload, Sparkles } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { dynamicPersonaEngine, type PersonaAnalysis } from "@/lib/dynamicPersonaEngine";
+import { useQuestionLimit } from "@/hooks/use-question-limit";
 import { getShareUrl } from "@/config/environment";
 
 interface Message {
@@ -21,7 +22,7 @@ export default function SimplifiedChat() {
   const [message, setMessage] = useState("");
   const [currentSession, setCurrentSession] = useState<{ mode: string; sessionId: number; userId: number } | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [questionLimit, setQuestionLimit] = useState<{ remaining: number; limit: number } | null>(null);
+  const { questionLimit, refreshQuestionLimit } = useQuestionLimit();
   const [currentPersonaAnalysis, setCurrentPersonaAnalysis] = useState<PersonaAnalysis | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -95,18 +96,7 @@ export default function SimplifiedChat() {
         }
 
         // Check question limit
-        try {
-          const limitResponse = await fetch(`/api/users/${userId}/limit`);
-          if (limitResponse.ok) {
-            const limitData = await limitResponse.json();
-            console.log("Question limit data:", limitData);
-            setQuestionLimit(limitData);
-          } else {
-            console.error("Failed to get question limit, status:", limitResponse.status);
-          }
-        } catch (error) {
-          console.error("Error checking question limit:", error);
-        }
+        await refreshQuestionLimit(userId);
 
       } catch (error) {
         console.error("Session initialization error:", error);
@@ -167,7 +157,7 @@ export default function SimplifiedChat() {
         return "MoodyBot is thinking...";
       }
     },
-    onSuccess: (aiReply) => {
+    onSuccess: async (aiReply) => {
       console.log("Message sent successfully:", aiReply);
       
       // Add only the AI response since user message was already added
@@ -191,6 +181,11 @@ export default function SimplifiedChat() {
           currentPersonaAnalysis.selectedPersonas,
           true // Assume success for now
         );
+      }
+      
+      // Refresh question limit after successful request
+      if (currentSession) {
+        await refreshQuestionLimit(currentSession.userId);
       }
     },
     onError: (error) => {

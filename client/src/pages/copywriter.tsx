@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Copy, Sparkles, Target, Zap, MessageSquare, MousePointer } from "lucide-react";
+import { useQuestionLimit } from "@/hooks/use-question-limit";
 
 interface CopyOutput {
   titles: string[];
@@ -20,7 +21,12 @@ export default function CopywriterPage() {
   const [loading, setLoading] = useState(false);
   const [out, setOut] = useState<CopyOutput | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [questionLimit, setQuestionLimit] = useState<{ remaining: number; limit: number } | null>(null);
+  const { questionLimit, refreshQuestionLimit } = useQuestionLimit();
+
+  // Refresh question limit on component mount
+  useEffect(() => {
+    refreshQuestionLimit(1); // Using default user ID 1
+  }, [refreshQuestionLimit]);
 
   // Debug logging for out state
   useEffect(() => {
@@ -68,13 +74,8 @@ export default function CopywriterPage() {
         setErr("Limit reached. Please subscribe for unlimited access.");
       } else {
         setOut(data.result);
-        // Update question limit
-        if (data.remaining !== undefined && data.limit !== undefined) {
-          setQuestionLimit({
-            remaining: data.remaining,
-            limit: data.limit
-          });
-        }
+        // Refresh question limit from server
+        await refreshQuestionLimit(1);
       }
     } catch (e: any) {
       setErr(e.message || "Something broke");

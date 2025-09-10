@@ -4,6 +4,7 @@ import Chat from "@/pages/chat";
 import SimplifiedChat from "@/components/SimplifiedChat";
 import Demo from "@/pages/demo";
 import Copywriter from "@/pages/copywriter";
+import CreativeWriter from "@/pages/creative-writer";
 
 import NotFound from "@/pages/not-found"; // Optional fallback
 
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/dynamic" component={SimplifiedChat} />
       <Route path="/demo" component={Demo} />
       <Route path="/copywriter" component={Copywriter} />
+      <Route path="/creative-writer" component={CreativeWriter} />
 
       <Route component={NotFound} />
     </Switch>
