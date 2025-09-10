@@ -888,19 +888,19 @@ export default function CreativeWriterPage() {
 
                 <div>
                   <div className="flex items-center space-x-2 mb-2">
-                    <Label htmlFor="structure" className="text-sm font-medium">Structure (Optional)</Label>
+                    <Label htmlFor="instructions" className="text-sm font-medium">Instructions (Optional)</Label>
                     <div className="group relative">
                       <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
                         <span className="text-xs text-amber-400">?</span>
                       </div>
                       <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
-                        Describe the structure or beats you want. For example: "3 acts with plot twist in act 2"
+                        Specific instructions for style, pacing, or content. For example: "Focus on dialogue", "Keep it under 800 words", "Use present tense"
                       </div>
                     </div>
                   </div>
                   <Textarea
-                    id="structure"
-                    placeholder="Describe the structure or beats you want..."
+                    id="instructions"
+                    placeholder="Specific instructions for style, pacing, or content..."
                     value={structure}
                     onChange={(e) => setStructure(e.target.value)}
                     className="mt-1"
@@ -1008,10 +1008,36 @@ export default function CreativeWriterPage() {
             {/* Style Dials */}
             <Card className="bg-gradient-to-br from-red-900/10 to-amber-900/10 border-red-900/20">
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-amber-400">
-                  <Sparkles className="h-5 w-5" />
-                  <span>Style Dials</span>
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center space-x-2 text-amber-400">
+                    <Sparkles className="h-5 w-5" />
+                    <span>Style Dials</span>
+                  </CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (topicOrPremise && audience) {
+                        const recommendation = recommendPersona({
+                          contentMode: mode,
+                          audience: audience,
+                          topic: topicOrPremise
+                        });
+                        setMood(recommendation.persona === 'ogilvy' ? 'journalistic' : 
+                               recommendation.persona === 'gothic_flourish' ? 'cinematic' :
+                               recommendation.persona === 'forensic_files' ? 'wry' :
+                               recommendation.persona === 'savage_roast' ? 'romantic' : 'gritty');
+                        setIntensity([Math.round(recommendation.intensity * 5)]);
+                        setEdge([Math.round(recommendation.edge * 5)]);
+                      }
+                    }}
+                    className="text-xs border-amber-900/30 hover:bg-amber-800/20"
+                    disabled={!topicOrPremise || !audience}
+                  >
+                    <Zap className="h-3 w-3 mr-1" />
+                    Auto-Select
+                  </Button>
+                </div>
                 <CardDescription>
                   Fine-tune MoodyBot's voice and intensity with live preview
                 </CardDescription>
