@@ -477,7 +477,22 @@ The real prose? The stories that change your life? Those cost something. Not mon
       const systemPrompt = systemPromptManager.getSystemPrompt();
       
       // Create the creative writer prompt
-      const creativeWriterPrompt = `
+           // Build auto-selection context if provided
+           let autoSelectContext = '';
+           if (req.body.auto_selected && req.body.routing) {
+             const routing = req.body.routing;
+             autoSelectContext = `
+AUTO-SELECTION ROUTING (internal context):
+Form: ${routing.style}
+Genre: ${routing.genre}
+POV: ${routing.pov}
+Tense: ${routing.tense}
+Target Words: ${routing.target_words}
+
+Use this routing to inform your creative decisions. Do not mention this routing in your output.`;
+           }
+
+           const creativeWriterPrompt = `
 MODE: ${mode}
 TOPIC/PREMISE: ${topic_or_premise}
 AUDIENCE: ${audience}
@@ -488,6 +503,7 @@ mood=${mood} | intensity=${intensity} | edge=${edge} | gothic_flourish=${gothic_
 STRUCTURE (beats):
 ${structure || 'No specific structure provided'}
 EXTRAS: ${extras || 'None specified'}
+${autoSelectContext}
 
 INSTRUCTIONS TO MODEL:
 Generate the ${mode} in MoodyBot voice. Obey structure and word counts. No meta commentary.`;
@@ -520,24 +536,26 @@ Generate the ${mode} in MoodyBot voice. Obey structure and word counts. No meta 
       const json = await openRouterRes.json();
       const aiReply = json.choices?.[0]?.message?.content || "Failed to generate creative content";
 
-      const responseData = {
-        ok: true,
-        result: {
-          content: aiReply,
-          mode,
-          word_count_target,
-          max_words,
-          style_dials: {
-            mood,
-            intensity,
-            edge,
-            gothic_flourish,
-            carebear_to_policehorse
-          }
-        },
-        remaining: updatedLimitCheck.remaining,
-        limit: updatedLimitCheck.limit
-      };
+           const responseData = {
+             ok: true,
+             result: {
+               content: aiReply,
+               mode,
+               word_count_target,
+               max_words,
+               style_dials: {
+                 mood,
+                 intensity,
+                 edge,
+                 gothic_flourish,
+                 carebear_to_policehorse
+               },
+               auto_selected: req.body.auto_selected || false,
+               routing: req.body.routing || null
+             },
+             remaining: updatedLimitCheck.remaining,
+             limit: updatedLimitCheck.limit
+           };
       
       res.json(responseData);
     } catch (error: any) {

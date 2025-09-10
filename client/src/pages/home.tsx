@@ -90,13 +90,13 @@ export default function Home() {
                 COPYWRITER MODE
               </Button>
               
-              <Button 
-                className="bg-gradient-to-r from-violet-700 to-amber-500 hover:from-violet-800 hover:to-amber-600 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
-                onClick={() => setLocation("/creative-writer")}
-              >
-                <Feather className="mr-2 h-5 w-5 text-amber-200" />
-                CREATIVE WRITER
-              </Button>
+        <Button
+          className="bg-gradient-to-r from-red-700 to-amber-500 hover:from-red-800 hover:to-amber-600 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
+          onClick={() => setLocation("/creative-writer")}
+        >
+          <Feather className="mr-2 h-5 w-5 text-amber-200" />
+          CREATIVE WRITER
+        </Button>
             </div>
             
             {/* Mode Descriptions */}
@@ -122,7 +122,7 @@ export default function Home() {
               </div>
               
               <div className="text-center p-4 bg-background/50 rounded-lg border border-primary/20">
-                <h3 className="font-bold bg-gradient-to-r from-violet-600 to-amber-500 bg-clip-text text-transparent mb-2 flex items-center justify-center">
+                <h3 className="font-bold bg-gradient-to-r from-red-600 to-amber-500 bg-clip-text text-transparent mb-2 flex items-center justify-center">
                   <Feather className="h-4 w-4 mr-2 text-amber-500" />
                   Creative Writer
                 </h3>

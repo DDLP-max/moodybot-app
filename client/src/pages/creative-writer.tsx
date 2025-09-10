@@ -23,6 +23,14 @@ interface CreativeWriterResult {
     gothic_flourish: boolean;
     carebear_to_policehorse: number;
   };
+  auto_selected?: boolean;
+  routing?: {
+    style: string;
+    genre: string;
+    pov: string;
+    tense: string;
+    target_words: number;
+  };
 }
 
 export default function CreativeWriterPage() {
@@ -52,6 +60,8 @@ export default function CreativeWriterPage() {
   const [edge, setEdge] = useState([3]);
   const [gothicFlourish, setGothicFlourish] = useState(false);
   const [carebearToPolicehorse, setCarebearToPolicehorse] = useState([5]);
+  const [selectedMood, setSelectedMood] = useState<string | null>(null);
+  const [autoSelect, setAutoSelect] = useState(true);
 
   // Presets
   const presets = {
@@ -133,6 +143,16 @@ export default function CreativeWriterPage() {
     
     setLoading(true);
     try {
+      // Get auto-selection routing if enabled
+      let routingData = {};
+      if (autoSelect) {
+        const routing = autoSelectCreative(topicOrPremise, mode, undefined, undefined, wordCountTarget);
+        routingData = {
+          auto_selected: true,
+          routing: routing
+        };
+      }
+
       const res = await fetch("/api/creative-writer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -149,7 +169,8 @@ export default function CreativeWriterPage() {
           edge: edge[0],
           gothic_flourish: gothicFlourish,
           carebear_to_policehorse: carebearToPolicehorse[0],
-          userId: 1 
+          userId: 1,
+          ...routingData
         }),
       });
       const data = await res.json();
@@ -239,12 +260,171 @@ export default function CreativeWriterPage() {
 
   const getModeActionText = (mode: string) => {
     switch (mode) {
-      case 'fiction_chapter': return '✍️ Write Chapter';
-      case 'fiction_outline': return '📝 Draft Outline';
-      case 'article': return '📰 Craft Article';
-      case 'teaser_blurbs': return '🎭 Create Blurbs';
-      default: return '✍️ Generate Content';
+      case 'fiction_chapter': return 'Write Chapter';
+      case 'fiction_outline': return 'Draft Outline';
+      case 'article': return 'Craft Article';
+      case 'teaser_blurbs': return 'Create Blurbs';
+      default: return 'Generate Content';
     }
+  };
+
+  const getRecommendedPersona = (topic: string, audience: string) => {
+    const topicLower = topic.toLowerCase();
+    const audienceLower = audience.toLowerCase();
+    
+    // Fantasy/Romance detection
+    if (topicLower.includes('fantasy') || topicLower.includes('princess') || topicLower.includes('magic') || 
+        audienceLower.includes('fantasy') || audienceLower.includes('romance')) {
+      return 'Gothic Flourish + Cinematic (Perfect for fantasy romance with atmospheric worldbuilding)';
+    }
+    
+    // Marketing/Business detection
+    if (topicLower.includes('marketing') || topicLower.includes('business') || topicLower.includes('product') ||
+        audienceLower.includes('marketer') || audienceLower.includes('business') || audienceLower.includes('entrepreneur')) {
+      return 'Ogilvy Copywriter + Journalistic (Clear, persuasive marketing voice)';
+    }
+    
+    // Mystery/Thriller detection
+    if (topicLower.includes('mystery') || topicLower.includes('detective') || topicLower.includes('crime') ||
+        audienceLower.includes('mystery') || audienceLower.includes('thriller')) {
+      return 'Forensic Files + Wry (Cold psychological narration with subtle wit)';
+    }
+    
+    // Comedy/Satire detection
+    if (topicLower.includes('comedy') || topicLower.includes('funny') || topicLower.includes('satire') ||
+        audienceLower.includes('comedy') || audienceLower.includes('humor')) {
+      return 'Savage Roast + Wry (Biting humor with sharp wit)';
+    }
+    
+    // Default recommendation
+    return 'MoodyBot Default + Gritty (Bourdain/Hank Moody mix for authentic voice)';
+  };
+
+  const applyRecommendedSettings = (topic: string, audience: string) => {
+    const topicLower = topic.toLowerCase();
+    const audienceLower = audience.toLowerCase();
+    
+    // Fantasy/Romance settings
+    if (topicLower.includes('fantasy') || topicLower.includes('princess') || topicLower.includes('magic') || 
+        audienceLower.includes('fantasy') || audienceLower.includes('romance')) {
+      setMood('cinematic');
+      setIntensity([4]);
+      setEdge([2]);
+      setGothicFlourish(true);
+      setCarebearToPolicehorse([3]);
+    }
+    // Marketing/Business settings
+    else if (topicLower.includes('marketing') || topicLower.includes('business') || topicLower.includes('product') ||
+             audienceLower.includes('marketer') || audienceLower.includes('business') || audienceLower.includes('entrepreneur')) {
+      setMood('journalistic');
+      setIntensity([3]);
+      setEdge([2]);
+      setGothicFlourish(false);
+      setCarebearToPolicehorse([4]);
+    }
+    // Mystery/Thriller settings
+    else if (topicLower.includes('mystery') || topicLower.includes('detective') || topicLower.includes('crime') ||
+             audienceLower.includes('mystery') || audienceLower.includes('thriller')) {
+      setMood('wry');
+      setIntensity([3]);
+      setEdge([3]);
+      setGothicFlourish(false);
+      setCarebearToPolicehorse([5]);
+    }
+    // Comedy/Satire settings
+    else if (topicLower.includes('comedy') || topicLower.includes('funny') || topicLower.includes('satire') ||
+             audienceLower.includes('comedy') || audienceLower.includes('humor')) {
+      setMood('wry');
+      setIntensity([4]);
+      setEdge([4]);
+      setGothicFlourish(false);
+      setCarebearToPolicehorse([7]);
+    }
+    // Default settings
+    else {
+      setMood('gritty');
+      setIntensity([3]);
+      setEdge([3]);
+      setGothicFlourish(false);
+      setCarebearToPolicehorse([5]);
+    }
+  };
+
+  // Auto-Selection Routing Functions
+  const autoSelectCreative = (prompt: string, manualStyle?: string, manualGenre?: string, manualPOV?: string, lengthHint?: number) => {
+    const lower = prompt.toLowerCase();
+    
+    // 1) Form Detection
+    let style = "short_story"; // default
+    if (manualStyle) {
+      style = manualStyle;
+    } else if (/\bpoem|verse|sonnet\b/.test(lower)) {
+      style = "poem";
+    } else if (/\bscreenplay|script|slugline\b/.test(lower)) {
+      style = "screenplay";
+    } else if (/\bmonologue|speech|soliloquy\b/.test(lower)) {
+      style = "monologue";
+    } else if (/\bessay|article|op-ed|op ed|opinion\b/.test(lower)) {
+      style = "article";
+    } else if (/\bchapter|opening scene|pilot\b/.test(lower)) {
+      style = "chapter";
+    } else if (/\bmicro|very short|100-300 words\b/.test(lower)) {
+      style = "microfiction";
+    }
+
+    // 2) Genre Detection
+    const genreMap: [string, RegExp][] = [
+      ["fantasy", /\b(crown|kingdom|dragon|sorcer|prophe|knight|castle)\b/],
+      ["sci_fi", /\b(ship|orbit|ai|android|quantum|colony|station|neural)\b/],
+      ["horror", /\b(crypt|apparit|haunt|ritual|blood|possession|eldritch)\b/],
+      ["thriller", /\b(stakeout|heist|fixer|cartel|spy|chase|assassin)\b/],
+      ["romance", /\b(lover|kiss|heartbreak|confession|chemistry)\b/],
+      ["historical", /\b(regency|dynasty|trench|victorian|roman|192\d|18\d\d)\b/],
+      ["humor", /\b(parody|satire|sketch|bit|roast|absurd)\b/],
+      ["contemporary", /\b(apartment|therapy|bartender|rideshare|startup|roommate)\b/],
+    ];
+    
+    let genre = "other";
+    if (manualGenre) {
+      genre = manualGenre;
+    } else {
+      for (const [g, rx] of genreMap) {
+        if (rx.test(lower)) {
+          genre = g;
+          break;
+        }
+      }
+    }
+
+    // 3) POV Detection
+    let pov = "first_close"; // default
+    if (manualPOV) {
+      pov = manualPOV;
+    } else if (/you\b/.test(lower) && /imperative|instructions|address/.test(lower)) {
+      pov = "second";
+    } else if (["article", "screenplay"].includes(style)) {
+      pov = style === "screenplay" ? "screenplay" : "third_omniscient";
+    }
+
+    // 4) Tense Detection
+    const tense = /now|tonight|as it happens|live/.test(lower) ? "present" : "past";
+
+    // 5) Target Words
+    let target_words = lengthHint || 
+      (style === "chapter" ? 1100 :
+       style === "short_story" ? 1000 :
+       style === "microfiction" ? 220 :
+       style === "poem" ? 0 : // line-based
+       style === "monologue" ? 700 :
+       style === "screenplay" ? 600 : // ~1–2 pages worth of action/dialog
+       900);
+
+    return { style, genre, pov, tense, target_words };
+  };
+
+  const getAutoSelectDisplay = (prompt: string) => {
+    const routing = autoSelectCreative(prompt);
+    return `${routing.style} • ${routing.genre} • ${routing.pov} • ${routing.tense} • ~${routing.target_words} words`;
   };
 
   return (
@@ -279,7 +459,7 @@ export default function CreativeWriterPage() {
       <div className="container mx-auto px-4 py-8 max-w-6xl relative z-10">
         {/* Hero Section */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-black mb-4 bg-gradient-to-r from-violet-700 to-amber-500 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-black mb-4 bg-gradient-to-r from-red-700 to-amber-500 bg-clip-text text-transparent">
             Creative Writer Mode
           </h1>
           <p className="text-xl text-muted-foreground mb-2">
@@ -593,6 +773,81 @@ export default function CreativeWriterPage() {
               </CardContent>
             </Card>
 
+            {/* Auto Select Toggle */}
+            <Card className="bg-gradient-to-br from-indigo-900/20 to-purple-900/20 border-indigo-900/30 mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2 text-indigo-400">
+                  <Zap className="h-5 w-5" />
+                  <span>Auto Selection</span>
+                </CardTitle>
+                <CardDescription>
+                  Let MoodyBot automatically detect the best form, genre, and style for your content
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="auto-select"
+                      checked={autoSelect}
+                      onCheckedChange={setAutoSelect}
+                    />
+                    <Label htmlFor="auto-select" className="text-sm font-medium">
+                      Auto Select (Recommended)
+                    </Label>
+                  </div>
+                  {autoSelect && topicOrPremise && (
+                    <div className="text-xs text-muted-foreground bg-indigo-900/20 px-2 py-1 rounded">
+                      {getAutoSelectDisplay(topicOrPremise)}
+                    </div>
+                  )}
+                </div>
+                <div className="mt-2 text-xs text-muted-foreground">
+                  {autoSelect 
+                    ? "MoodyBot will analyze your prompt and automatically choose the best literary form, genre, POV, and structure."
+                    : "You'll manually control all style settings below."
+                  }
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Smart Persona Selector */}
+            {topicOrPremise && audience && !autoSelect && (
+              <Card className="bg-gradient-to-br from-violet-900/20 to-amber-900/20 border-violet-900/30 mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-violet-400">
+                    <Sparkles className="h-5 w-5" />
+                    <span>Recommended Settings</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Based on your topic and audience, here are suggested persona and style settings
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="p-3 bg-violet-900/20 rounded-lg border border-violet-900/30">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-violet-300">Suggested Persona</div>
+                          <div className="text-sm text-muted-foreground">{getRecommendedPersona(topicOrPremise, audience)}</div>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => applyRecommendedSettings(topicOrPremise, audience)}
+                          className="bg-violet-700 hover:bg-violet-800"
+                        >
+                          Apply
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      💡 This will automatically set mood, intensity, edge, and gothic flourish based on your content type
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Style Dials */}
             <Card className="bg-gradient-to-br from-red-900/10 to-amber-900/10 border-red-900/20">
               <CardHeader>
@@ -646,6 +901,10 @@ export default function CreativeWriterPage() {
                       </div>
                     </div>
                   </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                    <span>🟦 Subtle</span>
+                    <span>🔥 Maximalist</span>
+                  </div>
                   <Slider
                     value={intensity}
                     onValueChange={setIntensity}
@@ -670,6 +929,10 @@ export default function CreativeWriterPage() {
                         Spice/roast level. Keep ≤3 for brand-safe content.
                       </div>
                     </div>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                    <span>✨ Polite</span>
+                    <span>🪓 Brutal</span>
                   </div>
                   <Slider
                     value={edge}
@@ -730,6 +993,118 @@ export default function CreativeWriterPage() {
               </CardContent>
             </Card>
 
+            {/* Creative Writing Mood Toggles */}
+            <Card className="bg-gradient-to-br from-purple-900/10 to-indigo-900/10 border-purple-900/20">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2 text-purple-400">
+                  <Zap className="h-5 w-5" />
+                  <span>Creative Writing Moods</span>
+                </CardTitle>
+                <CardDescription>
+                  Choose the emotional tone for your narrative prose
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3">
+                  <div 
+                    className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                      selectedMood === 'desperate_flight' 
+                        ? 'bg-purple-900/30 border-purple-500/50' 
+                        : 'bg-purple-900/10 border-purple-900/30 hover:bg-purple-800/20'
+                    }`}
+                    onClick={() => setSelectedMood('desperate_flight')}
+                  >
+                    <div className="font-medium text-sm">🏃 Desperate Flight</div>
+                    <div className="text-xs text-muted-foreground">Chase scenes, escapes, danger</div>
+                  </div>
+                  
+                  <div 
+                    className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                      selectedMood === 'romantic_gothic' 
+                        ? 'bg-purple-900/30 border-purple-500/50' 
+                        : 'bg-purple-900/10 border-purple-900/30 hover:bg-purple-800/20'
+                    }`}
+                    onClick={() => setSelectedMood('romantic_gothic')}
+                  >
+                    <div className="font-medium text-sm">🌙 Romantic Gothic</div>
+                    <div className="text-xs text-muted-foreground">Atmospheric worldbuilding</div>
+                  </div>
+                  
+                  <div 
+                    className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                      selectedMood === 'seduction_surrender' 
+                        ? 'bg-purple-900/30 border-purple-500/50' 
+                        : 'bg-purple-900/10 border-purple-900/30 hover:bg-purple-800/20'
+                    }`}
+                    onClick={() => setSelectedMood('seduction_surrender')}
+                  >
+                    <div className="font-medium text-sm">💋 Seduction & Surrender</div>
+                    <div className="text-xs text-muted-foreground">Intimate tension, kisses</div>
+                  </div>
+                  
+                  <div 
+                    className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                      selectedMood === 'horror_dread' 
+                        ? 'bg-purple-900/30 border-purple-500/50' 
+                        : 'bg-purple-900/10 border-purple-900/30 hover:bg-purple-800/20'
+                    }`}
+                    onClick={() => setSelectedMood('horror_dread')}
+                  >
+                    <div className="font-medium text-sm">👻 Horror & Dread</div>
+                    <div className="text-xs text-muted-foreground">Spirits, curses, Deadwood</div>
+                  </div>
+                  
+                  <div 
+                    className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                      selectedMood === 'battle_fury' 
+                        ? 'bg-purple-900/30 border-purple-500/50' 
+                        : 'bg-purple-900/10 border-purple-900/30 hover:bg-purple-800/20'
+                    }`}
+                    onClick={() => setSelectedMood('battle_fury')}
+                  >
+                    <div className="font-medium text-sm">⚔️ Battle & Fury</div>
+                    <div className="text-xs text-muted-foreground">Army clashes, magic unleashed</div>
+                  </div>
+                  
+                  <div 
+                    className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                      selectedMood === 'heartbreak_memory' 
+                        ? 'bg-purple-900/30 border-purple-500/50' 
+                        : 'bg-purple-900/10 border-purple-900/30 hover:bg-purple-800/20'
+                    }`}
+                    onClick={() => setSelectedMood('heartbreak_memory')}
+                  >
+                    <div className="font-medium text-sm">💔 Heartbreak & Memory Loss</div>
+                    <div className="text-xs text-muted-foreground">After each kiss, losing ties</div>
+                  </div>
+                  
+                  <div 
+                    className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                      selectedMood === 'defiance_transformation' 
+                        ? 'bg-purple-900/30 border-purple-500/50' 
+                        : 'bg-purple-900/10 border-purple-900/30 hover:bg-purple-800/20'
+                    }`}
+                    onClick={() => setSelectedMood('defiance_transformation')}
+                  >
+                    <div className="font-medium text-sm">👑 Defiance & Transformation</div>
+                    <div className="text-xs text-muted-foreground">Claiming power, throne of ashes</div>
+                  </div>
+                  
+                  <div 
+                    className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                      selectedMood === 'quiet_lament' 
+                        ? 'bg-purple-900/30 border-purple-500/50' 
+                        : 'bg-purple-900/10 border-purple-900/30 hover:bg-purple-800/20'
+                    }`}
+                    onClick={() => setSelectedMood('quiet_lament')}
+                  >
+                    <div className="font-medium text-sm">🌅 Quiet Lament</div>
+                    <div className="text-xs text-muted-foreground">After loss, reflective pauses</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Enhanced Generate Button */}
             <div className="sticky bottom-4 z-10">
               <Button
@@ -765,52 +1140,75 @@ export default function CreativeWriterPage() {
 
             {/* Result Display */}
             {result && (
-              <Card>
+              <Card className="bg-gradient-to-br from-red-900/10 to-amber-900/10 border-red-900/20">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2 text-amber-400">
                       {getModeIcon(result.mode)}
                       <span>Generated Content</span>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => copyToClipboard(result.content)}
-                      className="hover:bg-primary/10"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyToClipboard(result.content)}
+                        className="text-xs border-red-900/30 hover:bg-red-800/20"
+                      >
+                        📋 Copy
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {/* TODO: Implement save preset */}}
+                        className="text-xs border-red-900/30 hover:bg-red-800/20"
+                      >
+                        💾 Save Preset
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleGenerate}
+                        className="text-xs border-red-900/30 hover:bg-red-800/20"
+                      >
+                        🔄 Regenerate
+                      </Button>
+                    </div>
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-muted-foreground">
                     {getModeDescription(result.mode)} • {result.word_count_target} words target
+                    {result.auto_selected && result.routing && (
+                      <div className="mt-2 text-xs text-indigo-300 bg-indigo-900/20 px-2 py-1 rounded">
+                        Auto-selected: {result.routing.style} • {result.routing.genre} • {result.routing.pov} • {result.routing.tense}
+                      </div>
+                    )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="prose prose-sm max-w-none dark:prose-invert">
-                    <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                    <div className="whitespace-pre-wrap text-white font-medium leading-relaxed text-base">
                       {result.content}
                     </div>
                   </div>
                   
                   {/* Style Dials Used */}
-                  <div className="mt-4 pt-4 border-t border-border">
+                  <div className="mt-4 pt-4 border-t border-red-900/30">
                     <p className="text-xs text-muted-foreground mb-2">Style used:</p>
                     <div className="flex flex-wrap gap-2">
-                      <span className="px-2 py-1 bg-muted rounded text-xs">
+                      <span className="px-2 py-1 bg-red-900/20 text-amber-200 rounded text-xs">
                         {result.style_dials.mood}
                       </span>
-                      <span className="px-2 py-1 bg-muted rounded text-xs">
+                      <span className="px-2 py-1 bg-red-900/20 text-amber-200 rounded text-xs">
                         intensity: {result.style_dials.intensity}
                       </span>
-                      <span className="px-2 py-1 bg-muted rounded text-xs">
+                      <span className="px-2 py-1 bg-red-900/20 text-amber-200 rounded text-xs">
                         edge: {result.style_dials.edge}
                       </span>
                       {result.style_dials.gothic_flourish && (
-                        <span className="px-2 py-1 bg-muted rounded text-xs">
+                        <span className="px-2 py-1 bg-red-900/20 text-amber-200 rounded text-xs">
                           gothic
                         </span>
                       )}
-                      <span className="px-2 py-1 bg-muted rounded text-xs">
+                      <span className="px-2 py-1 bg-red-900/20 text-amber-200 rounded text-xs">
                         cbph: {result.style_dials.carebear_to_policehorse}
                       </span>
                     </div>
