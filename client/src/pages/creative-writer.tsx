@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Copy, Sparkles, Feather, BookOpen, FileText, Zap } from "lucide-react";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
+import { fetchJSON, FetchError } from "@/lib/fetchJSON";
 
 interface CreativeWriterResult {
   content: string;
@@ -153,9 +154,8 @@ export default function CreativeWriterPage() {
         };
       }
 
-      const res = await fetch("/api/creative-writer", {
+      const data = await fetchJSON("/api/creative-writer", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           mode,
           topic_or_premise: topicOrPremise,
@@ -173,21 +173,38 @@ export default function CreativeWriterPage() {
           ...routingData
         }),
       });
-      const data = await res.json();
       
-      if (!res.ok) throw new Error(data.error || "Request failed");
+      // Update result with new API response format
+      setResult({
+        content: data.text,
+        mode,
+        word_count_target: wordCountTarget,
+        max_words: maxWords,
+        style_dials: {
+          mood,
+          intensity: intensity[0],
+          edge: edge[0],
+          gothic_flourish: gothicFlourish,
+          carebear_to_policehorse: carebearToPolicehorse[0]
+        },
+        auto_selected: data.personaResolved ? true : false,
+        routing: data.personaResolved
+      });
       
-      // Check if limit reached
-      if (data.limitReached) {
-        setResult(null);
-        setErr("Limit reached. Please subscribe for unlimited access.");
+      // Refresh question limit from server
+      await refreshQuestionLimit(1);
+    } catch (error) {
+      if (error instanceof FetchError) {
+        if (error.code === 'RATE_LIMIT_EXCEEDED') {
+          setErr("You're out of free runs. Upgrade to continue.");
+        } else if (error.status >= 500) {
+          setErr("Server hiccup—try again.");
+        } else {
+          setErr(error.message);
+        }
       } else {
-        setResult(data.result);
-        // Refresh question limit from server
-        await refreshQuestionLimit(1);
+        setErr("Failed to generate content");
       }
-    } catch (e: any) {
-      setErr(e.message || "Something broke");
     } finally {
       setLoading(false);
     }
@@ -427,6 +444,29 @@ export default function CreativeWriterPage() {
     return `${routing.style} • ${routing.genre} • ${routing.pov} • ${routing.tense} • ~${routing.target_words} words`;
   };
 
+  // Persona recommendation function
+  const recommendPersona = (input: {
+    contentMode: string;
+    audience: string;
+    topic: string;
+  }) => {
+    const t = `${input.topic} ${input.audience}`.toLowerCase();
+    
+    if (input.contentMode === 'article') {
+      return { persona: 'ogilvy', intensity: 0.35, edge: 0.2 };
+    }
+    if (t.match(/fantasy|princess|crow|myth|gothic/)) {
+      return { persona: 'gothic_flourish', intensity: 0.45, edge: 0.35 };
+    }
+    if (t.match(/crime|forensic|case|evidence/)) {
+      return { persona: 'forensic_files', intensity: 0.3, edge: 0.4 };
+    }
+    if (t.match(/roast|rant|satire|expose/)) {
+      return { persona: 'savage_roast', intensity: 0.5, edge: 0.7 };
+    }
+    return { persona: 'moodybot_default', intensity: 0.4, edge: 0.4 };
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-red-900/5 to-amber-900/5 text-foreground relative">
       {/* Subtle background texture */}
@@ -470,6 +510,63 @@ export default function CreativeWriterPage() {
           </p>
         </div>
 
+        {/* Auto-MoodyBot Mode Toggle */}
+        <Card className="bg-gradient-to-br from-indigo-900/20 to-purple-900/20 border-indigo-900/30 mb-6">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center space-x-6">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="manual-mode"
+                  name="mode-toggle"
+                  checked={!autoSelect}
+                  onChange={() => setAutoSelect(false)}
+                  className="w-4 h-4 text-indigo-600"
+                />
+                <Label htmlFor="manual-mode" className="text-sm font-medium cursor-pointer">
+                  🔘 Manual Mode
+                </Label>
+                <span className="text-xs text-muted-foreground">(user sets everything)</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="auto-mode"
+                  name="mode-toggle"
+                  checked={autoSelect}
+                  onChange={() => setAutoSelect(true)}
+                  className="w-4 h-4 text-indigo-600"
+                />
+                <Label htmlFor="auto-mode" className="text-sm font-medium cursor-pointer">
+                  🔘 MoodyBot Auto
+                </Label>
+                <span className="text-xs text-muted-foreground">(system selects persona + style)</span>
+              </div>
+            </div>
+            {autoSelect && topicOrPremise && audience && (
+              <div className="mt-4 text-center">
+                <div className="text-xs text-indigo-300 bg-indigo-900/20 px-3 py-2 rounded-lg inline-block">
+                  {getAutoSelectDisplay(topicOrPremise)}
+                </div>
+                <div className="mt-2">
+                  {(() => {
+                    const recommendation = recommendPersona({
+                      contentMode: mode,
+                      audience: audience,
+                      topic: topicOrPremise
+                    });
+                    return (
+                      <div className="text-xs text-amber-300 bg-amber-900/20 px-3 py-2 rounded-lg inline-block">
+                        Recommended: {recommendation.persona} • Intensity {Math.round(recommendation.intensity * 5)}/5 • Edge {Math.round(recommendation.edge * 5)}/5
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Question Limit Display */}
         <Card className="mb-4 bg-muted/30">
           <CardContent className="pt-6">
@@ -488,7 +585,7 @@ export default function CreativeWriterPage() {
                   </>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    3 of 3 creative writing requests remaining
+                    Usage unavailable.
                   </p>
                 )}
               </div>
@@ -507,11 +604,11 @@ export default function CreativeWriterPage() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 min-h-screen">
           {/* Input Section */}
-          <div className="space-y-6">
-            {/* Content Mode & Presets Group */}
-            <Card className="bg-gradient-to-br from-red-900/10 to-amber-900/10 border-red-900/20">
+          <div className="space-y-6 pb-24">
+            {/* Content Setup */}
+            <Card className="bg-gradient-to-br from-red-900/10 to-amber-900/10 border-red-900/20 shadow-lg">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2 text-amber-400">
                   <Feather className="h-5 w-5" />
@@ -522,10 +619,10 @@ export default function CreativeWriterPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Mode Selection */}
+                {/* Content Type Selection */}
                 <div>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Label className="text-sm font-medium">Content Mode</Label>
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Label className="text-sm font-medium">Content Type</Label>
                     <div className="group relative">
                       <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
                         <span className="text-xs text-amber-400">?</span>
@@ -535,17 +632,75 @@ export default function CreativeWriterPage() {
                       </div>
                     </div>
                   </div>
-                  <Select value={mode} onValueChange={setMode}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="fiction_chapter">Fiction Chapter</SelectItem>
-                      <SelectItem value="fiction_outline">Fiction Outline</SelectItem>
-                      <SelectItem value="article">Article</SelectItem>
-                      <SelectItem value="teaser_blurbs">Teaser Blurbs</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div 
+                      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                        mode === 'fiction_chapter' 
+                          ? 'bg-red-900/30 border-red-500/50' 
+                          : 'bg-red-900/10 border-red-900/30 hover:bg-red-800/20'
+                      }`}
+                      onClick={() => setMode('fiction_chapter')}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <BookOpen className="h-6 w-6 text-amber-400" />
+                        <div>
+                          <div className="font-medium text-sm">📖 Fiction Chapter</div>
+                          <div className="text-xs text-muted-foreground">Full chapter prose with scene beats</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div 
+                      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                        mode === 'article' 
+                          ? 'bg-red-900/30 border-red-500/50' 
+                          : 'bg-red-900/10 border-red-900/30 hover:bg-red-800/20'
+                      }`}
+                      onClick={() => setMode('article')}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <FileText className="h-6 w-6 text-amber-400" />
+                        <div>
+                          <div className="font-medium text-sm">📰 Article</div>
+                          <div className="text-xs text-muted-foreground">Publish-ready essay or guide</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div 
+                      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                        mode === 'teaser_blurbs' 
+                          ? 'bg-red-900/30 border-red-500/50' 
+                          : 'bg-red-900/10 border-red-900/30 hover:bg-red-800/20'
+                      }`}
+                      onClick={() => setMode('teaser_blurbs')}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Zap className="h-6 w-6 text-amber-400" />
+                        <div>
+                          <div className="font-medium text-sm">🎭 Teaser Blurbs</div>
+                          <div className="text-xs text-muted-foreground">3-5 loglines or hooks</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div 
+                      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                        mode === 'fiction_outline' 
+                          ? 'bg-red-900/30 border-red-500/50' 
+                          : 'bg-red-900/10 border-red-900/30 hover:bg-red-800/20'
+                      }`}
+                      onClick={() => setMode('fiction_outline')}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Zap className="h-6 w-6 text-amber-400" />
+                        <div>
+                          <div className="font-medium text-sm">🕵 Outline</div>
+                          <div className="text-xs text-muted-foreground">Chapter list with summaries</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Enhanced Presets */}
@@ -993,6 +1148,92 @@ export default function CreativeWriterPage() {
               </CardContent>
             </Card>
 
+            {/* Persona Selector */}
+            <Card className="bg-gradient-to-br from-purple-900/10 to-indigo-900/10 border-purple-900/20 shadow-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2 text-purple-400">
+                  <Sparkles className="h-5 w-5" />
+                  <span>Persona Selector</span>
+                </CardTitle>
+                <CardDescription>
+                  Choose your writing voice and see preview examples
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 gap-4">
+                  <div 
+                    className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                      mood === 'gritty' 
+                        ? 'bg-purple-900/30 border-purple-500/50' 
+                        : 'bg-purple-900/10 border-purple-900/30 hover:bg-purple-800/20'
+                    }`}
+                    onClick={() => setMood('gritty')}
+                  >
+                    <div className="font-medium text-sm mb-2">Default MoodyBot (Dark, Witty)</div>
+                    <div className="text-xs text-muted-foreground italic">
+                      "The whiskey burns going down, but it's the memories that really hurt. She left three months ago, and I'm still finding her hair in the shower drain."
+                    </div>
+                  </div>
+                  
+                  <div 
+                    className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                      mood === 'cinematic' 
+                        ? 'bg-purple-900/30 border-purple-500/50' 
+                        : 'bg-purple-900/10 border-purple-900/30 hover:bg-purple-800/20'
+                    }`}
+                    onClick={() => setMood('cinematic')}
+                  >
+                    <div className="font-medium text-sm mb-2">Cinematic (Visual, Lyrical)</div>
+                    <div className="text-xs text-muted-foreground italic">
+                      "Moonlight spills across the empty street like spilled mercury. Neon signs flicker their last gasps before dawn claims the city."
+                    </div>
+                  </div>
+                  
+                  <div 
+                    className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                      mood === 'wry' 
+                        ? 'bg-purple-900/30 border-purple-500/50' 
+                        : 'bg-purple-900/10 border-purple-900/30 hover:bg-purple-800/20'
+                    }`}
+                    onClick={() => setMood('wry')}
+                  >
+                    <div className="font-medium text-sm mb-2">Gothic Flourish (Mythic, Poetic)</div>
+                    <div className="text-xs text-muted-foreground italic">
+                      "The old gods sleep beneath the city, their dreams woven into the very stones. Every shadow holds a secret, every whisper carries the weight of centuries."
+                    </div>
+                  </div>
+                  
+                  <div 
+                    className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                      mood === 'journalistic' 
+                        ? 'bg-purple-900/30 border-purple-500/50' 
+                        : 'bg-purple-900/10 border-purple-900/30 hover:bg-purple-800/20'
+                    }`}
+                    onClick={() => setMood('journalistic')}
+                  >
+                    <div className="font-medium text-sm mb-2">Ogilvy (Marketing Clarity)</div>
+                    <div className="text-xs text-muted-foreground italic">
+                      "People don't buy products. They buy better versions of themselves. Your product isn't the solution—it's the bridge to who they want to become."
+                    </div>
+                  </div>
+                  
+                  <div 
+                    className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                      mood === 'romantic' 
+                        ? 'bg-purple-900/30 border-purple-500/50' 
+                        : 'bg-purple-900/10 border-purple-900/30 hover:bg-purple-800/20'
+                    }`}
+                    onClick={() => setMood('romantic')}
+                  >
+                    <div className="font-medium text-sm mb-2">Roast (Savage Satire)</div>
+                    <div className="text-xs text-muted-foreground italic">
+                      "Your startup idea is so original, I'm surprised it hasn't been featured on 'Shark Tank' yet. Oh wait, it has—and they called it 'delusional.'"
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Creative Writing Mood Toggles */}
             <Card className="bg-gradient-to-br from-purple-900/10 to-indigo-900/10 border-purple-900/20">
               <CardHeader>
@@ -1105,8 +1346,8 @@ export default function CreativeWriterPage() {
               </CardContent>
             </Card>
 
-            {/* Enhanced Generate Button */}
-            <div className="sticky bottom-4 z-10">
+            {/* Sticky Generate Button */}
+            <div className="fixed bottom-4 left-4 right-4 lg:left-auto lg:right-auto lg:w-1/2 z-50">
               <Button
                 onClick={handleGenerate}
                 disabled={loading}
@@ -1128,10 +1369,10 @@ export default function CreativeWriterPage() {
           </div>
 
           {/* Output Section */}
-          <div>
+          <div className="sticky top-4">
             {/* Error Display */}
             {err && (
-              <Card className="mb-6 bg-red-900/20 border-red-500/30">
+              <Card className="mb-6 bg-red-900/20 border-red-500/30 shadow-lg">
                 <CardContent className="pt-6">
                   <p className="text-red-400 text-center">{err}</p>
                 </CardContent>
@@ -1140,7 +1381,7 @@ export default function CreativeWriterPage() {
 
             {/* Result Display */}
             {result && (
-              <Card className="bg-gradient-to-br from-red-900/10 to-amber-900/10 border-red-900/20">
+              <Card className="bg-gradient-to-br from-red-900/10 to-amber-900/10 border-red-900/20 shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <div className="flex items-center space-x-2 text-amber-400">
@@ -1162,7 +1403,7 @@ export default function CreativeWriterPage() {
                         onClick={() => {/* TODO: Implement save preset */}}
                         className="text-xs border-red-900/30 hover:bg-red-800/20"
                       >
-                        💾 Save Preset
+                        💾 Save
                       </Button>
                       <Button
                         variant="outline"
@@ -1185,7 +1426,7 @@ export default function CreativeWriterPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="prose prose-sm max-w-none dark:prose-invert">
-                    <div className="whitespace-pre-wrap text-white font-medium leading-relaxed text-base">
+                    <div className="whitespace-pre-wrap font-medium leading-relaxed text-base" style={{ color: '#ffffff' }}>
                       {result.content}
                     </div>
                   </div>
@@ -1212,6 +1453,19 @@ export default function CreativeWriterPage() {
                         cbph: {result.style_dials.carebear_to_policehorse}
                       </span>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Placeholder when no result */}
+            {!result && !err && (
+              <Card className="bg-gradient-to-br from-gray-900/10 to-gray-800/10 border-gray-800/20 shadow-lg">
+                <CardContent className="pt-12 pb-12">
+                  <div className="text-center text-muted-foreground">
+                    <Feather className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium mb-2">Ready to Create</p>
+                    <p className="text-sm">Fill in your details and click generate to see your content here</p>
                   </div>
                 </CardContent>
               </Card>

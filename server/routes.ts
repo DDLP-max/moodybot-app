@@ -194,11 +194,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/:userId/limit", async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ 
+          code: "INVALID_USER_ID", 
+          message: "Invalid user ID format" 
+        });
+      }
+
       const limitCheck = await storage.checkQuestionLimit(userId);
-      res.json(limitCheck);
+      const resetAt = new Date();
+      resetAt.setDate(resetAt.getDate() + 1); // Reset daily
+      
+      res.json({
+        total: limitCheck.limit,
+        remaining: limitCheck.remaining,
+        resetAt: resetAt.toISOString()
+      });
     } catch (error) {
       console.error("Limit check error:", error);
-      res.status(500).json({ error: "Failed to check question limit" });
+      res.status(500).json({ 
+        code: "INTERNAL_ERROR", 
+        message: "Failed to check question limit" 
+      });
     }
   });
 
@@ -438,27 +455,11 @@ The real answers? The insights that change your life? Those cost something. Not 
       const limitCheck = await storage.checkQuestionLimit(currentUserId);
       
       if (!limitCheck.canAsk) {
-        return res.json({
-          limitReached: true,
+        return res.status(429).json({
+          code: "RATE_LIMIT_EXCEEDED",
+          message: "You've reached the end of your free trial. Upgrade to continue.",
           remaining: limitCheck.remaining,
-          limit: limitCheck.limit,
-          subscriptionMessage: `You've reached the end of your free trial, wanderer. Three creative writing requests. That's all the universe gives for free.
-
-The real prose? The stories that change your life? Those cost something. Not money. Commitment. The willingness to invest in your craft.
-
-**Subscribe to MoodyBot Premium** and unlock unlimited access to:
-• 🔶 All AI modes and personalities
-• 🎴 Advanced conversation features
-• 🧠 Custom prompt engineering
-• 🧃 Priority response times
-• 🎧 Early access to new features
-• 🛰 Access to the Premium Telegram channel
-
-**$9/month** - The AI upgrade your competitors wish they had.
-
-[Subscribe Now](https://moodybot.gumroad.com/l/moodybot-webapp)
-
-@MoodyBotAI`
+          limit: limitCheck.limit
         });
       }
 
@@ -530,38 +531,33 @@ Generate the ${mode} in MoodyBot voice. Obey structure and word counts. No meta 
       if (!openRouterRes.ok) {
         const errorText = await openRouterRes.text();
         console.error("OpenRouter API error:", errorText);
-        throw new Error(`OpenRouter API error: ${openRouterRes.status}`);
+        return res.status(502).json({
+          code: "AI_SERVICE_ERROR",
+          message: "AI service returned an error"
+        });
       }
 
       const json = await openRouterRes.json();
       const aiReply = json.choices?.[0]?.message?.content || "Failed to generate creative content";
+      const usage = json.usage || { total_tokens: 0 };
 
-           const responseData = {
-             ok: true,
-             result: {
-               content: aiReply,
-               mode,
-               word_count_target,
-               max_words,
-               style_dials: {
-                 mood,
-                 intensity,
-                 edge,
-                 gothic_flourish,
-                 carebear_to_policehorse
-               },
-               auto_selected: req.body.auto_selected || false,
-               routing: req.body.routing || null
-             },
-             remaining: updatedLimitCheck.remaining,
-             limit: updatedLimitCheck.limit
-           };
+      const responseData = {
+        id: `gen_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        text: aiReply,
+        personaResolved: req.body.auto_selected ? req.body.routing : null,
+        usage: {
+          tokens: usage.total_tokens || 0
+        },
+        remaining: updatedLimitCheck.remaining,
+        limit: updatedLimitCheck.limit
+      };
       
       res.json(responseData);
     } catch (error: any) {
       console.error("Creative Writer API error:", error);
-      res.status(500).json({ 
-        error: error.message || "Failed to generate creative content" 
+      res.status(500).json({
+        code: "INTERNAL_ERROR",
+        message: "An unexpected error occurred"
       });
     }
   });

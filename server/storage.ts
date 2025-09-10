@@ -163,9 +163,13 @@ export class MemStorage implements IStorage {
   }
 
   async checkQuestionLimit(userId: number): Promise<{ canAsk: boolean; remaining: number; limit: number }> {
-    const user = this.users.get(userId);
+    let user = this.users.get(userId);
     if (!user) {
-      throw new Error("User not found");
+      // Create user if they don't exist
+      user = await this.createUser({
+        username: `user_${userId}`,
+        password: 'temp_password_123'
+      });
     }
 
     const limit = 3; // 3 questions for free users
