@@ -72,63 +72,66 @@ export default function Home() {
             
 
             
-            {/* Chat Options */}
-            <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-8 w-full px-4">
-              <Button 
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
-                onClick={() => setLocation("/dynamic")}
-              >
-                <Eye className="mr-2 h-5 w-5" />
-                DYNAMIC MODE
-              </Button>
-              
-              <Button 
-                className="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
-                onClick={() => setLocation("/copywriter")}
-              >
-                <Target className="mr-2 h-5 w-5" />
-                COPYWRITER MODE
-              </Button>
-              
-        <Button
-          className="bg-gradient-to-r from-red-700 to-amber-500 hover:from-red-800 hover:to-amber-600 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
-          onClick={() => setLocation("/creative-writer")}
-        >
-          <Feather className="mr-2 h-5 w-5 text-amber-200" />
-          CREATIVE WRITER
-        </Button>
-            </div>
-            
-            {/* Mode Descriptions */}
-            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 px-4">
-              <div className="text-center p-4 bg-background/50 rounded-lg border border-primary/20">
-                <h3 className="font-bold text-blue-500 mb-2 flex items-center justify-center">
-                  <Eye className="h-4 w-4 mr-2" />
-                  Dynamic Mode
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  AI-powered persona selection. MoodyBot automatically adapts to your emotional state and message content.
-                </p>
+            {/* Mode Options with Descriptions */}
+            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 px-4 mb-8">
+              {/* Dynamic Mode */}
+              <div className="flex flex-col items-center space-y-3">
+                <Button 
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full"
+                  onClick={() => setLocation("/dynamic")}
+                >
+                  <Eye className="mr-2 h-5 w-5" />
+                  DYNAMIC MODE
+                </Button>
+                <div className="text-center p-3 bg-background/50 rounded-lg border border-primary/20 w-full">
+                  <h3 className="font-bold text-blue-500 mb-2 flex items-center justify-center text-sm">
+                    <Eye className="h-4 w-4 mr-2" />
+                    Dynamic Mode
+                  </h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    AI-powered persona selection. MoodyBot automatically adapts to your emotional state and message content.
+                  </p>
+                </div>
               </div>
               
-              <div className="text-center p-4 bg-background/50 rounded-lg border border-primary/20">
-                <h3 className="font-bold text-green-500 mb-2 flex items-center justify-center">
-                  <Target className="h-4 w-4 mr-2" />
-                  Copywriter Mode
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  From Ogilvy to Outlaw: MoodyBot's Copy Engine. Create compelling titles, hooks, CTAs, and captions with brutal honesty.
-                </p>
+              {/* Copywriter Mode */}
+              <div className="flex flex-col items-center space-y-3">
+                <Button 
+                  className="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full"
+                  onClick={() => setLocation("/copywriter")}
+                >
+                  <Target className="mr-2 h-5 w-5" />
+                  COPYWRITER MODE
+                </Button>
+                <div className="text-center p-3 bg-background/50 rounded-lg border border-primary/20 w-full">
+                  <h3 className="font-bold text-green-500 mb-2 flex items-center justify-center text-sm">
+                    <Target className="h-4 w-4 mr-2" />
+                    Copywriter Mode
+                  </h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    From Ogilvy to Outlaw: MoodyBot's Copy Engine. Create compelling titles, hooks, CTAs, and captions with brutal honesty.
+                  </p>
+                </div>
               </div>
               
-              <div className="text-center p-4 bg-background/50 rounded-lg border border-primary/20">
-                <h3 className="font-bold bg-gradient-to-r from-red-600 to-amber-500 bg-clip-text text-transparent mb-2 flex items-center justify-center">
-                  <Feather className="h-4 w-4 mr-2 text-amber-500" />
-                  Creative Writer
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Dive-bar oracle meets copywriter. Fiction, articles, outlines, and teaser blurbs with Hank Moody swagger and Bourdain grit.
-                </p>
+              {/* Creative Writer Mode */}
+              <div className="flex flex-col items-center space-y-3">
+                <Button
+                  className="bg-gradient-to-r from-red-700 to-amber-500 hover:from-red-800 hover:to-amber-600 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full"
+                  onClick={() => setLocation("/creative-writer")}
+                >
+                  <Feather className="mr-2 h-5 w-5 text-amber-200" />
+                  CREATIVE WRITER
+                </Button>
+                <div className="text-center p-3 bg-background/50 rounded-lg border border-primary/20 w-full">
+                  <h3 className="font-bold bg-gradient-to-r from-red-600 to-amber-500 bg-clip-text text-transparent mb-2 flex items-center justify-center text-sm">
+                    <Feather className="h-4 w-4 mr-2 text-amber-500" />
+                    Creative Writer
+                  </h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Dive-bar oracle meets copywriter. Fiction, articles, outlines, and teaser blurbs with Hank Moody swagger and Bourdain grit.
+                  </p>
+                </div>
               </div>
             </div>
           </motion.div>
