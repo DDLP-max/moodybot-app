@@ -196,8 +196,62 @@ export default function CreativeWriterPage() {
     }
   };
 
+  const getMoodPreview = (mood: string) => {
+    switch (mood) {
+      case 'gritty': return 'Raw, visceral prose with hard edges and authentic voice';
+      case 'romantic': return 'Emotional, lyrical writing with heart and vulnerability';
+      case 'wry': return 'Clever, ironic tone with subtle humor and wit';
+      case 'journalistic': return 'Clear, factual style with sharp observations';
+      case 'cinematic': return 'Visual, scene-setting prose that paints pictures';
+      default: return '';
+    }
+  };
+
+  const getIntensityPreview = (level: number) => {
+    switch (level) {
+      case 1: return 'Gentle, flowing sentences with soft rhythm';
+      case 2: return 'Moderate pace with balanced structure';
+      case 3: return 'Dynamic writing with varied sentence lengths';
+      case 4: return 'Intense, compressed prose with vivid imagery';
+      case 5: return 'Maximum intensity with rapid-fire, visceral language';
+      default: return '';
+    }
+  };
+
+  const getEdgePreview = (level: number) => {
+    switch (level) {
+      case 1: return 'Safe, professional tone suitable for all audiences';
+      case 2: return 'Mildly provocative with subtle attitude';
+      case 3: return 'Moderate edge with some bite and personality';
+      case 4: return 'Sharp, edgy writing with real attitude';
+      case 5: return 'Maximum edge with unfiltered, raw voice';
+      default: return '';
+    }
+  };
+
+  const getCarebearPreview = (level: number) => {
+    if (level <= 2) return 'Gentle, supportive, encouraging tone';
+    if (level <= 4) return 'Balanced approach with some directness';
+    if (level <= 6) return 'Direct, honest feedback with some warmth';
+    if (level <= 8) return 'Blunt, no-nonsense approach';
+    return 'Brutally honest, unflinching truth-telling';
+  };
+
+  const getModeActionText = (mode: string) => {
+    switch (mode) {
+      case 'fiction_chapter': return '✍️ Write Chapter';
+      case 'fiction_outline': return '📝 Draft Outline';
+      case 'article': return '📰 Craft Article';
+      case 'teaser_blurbs': return '🎭 Create Blurbs';
+      default: return '✍️ Generate Content';
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-gradient-to-br from-background via-red-900/5 to-amber-900/5 text-foreground relative">
+      {/* Subtle background texture */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(127,29,29,0.03),transparent_50%)] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(146,64,14,0.03),transparent_50%)] pointer-events-none" />
       {/* Header */}
       <div className="border-b border-primary/20 bg-background/90 backdrop-blur-sm">
         <div className="flex items-center justify-between px-4 py-3">
@@ -222,7 +276,7 @@ export default function CreativeWriterPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="container mx-auto px-4 py-8 max-w-6xl relative z-10">
         {/* Hero Section */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-black mb-4 bg-gradient-to-r from-violet-700 to-amber-500 bg-clip-text text-transparent">
@@ -276,86 +330,128 @@ export default function CreativeWriterPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Input Section */}
           <div className="space-y-6">
-            {/* Mode Selection */}
-            <Card>
+            {/* Content Mode & Presets Group */}
+            <Card className="bg-gradient-to-br from-red-900/10 to-amber-900/10 border-red-900/20">
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  {getModeIcon(mode)}
-                  <span>Content Mode</span>
+                <CardTitle className="flex items-center space-x-2 text-amber-400">
+                  <Feather className="h-5 w-5" />
+                  <span>Content Setup</span>
                 </CardTitle>
                 <CardDescription>
-                  {getModeDescription(mode)}
+                  Choose your content type and get started quickly
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Select value={mode} onValueChange={setMode}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fiction_chapter">Fiction Chapter</SelectItem>
-                    <SelectItem value="fiction_outline">Fiction Outline</SelectItem>
-                    <SelectItem value="article">Article</SelectItem>
-                    <SelectItem value="teaser_blurbs">Teaser Blurbs</SelectItem>
-                  </SelectContent>
-                </Select>
-              </CardContent>
-            </Card>
+              <CardContent className="space-y-6">
+                {/* Mode Selection */}
+                <div>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Label className="text-sm font-medium">Content Mode</Label>
+                    <div className="group relative">
+                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
+                        <span className="text-xs text-amber-400">?</span>
+                      </div>
+                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
+                        {getModeDescription(mode)}
+                      </div>
+                    </div>
+                  </div>
+                  <Select value={mode} onValueChange={setMode}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fiction_chapter">Fiction Chapter</SelectItem>
+                      <SelectItem value="fiction_outline">Fiction Outline</SelectItem>
+                      <SelectItem value="article">Article</SelectItem>
+                      <SelectItem value="teaser_blurbs">Teaser Blurbs</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            {/* Presets */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Presets</CardTitle>
-                <CardDescription>
-                  Load example configurations to get started
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => applyPreset('fiction_chapter')}
-                    className="text-xs"
-                  >
-                    Fantasy Romance
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => applyPreset('article')}
-                    className="text-xs"
-                  >
-                    Marketing Article
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => applyPreset('fiction_outline')}
-                    className="text-xs"
-                  >
-                    Mystery Outline
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => applyPreset('teaser_blurbs')}
-                    className="text-xs"
-                  >
-                    Comedy Blurbs
-                  </Button>
+                {/* Enhanced Presets */}
+                <div>
+                  <Label className="text-sm font-medium mb-3 block">Quick Presets</Label>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div 
+                      className="p-3 rounded-lg border border-red-900/30 bg-gradient-to-r from-red-900/20 to-amber-900/20 hover:from-red-800/30 hover:to-amber-800/30 cursor-pointer transition-all duration-200"
+                      onClick={() => applyPreset('fiction_chapter')}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <BookOpen className="h-5 w-5 text-amber-400" />
+                        <div>
+                          <div className="font-medium text-sm">Fantasy Romance</div>
+                          <div className="text-xs text-muted-foreground">Runaway princess bargains with the God of Crows</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div 
+                      className="p-3 rounded-lg border border-red-900/30 bg-gradient-to-r from-red-900/20 to-amber-900/20 hover:from-red-800/30 hover:to-amber-800/30 cursor-pointer transition-all duration-200"
+                      onClick={() => applyPreset('article')}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <FileText className="h-5 w-5 text-amber-400" />
+                        <div>
+                          <div className="font-medium text-sm">Marketing Article</div>
+                          <div className="text-xs text-muted-foreground">People buy status, not products</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div 
+                      className="p-3 rounded-lg border border-red-900/30 bg-gradient-to-r from-red-900/20 to-amber-900/20 hover:from-red-800/30 hover:to-amber-800/30 cursor-pointer transition-all duration-200"
+                      onClick={() => applyPreset('fiction_outline')}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Zap className="h-5 w-5 text-amber-400" />
+                        <div>
+                          <div className="font-medium text-sm">Mystery Outline</div>
+                          <div className="text-xs text-muted-foreground">Detective with synesthesia solves crimes</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div 
+                      className="p-3 rounded-lg border border-red-900/30 bg-gradient-to-r from-red-900/20 to-amber-900/20 hover:from-red-800/30 hover:to-amber-800/30 cursor-pointer transition-all duration-200"
+                      onClick={() => applyPreset('teaser_blurbs')}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Zap className="h-5 w-5 text-amber-400" />
+                        <div>
+                          <div className="font-medium text-sm">Comedy Blurbs</div>
+                          <div className="text-xs text-muted-foreground">Time-traveling barista adventures</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Basic Inputs */}
-            <Card>
+            {/* Basic Settings */}
+            <Card className="bg-gradient-to-br from-red-900/10 to-amber-900/10 border-red-900/20">
               <CardHeader>
-                <CardTitle>Basic Settings</CardTitle>
+                <CardTitle className="flex items-center space-x-2 text-amber-400">
+                  <FileText className="h-5 w-5" />
+                  <span>Content Details</span>
+                </CardTitle>
+                <CardDescription>
+                  Define your story, audience, and technical requirements
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div>
-                  <Label htmlFor="topic">Topic/Premise</Label>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Label htmlFor="topic" className="text-sm font-medium">Topic/Premise</Label>
+                    <div className="group relative">
+                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
+                        <span className="text-xs text-amber-400">?</span>
+                      </div>
+                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
+                        Describe your story concept, article topic, or creative premise. Be specific about the core idea.
+                      </div>
+                    </div>
+                  </div>
                   <Textarea
                     id="topic"
                     placeholder="Describe your story, article topic, or creative premise..."
@@ -366,7 +462,17 @@ export default function CreativeWriterPage() {
                 </div>
                 
                 <div>
-                  <Label htmlFor="audience">Target Audience</Label>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Label htmlFor="audience" className="text-sm font-medium">Target Audience</Label>
+                    <div className="group relative">
+                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
+                        <span className="text-xs text-amber-400">?</span>
+                      </div>
+                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
+                        Who should this feel written for? Be specific: "YA fantasy readers", "digital marketers", etc.
+                      </div>
+                    </div>
+                  </div>
                   <Textarea
                     id="audience"
                     placeholder="Who is this for? (e.g., 'YA fantasy readers', 'digital marketers')"
@@ -376,31 +482,85 @@ export default function CreativeWriterPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="wordCount">Word Count Target</Label>
-                    <input
-                      id="wordCount"
-                      type="number"
-                      value={wordCountTarget}
-                      onChange={(e) => setWordCountTarget(Number(e.target.value))}
-                      className="mt-1 w-full px-3 py-2 border border-input rounded-md bg-background"
-                    />
+                {/* Enhanced Word Count Controls */}
+                <div>
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Label className="text-sm font-medium">Word Count Range</Label>
+                    <div className="group relative">
+                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
+                        <span className="text-xs text-amber-400">?</span>
+                      </div>
+                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
+                        Set your target word count. The AI will aim for this range with a maximum limit.
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="maxWords">Max Words</Label>
-                    <input
-                      id="maxWords"
-                      type="number"
-                      value={maxWords}
-                      onChange={(e) => setMaxWords(Number(e.target.value))}
-                      className="mt-1 w-full px-3 py-2 border border-input rounded-md bg-background"
-                    />
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm text-muted-foreground">Target: {wordCountTarget} words</span>
+                        <span className="text-sm text-muted-foreground">Max: {maxWords} words</span>
+                      </div>
+                      <div className="relative">
+                        <Slider
+                          value={[wordCountTarget]}
+                          onValueChange={(value) => setWordCountTarget(value[0])}
+                          max={5000}
+                          min={100}
+                          step={50}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                          <span>100</span>
+                          <span>5,000</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="wordCount" className="text-xs text-muted-foreground">Target Words</Label>
+                        <input
+                          id="wordCount"
+                          type="number"
+                          value={wordCountTarget}
+                          onChange={(e) => setWordCountTarget(Number(e.target.value))}
+                          className="mt-1 w-full px-3 py-2 border border-red-900/30 rounded-md bg-red-900/10 text-sm"
+                          min="100"
+                          max="5000"
+                          step="50"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="maxWords" className="text-xs text-muted-foreground">Max Words</Label>
+                        <input
+                          id="maxWords"
+                          type="number"
+                          value={maxWords}
+                          onChange={(e) => setMaxWords(Number(e.target.value))}
+                          className="mt-1 w-full px-3 py-2 border border-red-900/30 rounded-md bg-red-900/10 text-sm"
+                          min={wordCountTarget}
+                          max="10000"
+                          step="50"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="structure">Structure (Optional)</Label>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Label htmlFor="structure" className="text-sm font-medium">Structure (Optional)</Label>
+                    <div className="group relative">
+                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
+                        <span className="text-xs text-amber-400">?</span>
+                      </div>
+                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
+                        Describe the structure or beats you want. For example: "3 acts with plot twist in act 2"
+                      </div>
+                    </div>
+                  </div>
                   <Textarea
                     id="structure"
                     placeholder="Describe the structure or beats you want..."
@@ -411,7 +571,17 @@ export default function CreativeWriterPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="extras">Extras (Optional)</Label>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Label htmlFor="extras" className="text-sm font-medium">Extras (Optional)</Label>
+                    <div className="group relative">
+                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
+                        <span className="text-xs text-amber-400">?</span>
+                      </div>
+                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
+                        Additional instructions like "include dialogue", "use subheads", "present tense", etc.
+                      </div>
+                    </div>
+                  </div>
                   <Textarea
                     id="extras"
                     placeholder="Additional instructions (e.g., 'include dialogue', 'use subheads')"
@@ -424,16 +594,29 @@ export default function CreativeWriterPage() {
             </Card>
 
             {/* Style Dials */}
-            <Card>
+            <Card className="bg-gradient-to-br from-red-900/10 to-amber-900/10 border-red-900/20">
               <CardHeader>
-                <CardTitle>Style Dials</CardTitle>
+                <CardTitle className="flex items-center space-x-2 text-amber-400">
+                  <Sparkles className="h-5 w-5" />
+                  <span>Style Dials</span>
+                </CardTitle>
                 <CardDescription>
-                  Fine-tune MoodyBot's voice and intensity
+                  Fine-tune MoodyBot's voice and intensity with live preview
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <Label>Mood</Label>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Label className="text-sm font-medium">Mood</Label>
+                    <div className="group relative">
+                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
+                        <span className="text-xs text-amber-400">?</span>
+                      </div>
+                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
+                        The overall emotional tone and writing style
+                      </div>
+                    </div>
+                  </div>
                   <Select value={mood} onValueChange={setMood}>
                     <SelectTrigger className="mt-1">
                       <SelectValue />
@@ -446,10 +629,23 @@ export default function CreativeWriterPage() {
                       <SelectItem value="cinematic">Cinematic</SelectItem>
                     </SelectContent>
                   </Select>
+                  <div className="mt-2 p-2 bg-red-900/20 rounded text-xs text-muted-foreground">
+                    <strong>Preview:</strong> {getMoodPreview(mood)}
+                  </div>
                 </div>
 
                 <div>
-                  <Label>Intensity: {intensity[0]}/5</Label>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Label className="text-sm font-medium">Intensity: {intensity[0]}/5</Label>
+                    <div className="group relative">
+                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
+                        <span className="text-xs text-amber-400">?</span>
+                      </div>
+                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
+                        Sentence compression, vividness, and tempo. Higher = more intense writing.
+                      </div>
+                    </div>
+                  </div>
                   <Slider
                     value={intensity}
                     onValueChange={setIntensity}
@@ -458,13 +654,23 @@ export default function CreativeWriterPage() {
                     step={1}
                     className="mt-2"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Sentence compression, vividness, tempo
-                  </p>
+                  <div className="mt-2 p-2 bg-red-900/20 rounded text-xs text-muted-foreground">
+                    <strong>Preview:</strong> {getIntensityPreview(intensity[0])}
+                  </div>
                 </div>
 
                 <div>
-                  <Label>Edge: {edge[0]}/5</Label>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Label className="text-sm font-medium">Edge: {edge[0]}/5</Label>
+                    <div className="group relative">
+                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
+                        <span className="text-xs text-amber-400">?</span>
+                      </div>
+                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
+                        Spice/roast level. Keep ≤3 for brand-safe content.
+                      </div>
+                    </div>
+                  </div>
                   <Slider
                     value={edge}
                     onValueChange={setEdge}
@@ -473,13 +679,23 @@ export default function CreativeWriterPage() {
                     step={1}
                     className="mt-2"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Spice/roast level (keep ≤3 for brand-safe)
-                  </p>
+                  <div className="mt-2 p-2 bg-red-900/20 rounded text-xs text-muted-foreground">
+                    <strong>Preview:</strong> {getEdgePreview(edge[0])}
+                  </div>
                 </div>
 
                 <div>
-                  <Label>Carebear to Policehorse: {carebearToPolicehorse[0]}/10</Label>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Label className="text-sm font-medium">Carebear to Policehorse: {carebearToPolicehorse[0]}/10</Label>
+                    <div className="group relative">
+                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
+                        <span className="text-xs text-amber-400">?</span>
+                      </div>
+                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
+                        Softness vs. brutality scale. 0 = gentle, 10 = harsh.
+                      </div>
+                    </div>
+                  </div>
                   <Slider
                     value={carebearToPolicehorse}
                     onValueChange={setCarebearToPolicehorse}
@@ -488,9 +704,9 @@ export default function CreativeWriterPage() {
                     step={1}
                     className="mt-2"
                   />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    0 = soft, 10 = brutal
-                  </p>
+                  <div className="mt-2 p-2 bg-red-900/20 rounded text-xs text-muted-foreground">
+                    <strong>Preview:</strong> {getCarebearPreview(carebearToPolicehorse[0])}
+                  </div>
                 </div>
 
                 <div className="flex items-center space-x-2">
@@ -499,29 +715,41 @@ export default function CreativeWriterPage() {
                     checked={gothicFlourish}
                     onCheckedChange={setGothicFlourish}
                   />
-                  <Label htmlFor="gothic-flourish">Gothic Flourish</Label>
+                  <div className="flex items-center space-x-2">
+                    <Label htmlFor="gothic-flourish" className="text-sm font-medium">Gothic Flourish</Label>
+                    <div className="group relative">
+                      <div className="w-4 h-4 rounded-full bg-amber-500/20 flex items-center justify-center cursor-help">
+                        <span className="text-xs text-amber-400">?</span>
+                      </div>
+                      <div className="absolute bottom-full left-0 mb-2 w-64 p-2 bg-red-900/95 text-white text-xs rounded-md opacity-0 group-hover:opacity-100 transition-opacity z-50">
+                        Add dark, atmospheric imagery and poetic language
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Generate Button */}
-            <Button
-              onClick={handleGenerate}
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-violet-700 to-amber-500 hover:from-violet-800 hover:to-amber-600"
-            >
-              {loading ? (
-                <>
-                  <Sparkles className="mr-2 h-4 w-4 animate-spin" />
-                  Generating Creative Content...
-                </>
-              ) : (
-                <>
-                  <Feather className="mr-2 h-4 w-4" />
-                  Generate Creative Content
-                </>
-              )}
-            </Button>
+            {/* Enhanced Generate Button */}
+            <div className="sticky bottom-4 z-10">
+              <Button
+                onClick={handleGenerate}
+                disabled={loading}
+                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-violet-700 via-red-700 to-amber-500 hover:from-violet-800 hover:via-red-800 hover:to-amber-600 shadow-2xl hover:shadow-violet-500/25 transition-all duration-300 transform hover:scale-[1.02]"
+              >
+                {loading ? (
+                  <>
+                    <Sparkles className="mr-3 h-5 w-5 animate-spin" />
+                    {getModeActionText(mode)}...
+                  </>
+                ) : (
+                  <>
+                    <Feather className="mr-3 h-5 w-5" />
+                    {getModeActionText(mode)}
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
 
           {/* Output Section */}
