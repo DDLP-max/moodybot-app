@@ -43,9 +43,10 @@ export default function CreativeWriterPage() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
   const [activePreset, setActivePreset] = useState<string | null>(null);
-  const { questionLimit, refreshQuestionLimit } = useQuestionLimit();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { questionLimit, refreshQuestionLimit, quotaError } = useQuestionLimit();
 
-  // Refresh question limit on component mount
+  // Refresh question limit on component mount (non-blocking)
   useEffect(() => {
     refreshQuestionLimit(1); // Using default user ID 1
   }, [refreshQuestionLimit]);
@@ -150,6 +151,11 @@ export default function CreativeWriterPage() {
   }, [topicOrPremise, audience, mode, wordCountTarget, maxWords, activePreset]);
 
   async function handleGenerate() {
+    // Prevent multiple rapid clicks
+    if (isSubmitting || loading) {
+      return;
+    }
+    
     setErr(null);
     if (!topicOrPremise.trim() || !audience.trim()) { 
       setErr("Please provide both a topic/premise and target audience."); 
@@ -157,6 +163,9 @@ export default function CreativeWriterPage() {
     }
     
     setLoading(true);
+    setIsSubmitting(true);
+    setRateLimited(false);
+    
     try {
       // Get auto-selection routing if enabled
       let routingData = {};
@@ -205,23 +214,37 @@ export default function CreativeWriterPage() {
         routing: data.personaResolved
       });
       
-      // Refresh question limit from server
-      await refreshQuestionLimit(1);
+      // Refresh question limit from server (non-blocking)
+      refreshQuestionLimit(1).catch(console.error);
     } catch (error) {
       if (error instanceof FetchError) {
         if (error.code === 'RATE_LIMIT_EXCEEDED') {
-          setErr("You're out of free runs. Upgrade to continue.");
+          setErr("You're out of free responses. Upgrade to continue.");
           setRateLimited(true);
+        } else if (error.status === 402) {
+          setErr("You're out of free responses. Upgrade to continue.");
+          setRateLimited(true);
+        } else if (error.status === 429) {
+          setErr("Too many requests. Try again in ~30s.");
+        } else if (error.status === 401 || error.status === 403) {
+          setErr("Please sign in again.");
         } else if (error.status >= 500) {
-          setErr("Server hiccup—try again.");
+          setErr("Service hiccup. Retrying...");
+        } else {
+          setErr(error.message);
+        }
+      } else if (error instanceof Error) {
+        if (error.message.includes('Failed to fetch') || error.message.includes('ERR_')) {
+          setErr("Network error. Check your connection and try again.");
         } else {
           setErr(error.message);
         }
       } else {
-        setErr("Failed to generate content");
+        setErr("Failed to generate content. Please try again.");
       }
     } finally {
       setLoading(false);
+      setIsSubmitting(false);
     }
   }
 
@@ -271,16 +294,29 @@ export default function CreativeWriterPage() {
     setActivePreset(null);
   };
 
-  // Preset functions to populate form fields
-  const applyPreset = (presetType: string) => {
-    console.log('Applying preset:', presetType);
+  // Content Type selection (only changes mode)
+  const applyContentType = (contentType: string) => {
+    console.log('Applying content type:', contentType);
+    setMode(contentType);
+    setActivePreset(null); // Clear quick preset selection
+    setErr(`✅ Selected content type: ${contentType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}`);
+    setTimeout(() => setErr(null), 2000);
+  };
+
+  // Quick Presets (populate content details, keep current content type)
+  const applyQuickPreset = (presetType: string) => {
+    console.log('Applying quick preset:', presetType);
     
-    // Clear all fields first
-    clearAllFields();
+    // Clear content fields but keep the current content type
+    setTopicOrPremise('');
+    setAudience('');
+    setStructure('');
+    setExtras('');
+    setResult(null);
+    setErr(null);
     
     switch (presetType) {
-      case 'fiction_chapter':
-        setMode('fiction_chapter');
+      case 'fantasy_romance':
         setWordCountTarget(1000);
         setMaxWords(1200);
         setMood('cinematic');
@@ -288,10 +324,9 @@ export default function CreativeWriterPage() {
         setEdge([2]);
         setGothicFlourish(true);
         setCarebearToPolicehorse([3]);
-        console.log('Applied Fiction Chapter preset');
+        console.log('Applied Fantasy Romance preset');
         break;
-      case 'article':
-        setMode('article');
+      case 'marketing_article':
         setWordCountTarget(500);
         setMaxWords(550);
         setMood('journalistic');
@@ -299,35 +334,33 @@ export default function CreativeWriterPage() {
         setEdge([3]);
         setGothicFlourish(false);
         setCarebearToPolicehorse([4]);
-        console.log('Applied Article preset');
+        console.log('Applied Marketing Article preset');
         break;
-      case 'teaser_blurbs':
-        setMode('teaser_blurbs');
-        setWordCountTarget(200);
-        setMaxWords(250);
-        setMood('wry');
+      case 'mystery_thriller':
+        setWordCountTarget(800);
+        setMaxWords(900);
+        setMood('gritty');
         setIntensity([4]);
         setEdge([4]);
-        setGothicFlourish(false);
-        setCarebearToPolicehorse([6]);
-        console.log('Applied Teaser Blurbs preset');
-        break;
-      case 'fiction_outline':
-        setMode('fiction_outline');
-        setWordCountTarget(1200);
-        setMaxWords(1300);
-        setMood('cinematic');
-        setIntensity([3]);
-        setEdge([2]);
         setGothicFlourish(true);
-        setCarebearToPolicehorse([3]);
-        console.log('Applied Fiction Outline preset');
+        setCarebearToPolicehorse([6]);
+        console.log('Applied Mystery Thriller preset');
+        break;
+      case 'comedy_sketch':
+        setWordCountTarget(300);
+        setMaxWords(400);
+        setMood('wry');
+        setIntensity([4]);
+        setEdge([5]);
+        setGothicFlourish(false);
+        setCarebearToPolicehorse([7]);
+        console.log('Applied Comedy Sketch preset');
         break;
     }
     
     // Set active preset and show success feedback
     setActivePreset(presetType);
-    setErr(`✅ Applied preset: ${presetType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}`);
+    setErr(`✅ Applied quick preset: ${presetType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}`);
     setTimeout(() => setErr(null), 3000);
   };
 
@@ -630,9 +663,21 @@ export default function CreativeWriterPage() {
                       </p>
                     )}
                   </>
+                ) : quotaError ? (
+                  <div className="text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Usage currently unavailable
+                    </p>
+                    <p className="text-xs text-amber-500 mt-1">
+                      {quotaError}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      You can still generate content
+                    </p>
+                  </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    Usage unavailable.
+                    Loading usage...
                   </p>
                 )}
               </div>
@@ -669,7 +714,7 @@ export default function CreativeWriterPage() {
                 {/* Content Type Selection */}
                 <div>
                   <div className="flex items-center space-x-2 mb-3">
-                    <Label className="text-sm font-medium">Content Type</Label>
+                    <Label className="text-sm font-medium">Step 1: Choose Content Type</Label>
                     <button
                       type="button"
                       aria-label="Content Type help"
@@ -693,8 +738,81 @@ export default function CreativeWriterPage() {
                       )}
                     </button>
                   </div>
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-sm text-muted-foreground">Quick Presets</span>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div 
+                      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                        mode === 'fiction_chapter' 
+                          ? 'bg-blue-900/30 border-blue-500/50 ring-2 ring-blue-500/50' 
+                          : 'bg-blue-900/10 border-blue-900/30 hover:bg-blue-800/20'
+                      }`}
+                      onClick={() => applyContentType('fiction_chapter')}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <BookOpen className="h-6 w-6 text-blue-400" />
+                        <div>
+                          <div className="font-medium text-sm">📖 Fiction Chapter</div>
+                          <div className="text-xs text-muted-foreground">Full chapter prose with scene beats</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div 
+                      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                        mode === 'article' 
+                          ? 'bg-blue-900/30 border-blue-500/50 ring-2 ring-blue-500/50' 
+                          : 'bg-blue-900/10 border-blue-900/30 hover:bg-blue-800/20'
+                      }`}
+                      onClick={() => applyContentType('article')}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <FileText className="h-6 w-6 text-blue-400" />
+                        <div>
+                          <div className="font-medium text-sm">📰 Article</div>
+                          <div className="text-xs text-muted-foreground">Publish-ready essay or guide</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div 
+                      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                        mode === 'teaser_blurbs' 
+                          ? 'bg-blue-900/30 border-blue-500/50 ring-2 ring-blue-500/50' 
+                          : 'bg-blue-900/10 border-blue-900/30 hover:bg-blue-800/20'
+                      }`}
+                      onClick={() => applyContentType('teaser_blurbs')}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Zap className="h-6 w-6 text-blue-400" />
+                        <div>
+                          <div className="font-medium text-sm">🎭 Teaser Blurbs</div>
+                          <div className="text-xs text-muted-foreground">3-5 loglines or hooks</div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div 
+                      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                        mode === 'fiction_outline' 
+                          ? 'bg-blue-900/30 border-blue-500/50 ring-2 ring-blue-500/50' 
+                          : 'bg-blue-900/10 border-blue-900/30 hover:bg-blue-800/20'
+                      }`}
+                      onClick={() => applyContentType('fiction_outline')}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Zap className="h-6 w-6 text-blue-400" />
+                        <div>
+                          <div className="font-medium text-sm">🕵 Outline</div>
+                          <div className="text-xs text-muted-foreground">Chapter list with summaries</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Presets */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="text-sm font-medium">Step 2: Quick Presets (Optional)</Label>
                     <Button
                       type="button"
                       variant="outline"
@@ -705,129 +823,79 @@ export default function CreativeWriterPage() {
                       Clear All
                     </Button>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div 
-                      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
-                        activePreset === 'fiction_chapter' 
-                          ? 'bg-red-900/30 border-red-500/50 ring-2 ring-red-500/50' 
-                          : 'bg-red-900/10 border-red-900/30 hover:bg-red-800/20'
-                      }`}
-                      onClick={() => applyPreset('fiction_chapter')}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <BookOpen className="h-6 w-6 text-amber-400" />
-                        <div>
-                          <div className="font-medium text-sm">📖 Fiction Chapter</div>
-                          <div className="text-xs text-muted-foreground">Full chapter prose with scene beats</div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div 
-                      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
-                        activePreset === 'article' 
-                          ? 'bg-red-900/30 border-red-500/50 ring-2 ring-red-500/50' 
-                          : 'bg-red-900/10 border-red-900/30 hover:bg-red-800/20'
-                      }`}
-                      onClick={() => applyPreset('article')}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <FileText className="h-6 w-6 text-amber-400" />
-                        <div>
-                          <div className="font-medium text-sm">📰 Article</div>
-                          <div className="text-xs text-muted-foreground">Publish-ready essay or guide</div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div 
-                      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
-                        activePreset === 'teaser_blurbs' 
-                          ? 'bg-red-900/30 border-red-500/50 ring-2 ring-red-500/50' 
-                          : 'bg-red-900/10 border-red-900/30 hover:bg-red-800/20'
-                      }`}
-                      onClick={() => applyPreset('teaser_blurbs')}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Zap className="h-6 w-6 text-amber-400" />
-                        <div>
-                          <div className="font-medium text-sm">🎭 Teaser Blurbs</div>
-                          <div className="text-xs text-muted-foreground">3-5 loglines or hooks</div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div 
-                      className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
-                        activePreset === 'fiction_outline' 
-                          ? 'bg-red-900/30 border-red-500/50 ring-2 ring-red-500/50' 
-                          : 'bg-red-900/10 border-red-900/30 hover:bg-red-800/20'
-                      }`}
-                      onClick={() => applyPreset('fiction_outline')}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Zap className="h-6 w-6 text-amber-400" />
-                        <div>
-                          <div className="font-medium text-sm">🕵 Outline</div>
-                          <div className="text-xs text-muted-foreground">Chapter list with summaries</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Enhanced Presets */}
-                <div>
-                  <Label className="text-sm font-medium mb-3 block">Quick Presets</Label>
                   <div className="grid grid-cols-1 gap-3">
                     <div 
-                      className="p-3 rounded-lg border border-red-900/30 bg-gradient-to-r from-red-900/20 to-amber-900/20 hover:from-red-800/30 hover:to-amber-800/30 cursor-pointer transition-all duration-200"
-                      onClick={() => applyPreset('fiction_chapter')}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                        activePreset === 'fantasy_romance' 
+                          ? 'bg-purple-900/30 border-purple-500/50 ring-2 ring-purple-500/50' 
+                          : 'bg-purple-900/10 border-purple-900/30 hover:bg-purple-800/20'
+                      }`}
+                      onClick={() => applyQuickPreset('fantasy_romance')}
                     >
                       <div className="flex items-center space-x-3">
-                        <BookOpen className="h-5 w-5 text-amber-400" />
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+                          <span className="text-white text-sm">✨</span>
+                        </div>
                         <div>
                           <div className="font-medium text-sm">Fantasy Romance</div>
-                          <div className="text-xs text-muted-foreground">Runaway princess bargains with the God of Crows</div>
+                          <div className="text-xs text-muted-foreground">Princesses, magic, atmospheric prose</div>
                         </div>
                       </div>
                     </div>
                     
                     <div 
-                      className="p-3 rounded-lg border border-red-900/30 bg-gradient-to-r from-red-900/20 to-amber-900/20 hover:from-red-800/30 hover:to-amber-800/30 cursor-pointer transition-all duration-200"
-                      onClick={() => applyPreset('article')}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                        activePreset === 'marketing_article' 
+                          ? 'bg-blue-900/30 border-blue-500/50 ring-2 ring-blue-500/50' 
+                          : 'bg-blue-900/10 border-blue-900/30 hover:bg-blue-800/20'
+                      }`}
+                      onClick={() => applyQuickPreset('marketing_article')}
                     >
                       <div className="flex items-center space-x-3">
-                        <FileText className="h-5 w-5 text-amber-400" />
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center">
+                          <span className="text-white text-sm">📈</span>
+                        </div>
                         <div>
                           <div className="font-medium text-sm">Marketing Article</div>
-                          <div className="text-xs text-muted-foreground">People buy status, not products</div>
+                          <div className="text-xs text-muted-foreground">Clear, persuasive, conversion-focused</div>
                         </div>
                       </div>
                     </div>
                     
                     <div 
-                      className="p-3 rounded-lg border border-red-900/30 bg-gradient-to-r from-red-900/20 to-amber-900/20 hover:from-red-800/30 hover:to-amber-800/30 cursor-pointer transition-all duration-200"
-                      onClick={() => applyPreset('fiction_outline')}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                        activePreset === 'mystery_thriller' 
+                          ? 'bg-green-900/30 border-green-500/50 ring-2 ring-green-500/50' 
+                          : 'bg-green-900/10 border-green-900/30 hover:bg-green-800/20'
+                      }`}
+                      onClick={() => applyQuickPreset('mystery_thriller')}
                     >
                       <div className="flex items-center space-x-3">
-                        <Zap className="h-5 w-5 text-amber-400" />
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-center">
+                          <span className="text-white text-sm">🔍</span>
+                        </div>
                         <div>
-                          <div className="font-medium text-sm">Mystery Outline</div>
-                          <div className="text-xs text-muted-foreground">Detective with synesthesia solves crimes</div>
+                          <div className="font-medium text-sm">Mystery Thriller</div>
+                          <div className="text-xs text-muted-foreground">Detective work, plot twists, clues</div>
                         </div>
                       </div>
                     </div>
                     
                     <div 
-                      className="p-3 rounded-lg border border-red-900/30 bg-gradient-to-r from-red-900/20 to-amber-900/20 hover:from-red-800/30 hover:to-amber-800/30 cursor-pointer transition-all duration-200"
-                      onClick={() => applyPreset('teaser_blurbs')}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                        activePreset === 'comedy_sketch' 
+                          ? 'bg-orange-900/30 border-orange-500/50 ring-2 ring-orange-500/50' 
+                          : 'bg-orange-900/10 border-orange-900/30 hover:bg-orange-800/20'
+                      }`}
+                      onClick={() => applyQuickPreset('comedy_sketch')}
                     >
                       <div className="flex items-center space-x-3">
-                        <Zap className="h-5 w-5 text-amber-400" />
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-orange-500 to-yellow-500 flex items-center justify-center">
+                          <span className="text-white text-sm">🎭</span>
+                        </div>
                         <div>
-                          <div className="font-medium text-sm">Comedy Blurbs</div>
-                          <div className="text-xs text-muted-foreground">Time-traveling barista adventures</div>
+                          <div className="font-medium text-sm">Comedy Sketch</div>
+                          <div className="text-xs text-muted-foreground">Witty, satirical, punchy humor</div>
                         </div>
                       </div>
                     </div>
@@ -1406,10 +1474,10 @@ export default function CreativeWriterPage() {
             <div className="sticky bottom-4 z-10">
               <Button
                 onClick={handleGenerate}
-                disabled={loading || rateLimited}
+                disabled={loading || rateLimited || isSubmitting}
                 className="w-full h-14 text-lg font-bold bg-gradient-to-r from-violet-700 via-red-700 to-amber-500 hover:from-violet-800 hover:via-red-800 hover:to-amber-600 shadow-2xl hover:shadow-violet-500/25 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? (
+                {loading || isSubmitting ? (
                   <>
                     <Sparkles className="mr-3 h-5 w-5 animate-spin" />
                     {getModeActionText(mode)}...

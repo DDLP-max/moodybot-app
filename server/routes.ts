@@ -192,26 +192,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Check user question limit
   app.get("/api/users/:userId/limit", async (req, res) => {
+    const requestId = req.headers['x-request-id'] || `limit-${Date.now()}`;
+    const userId = parseInt(req.params.userId);
+    
     try {
-      const userId = parseInt(req.params.userId);
       if (isNaN(userId)) {
+        console.error(`[${requestId}] Invalid user ID: ${req.params.userId}`);
         return res.status(400).json({ 
           code: "INVALID_USER_ID", 
           message: "Invalid user ID format" 
         });
       }
 
+      console.log(`[${requestId}] Checking limit for user ${userId}`);
       const limitCheck = await storage.checkQuestionLimit(userId);
       const resetAt = new Date();
       resetAt.setDate(resetAt.getDate() + 1); // Reset daily
       
+      console.log(`[${requestId}] User ${userId} limit: ${limitCheck.remaining}/${limitCheck.limit}`);
+      
       res.json({
         total: limitCheck.limit,
         remaining: limitCheck.remaining,
+        canAsk: limitCheck.canAsk,
         resetAt: resetAt.toISOString()
       });
     } catch (error) {
-      console.error("Limit check error:", error);
+      console.error(`[${requestId}] Limit check error for user ${userId}:`, error);
       res.status(500).json({ 
         code: "INTERNAL_ERROR", 
         message: "Failed to check question limit" 
@@ -412,6 +419,8 @@ The real answers? The insights that change your life? Those cost something. Not 
 
   // Creative Writer API endpoint
   app.post("/api/creative-writer", async (req, res) => {
+    const requestId = req.headers['x-request-id'] || `creative-${Date.now()}`;
+    
     try {
       const { 
         mode, 
@@ -429,14 +438,24 @@ The real answers? The insights that change your life? Those cost something. Not 
         userId 
       } = req.body;
       
+      console.log(`[${requestId}] Creative writer request: mode=${mode}, userId=${userId}`);
+      
       if (!mode || !topic_or_premise || !audience || !word_count_target || !max_words) {
-        return res.status(400).json({ error: "Missing required fields: mode, topic_or_premise, audience, word_count_target, max_words" });
+        console.error(`[${requestId}] Missing required fields`);
+        return res.status(400).json({ 
+          code: "MISSING_FIELDS",
+          message: "Missing required fields: mode, topic_or_premise, audience, word_count_target, max_words" 
+        });
       }
 
       // Validate mode
       const validModes = ['fiction_chapter', 'fiction_outline', 'article', 'teaser_blurbs'];
       if (!validModes.includes(mode)) {
-        return res.status(400).json({ error: "Invalid mode. Must be one of: " + validModes.join(', ') });
+        console.error(`[${requestId}] Invalid mode: ${mode}`);
+        return res.status(400).json({ 
+          code: "INVALID_MODE",
+          message: "Invalid mode. Must be one of: " + validModes.join(', ') 
+        });
       }
 
       // Default to user ID 1 if not provided (for now)
@@ -445,6 +464,7 @@ The real answers? The insights that change your life? Those cost something. Not 
       // Ensure user exists in storage
       let user = await storage.getUser(currentUserId);
       if (!user) {
+        console.log(`[${requestId}] Creating new user ${currentUserId}`);
         user = await storage.createUser({
           username: `user_${currentUserId}`,
           password: 'temp_password_123'
@@ -453,8 +473,10 @@ The real answers? The insights that change your life? Those cost something. Not 
 
       // Check question limit for free users
       const limitCheck = await storage.checkQuestionLimit(currentUserId);
+      console.log(`[${requestId}] User ${currentUserId} limit check: ${limitCheck.remaining}/${limitCheck.limit}, canAsk: ${limitCheck.canAsk}`);
       
       if (!limitCheck.canAsk) {
+        console.log(`[${requestId}] User ${currentUserId} rate limited`);
         return res.status(429).json({
           code: "RATE_LIMIT_EXCEEDED",
           message: "You've reached the end of your free trial. Upgrade to continue.",
@@ -468,6 +490,7 @@ The real answers? The insights that change your life? Those cost something. Not 
       
       // Get updated limit check after incrementing
       const updatedLimitCheck = await storage.checkQuestionLimit(currentUserId);
+      console.log(`[${requestId}] User ${currentUserId} updated limit: ${updatedLimitCheck.remaining}/${updatedLimitCheck.limit}`);
 
       const apiKey = (process.env.OPENROUTER_API_KEY || "").trim();
       if (!apiKey) {
@@ -509,6 +532,8 @@ ${autoSelectContext}
 INSTRUCTIONS TO MODEL:
 Generate the ${mode} in MoodyBot voice. Obey structure and word counts. No meta commentary.`;
 
+      console.log(`[${requestId}] Calling OpenRouter API with ${max_words} max words`);
+      
       const openRouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -530,16 +555,36 @@ Generate the ${mode} in MoodyBot voice. Obey structure and word counts. No meta 
 
       if (!openRouterRes.ok) {
         const errorText = await openRouterRes.text();
-        console.error("OpenRouter API error:", errorText);
-        return res.status(502).json({
-          code: "AI_SERVICE_ERROR",
-          message: "AI service returned an error"
-        });
+        console.error(`[${requestId}] OpenRouter API error (${openRouterRes.status}):`, errorText);
+        
+        if (openRouterRes.status === 429) {
+          return res.status(429).json({
+            code: "RATE_LIMIT_EXCEEDED",
+            message: "AI service is rate limited. Try again in ~30s."
+          });
+        } else if (openRouterRes.status === 401 || openRouterRes.status === 403) {
+          return res.status(502).json({
+            code: "AI_SERVICE_ERROR",
+            message: "AI service authentication failed"
+          });
+        } else if (openRouterRes.status >= 500) {
+          return res.status(502).json({
+            code: "AI_SERVICE_ERROR",
+            message: "AI service is temporarily unavailable"
+          });
+        } else {
+          return res.status(502).json({
+            code: "AI_SERVICE_ERROR",
+            message: "AI service returned an error"
+          });
+        }
       }
 
       const json = await openRouterRes.json();
       const aiReply = json.choices?.[0]?.message?.content || "Failed to generate creative content";
       const usage = json.usage || { total_tokens: 0 };
+
+      console.log(`[${requestId}] Generated content (${usage.total_tokens} tokens)`);
 
       const responseData = {
         id: `gen_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -552,13 +597,27 @@ Generate the ${mode} in MoodyBot voice. Obey structure and word counts. No meta 
         limit: updatedLimitCheck.limit
       };
       
+      console.log(`[${requestId}] Sending response to client`);
       res.json(responseData);
     } catch (error: any) {
-      console.error("Creative Writer API error:", error);
-      res.status(500).json({
-        code: "INTERNAL_ERROR",
-        message: "An unexpected error occurred"
-      });
+      console.error(`[${requestId}] Creative Writer API error:`, error);
+      
+      if (error.message?.includes('fetch')) {
+        res.status(502).json({
+          code: "NETWORK_ERROR",
+          message: "Network error connecting to AI service"
+        });
+      } else if (error.message?.includes('timeout')) {
+        res.status(504).json({
+          code: "TIMEOUT",
+          message: "Request timed out. Please try again."
+        });
+      } else {
+        res.status(500).json({
+          code: "INTERNAL_ERROR",
+          message: "An unexpected error occurred"
+        });
+      }
     }
   });
 
