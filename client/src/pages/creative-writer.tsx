@@ -39,6 +39,7 @@ export default function CreativeWriterPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<CreativeWriterResult | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [rateLimited, setRateLimited] = useState(false);
   const { questionLimit, refreshQuestionLimit } = useQuestionLimit();
 
   // Refresh question limit on component mount
@@ -197,6 +198,7 @@ export default function CreativeWriterPage() {
       if (error instanceof FetchError) {
         if (error.code === 'RATE_LIMIT_EXCEEDED') {
           setErr("You're out of free runs. Upgrade to continue.");
+          setRateLimited(true);
         } else if (error.status >= 500) {
           setErr("Server hiccup—try again.");
         } else {
@@ -1160,74 +1162,74 @@ export default function CreativeWriterPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 gap-3">
                   <div 
-                    className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                    className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
                       mood === 'gritty' 
                         ? 'bg-purple-900/30 border-purple-500/50' 
                         : 'bg-purple-900/10 border-purple-900/30 hover:bg-purple-800/20'
                     }`}
                     onClick={() => setMood('gritty')}
                   >
-                    <div className="font-medium text-sm mb-2">Default MoodyBot (Dark, Witty)</div>
+                    <div className="font-medium text-sm mb-1">MoodyBot Default (Dark, Witty)</div>
                     <div className="text-xs text-muted-foreground italic">
-                      "The whiskey burns going down, but it's the memories that really hurt. She left three months ago, and I'm still finding her hair in the shower drain."
+                      "The whiskey burns going down, but it's the memories that really hurt."
                     </div>
                   </div>
                   
                   <div 
-                    className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                    className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
                       mood === 'cinematic' 
                         ? 'bg-purple-900/30 border-purple-500/50' 
                         : 'bg-purple-900/10 border-purple-900/30 hover:bg-purple-800/20'
                     }`}
                     onClick={() => setMood('cinematic')}
                   >
-                    <div className="font-medium text-sm mb-2">Cinematic (Visual, Lyrical)</div>
+                    <div className="font-medium text-sm mb-1">Gothic Flourish (Mythic, Poetic)</div>
                     <div className="text-xs text-muted-foreground italic">
-                      "Moonlight spills across the empty street like spilled mercury. Neon signs flicker their last gasps before dawn claims the city."
+                      "The old gods sleep beneath the city, their dreams woven into the very stones."
                     </div>
                   </div>
                   
                   <div 
-                    className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
-                      mood === 'wry' 
-                        ? 'bg-purple-900/30 border-purple-500/50' 
-                        : 'bg-purple-900/10 border-purple-900/30 hover:bg-purple-800/20'
-                    }`}
-                    onClick={() => setMood('wry')}
-                  >
-                    <div className="font-medium text-sm mb-2">Gothic Flourish (Mythic, Poetic)</div>
-                    <div className="text-xs text-muted-foreground italic">
-                      "The old gods sleep beneath the city, their dreams woven into the very stones. Every shadow holds a secret, every whisper carries the weight of centuries."
-                    </div>
-                  </div>
-                  
-                  <div 
-                    className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                    className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
                       mood === 'journalistic' 
                         ? 'bg-purple-900/30 border-purple-500/50' 
                         : 'bg-purple-900/10 border-purple-900/30 hover:bg-purple-800/20'
                     }`}
                     onClick={() => setMood('journalistic')}
                   >
-                    <div className="font-medium text-sm mb-2">Ogilvy (Marketing Clarity)</div>
+                    <div className="font-medium text-sm mb-1">Ogilvy (Marketing Clarity)</div>
                     <div className="text-xs text-muted-foreground italic">
-                      "People don't buy products. They buy better versions of themselves. Your product isn't the solution—it's the bridge to who they want to become."
+                      "People don't buy products. They buy better versions of themselves."
                     </div>
                   </div>
                   
                   <div 
-                    className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                    className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                      mood === 'wry' 
+                        ? 'bg-purple-900/30 border-purple-500/50' 
+                        : 'bg-purple-900/10 border-purple-900/30 hover:bg-purple-800/20'
+                    }`}
+                    onClick={() => setMood('wry')}
+                  >
+                    <div className="font-medium text-sm mb-1">Forensic Files (Analytical, Precise)</div>
+                    <div className="text-xs text-muted-foreground italic">
+                      "The evidence doesn't lie. Every detail tells a story, every clue leads to truth."
+                    </div>
+                  </div>
+                  
+                  <div 
+                    className={`p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
                       mood === 'romantic' 
                         ? 'bg-purple-900/30 border-purple-500/50' 
                         : 'bg-purple-900/10 border-purple-900/30 hover:bg-purple-800/20'
                     }`}
                     onClick={() => setMood('romantic')}
                   >
-                    <div className="font-medium text-sm mb-2">Roast (Savage Satire)</div>
+                    <div className="font-medium text-sm mb-1">Savage Roast (Brutal Satire)</div>
                     <div className="text-xs text-muted-foreground italic">
-                      "Your startup idea is so original, I'm surprised it hasn't been featured on 'Shark Tank' yet. Oh wait, it has—and they called it 'delusional.'"
+                      "Your startup idea is so original, I'm surprised it hasn't been featured on 'Shark Tank' yet."
                     </div>
                   </div>
                 </div>
@@ -1347,16 +1349,21 @@ export default function CreativeWriterPage() {
             </Card>
 
             {/* Sticky Generate Button */}
-            <div className="fixed bottom-4 left-4 right-4 lg:left-auto lg:right-auto lg:w-1/2 z-50">
+            <div className="sticky bottom-4 z-10">
               <Button
                 onClick={handleGenerate}
-                disabled={loading}
-                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-violet-700 via-red-700 to-amber-500 hover:from-violet-800 hover:via-red-800 hover:to-amber-600 shadow-2xl hover:shadow-violet-500/25 transition-all duration-300 transform hover:scale-[1.02]"
+                disabled={loading || rateLimited}
+                className="w-full h-14 text-lg font-bold bg-gradient-to-r from-violet-700 via-red-700 to-amber-500 hover:from-violet-800 hover:via-red-800 hover:to-amber-600 shadow-2xl hover:shadow-violet-500/25 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
                     <Sparkles className="mr-3 h-5 w-5 animate-spin" />
                     {getModeActionText(mode)}...
+                  </>
+                ) : rateLimited ? (
+                  <>
+                    <Sparkles className="mr-3 h-5 w-5" />
+                    Upgrade to Continue
                   </>
                 ) : (
                   <>
