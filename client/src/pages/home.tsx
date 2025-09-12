@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Eye, Sparkles, Target, Feather, Heart } from "lucide-react";
+import { Eye, Sparkles, Target, Feather } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { User } from "lucide-react";
@@ -151,16 +151,16 @@ export default function Home() {
                   className="bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full"
                   onClick={() => setLocation("/validation")}
                 >
-                  <Heart className="mr-2 h-5 w-5 text-rose-200" />
+                  <span className="mr-2 text-rose-200 text-lg">⚖️</span>
                   VALIDATION MODE
                 </Button>
                 <div className="text-center p-3 bg-background/50 rounded-lg border border-primary/20 w-full">
                   <h3 className="font-bold bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent mb-2 flex items-center justify-center text-sm">
-                    <Heart className="h-4 w-4 mr-2 text-rose-500" />
+                    <span className="mr-2 text-rose-500 text-base">⚖️</span>
                     Validation Mode
                   </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                    Emotionally intelligent responses that validate feelings and behaviors with positive, negative, or mixed validation.
+                    Positive, negative, or mixed push-pull. Make people feel seen, set boundaries, or do both with precision.
                   </p>
                 </div>
               </div>
