@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Copy, RefreshCw, Heart, Shield, Zap, MessageSquare } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
+import { useQuestionLimit } from "@/hooks/use-question-limit";
 
 const RELATIONSHIPS = [
   { value: "stranger", label: "Stranger" },
@@ -52,6 +53,7 @@ interface ValidationResponse {
 
 export default function ValidationMode() {
   const [, setLocation] = useLocation();
+  const { questionLimit, refreshQuestionLimit } = useQuestionLimit();
   const [context, setContext] = useState("");
   const [relationship, setRelationship] = useState("friend");
   const [mode, setMode] = useState<"positive" | "negative" | "mixed">("positive");
@@ -99,6 +101,11 @@ export default function ValidationMode() {
       
       const data = await res.json();
       setResponse(data.output);
+      
+      // Refresh question limit after successful request
+      if (data.remaining !== undefined) {
+        refreshQuestionLimit();
+      }
     } catch (error) {
       console.error('Error generating validation:', error);
     } finally {
@@ -140,6 +147,38 @@ export default function ValidationMode() {
       </div>
 
       <div className="max-w-4xl mx-auto p-6 space-y-6">
+        {/* Question Limit Display */}
+        {questionLimit && (
+          <Card className="border-0 shadow-lg" style={{ backgroundColor: 'rgba(20, 184, 166, 0.05)', borderColor: 'rgba(20, 184, 166, 0.2)' }}>
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center justify-between">
+                <div className="text-center flex-1">
+                  <p className="text-sm text-gray-300">
+                    {questionLimit.remaining > 0 
+                      ? `${questionLimit.remaining} free validation request${questionLimit.remaining === 1 ? '' : 's'} remaining`
+                      : 'No free validation requests remaining'
+                    }
+                  </p>
+                  {questionLimit.remaining <= 1 && questionLimit.remaining > 0 && (
+                    <p className="text-xs text-orange-400 mt-1">
+                      Last free request! Subscribe for unlimited access.
+                    </p>
+                  )}
+                </div>
+                <div className="flex-shrink-0">
+                  <Button
+                    onClick={() => window.open('https://moodybot.gumroad.com/l/moodybot-webapp', '_blank')}
+                    size="sm"
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90"
+                  >
+                    Subscribe $9/month
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Input Section */}
         <Card className="border-0 shadow-2xl" style={{ backgroundColor: 'rgba(20, 184, 166, 0.05)', borderColor: 'rgba(20, 184, 166, 0.2)' }}>
           <CardHeader>

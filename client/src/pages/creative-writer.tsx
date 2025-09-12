@@ -725,7 +725,10 @@ export default function CreativeWriterPage() {
                 {questionLimit ? (
                   <>
                     <p className="text-sm text-muted-foreground">
-                      {questionLimit.remaining} of {questionLimit.limit} creative writing requests remaining
+                      {questionLimit.remaining > 0 
+                        ? `${questionLimit.remaining} free creative writing request${questionLimit.remaining === 1 ? '' : 's'} remaining`
+                        : 'No free creative writing requests remaining'
+                      }
                     </p>
                     {questionLimit.remaining <= 1 && questionLimit.remaining > 0 && (
                       <p className="text-xs text-orange-500 mt-1">

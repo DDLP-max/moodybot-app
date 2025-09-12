@@ -563,7 +563,10 @@ export default function Chat() {
           {questionLimit && (
             <div className="flex items-center justify-center space-x-2 mt-2">
               <span className="text-xs text-muted-foreground">
-                Questions: {questionLimit.remaining}/{questionLimit.limit}
+                {questionLimit.remaining > 0 
+                  ? `${questionLimit.remaining} free question${questionLimit.remaining === 1 ? '' : 's'} remaining`
+                  : 'No free questions remaining'
+                }
               </span>
               {questionLimit.remaining <= 1 && questionLimit.remaining > 0 && (
                 <span className="text-xs bg-red-500 text-white px-2 py-1 rounded-full">

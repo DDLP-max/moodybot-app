@@ -136,7 +136,10 @@ export default function CopywriterPage() {
                 {questionLimit ? (
                   <>
                     <p className="text-sm text-muted-foreground">
-                      {questionLimit.remaining} of {questionLimit.limit} copywriting requests remaining
+                      {questionLimit.remaining > 0 
+                        ? `${questionLimit.remaining} free copywriting request${questionLimit.remaining === 1 ? '' : 's'} remaining`
+                        : 'No free copywriting requests remaining'
+                      }
                     </p>
                     {questionLimit.remaining <= 1 && questionLimit.remaining > 0 && (
                       <p className="text-xs text-orange-500 mt-1">
@@ -146,7 +149,7 @@ export default function CopywriterPage() {
                   </>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    3 of 3 copywriting requests remaining
+                    3 free copywriting requests remaining
                   </p>
                 )}
               </div>

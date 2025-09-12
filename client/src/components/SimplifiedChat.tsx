@@ -401,7 +401,11 @@ export default function SimplifiedChat() {
               🚀 Upgrade to MoodyBot Premium
             </p>
             <p className="text-xs text-muted-foreground">
-              {questionLimit ? `${questionLimit.remaining} of ${questionLimit.limit} questions remaining` : 'Unlimited emotional intelligence upgrades'}
+              {questionLimit ? (
+                questionLimit.remaining > 0 
+                  ? `${questionLimit.remaining} free question${questionLimit.remaining === 1 ? '' : 's'} remaining`
+                  : 'No free questions remaining'
+              ) : 'Unlimited emotional intelligence upgrades'}
             </p>
           </div>
           <Button
