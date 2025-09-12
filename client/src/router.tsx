@@ -6,6 +6,7 @@ import Demo from "@/pages/demo";
 import Copywriter from "@/pages/copywriter";
 import CreativeWriter from "@/pages/creative-writer";
 import Validation from "@/pages/validation";
+import Dynamic from "@/pages/dynamic";
 import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 
 import NotFound from "@/pages/not-found"; // Optional fallback
@@ -16,7 +17,11 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/chat" component={Chat} />
       <Route path="/chat/:sessionId" component={Chat} />
-      <Route path="/dynamic" component={SimplifiedChat} />
+      <Route path="/dynamic">
+        <AppErrorBoundary>
+          <Dynamic />
+        </AppErrorBoundary>
+      </Route>
       <Route path="/demo" component={Demo} />
       <Route path="/copywriter" component={Copywriter} />
       <Route path="/creative-writer">
