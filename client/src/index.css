@@ -18,6 +18,11 @@
     --accent-foreground: 0 0% 98%;
     --destructive: 0 74% 42%;
     --destructive-foreground: 0 0% 98%;
+    
+    /* Validation gradient tokens (edit here if you want a different lavender/teal) */
+    --val-start: #2DD4BF; /* teal-400 */
+    --val-end: #8B5CF6; /* violet-500 (lavender-ish) */
+    --val-ring: #A78BFA; /* violet-400 for focus/ring */
   }
 
   html.dark {
@@ -101,6 +106,17 @@
 @layer utilities {
   .animate-pulse-slow {
     animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  /* Validation gradient utilities */
+  .bg-val {
+    background-image: linear-gradient(to right, var(--val-start), var(--val-end));
+  }
+  .ring-val { 
+    box-shadow: 0 0 0 1px var(--val-ring) inset; 
+  }
+  .hover-bright:hover { 
+    filter: brightness(1.05); 
   }
 }
 

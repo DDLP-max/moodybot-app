@@ -18,16 +18,12 @@ export const MODE_THEME = {
     gradient: 'bg-gradient-to-r from-amber-500 to-orange-500'
   },
   validation: { 
-    bg: 'bg-pink-500', 
-    hover: 'hover:bg-pink-600', 
-    ring: 'ring-pink-300',
-    gradient: 'bg-gradient-to-r from-pink-500 to-rose-500',
-    // Using the exact colors from design tokens
-    custom: {
-      base: '#EC4899',
-      hover: '#DB2777',
-      ring: '#F472B6'
-    }
+    btn: "bg-val text-white hover-bright shadow-lg rounded-xl",
+    ring: "ring-val",
+    // Legacy support for existing code
+    bg: 'bg-val', 
+    hover: 'hover-bright', 
+    gradient: 'bg-val'
   }
 } as const;
 
