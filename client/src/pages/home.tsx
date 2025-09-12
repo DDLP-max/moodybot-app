@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Eye, Sparkles, Target, Feather } from "lucide-react";
+import { Eye, Sparkles, Target, Feather, Heart } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { User } from "lucide-react";
@@ -84,7 +84,7 @@ export default function Home() {
 
             
             {/* Mode Options with Descriptions */}
-            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 px-4 mb-8">
+            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-4 mb-8">
               {/* Dynamic Mode */}
               <div className="flex flex-col items-center space-y-3">
                 <Button 
@@ -141,6 +141,26 @@ export default function Home() {
                   </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     Dive-bar oracle meets copywriter. Fiction, articles, outlines, and teaser blurbs with Hank Moody swagger and Bourdain grit.
+                  </p>
+                </div>
+              </div>
+
+              {/* Validation Mode */}
+              <div className="flex flex-col items-center space-y-3">
+                <Button
+                  className="bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full"
+                  onClick={() => setLocation("/validation")}
+                >
+                  <Heart className="mr-2 h-5 w-5 text-rose-200" />
+                  VALIDATION MODE
+                </Button>
+                <div className="text-center p-3 bg-background/50 rounded-lg border border-primary/20 w-full">
+                  <h3 className="font-bold bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent mb-2 flex items-center justify-center text-sm">
+                    <Heart className="h-4 w-4 mr-2 text-rose-500" />
+                    Validation Mode
+                  </h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Emotionally intelligent responses that validate feelings and behaviors with positive, negative, or mixed validation.
                   </p>
                 </div>
               </div>

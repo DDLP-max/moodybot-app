@@ -810,6 +810,280 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
     }
   });
 
+  // Validation Mode API endpoint
+  app.post("/api/validation", async (req, res) => {
+    const requestId = req.headers['x-request-id'] || `validation-${Date.now()}`;
+    
+    try {
+      const { 
+        mode, 
+        style, 
+        intensity, 
+        length, 
+        relationship, 
+        reason_tags, 
+        order, 
+        include_followup, 
+        context_text,
+        userId 
+      } = req.body;
+      
+      console.log(`[${requestId}] Validation request: mode=${mode}, style=${style}, intensity=${intensity}, userId=${userId}`);
+      
+      if (!mode || !style || !context_text) {
+        console.error(`[${requestId}] Missing required fields`);
+        return res.status(400).json({ 
+          code: "MISSING_FIELDS",
+          message: "Missing required fields: mode, style, context_text" 
+        });
+      }
+
+      // Validate mode
+      const validModes = ['positive', 'negative', 'mixed'];
+      if (!validModes.includes(mode)) {
+        console.error(`[${requestId}] Invalid mode: ${mode}`);
+        return res.status(400).json({ 
+          code: "INVALID_MODE",
+          message: "Invalid mode. Must be one of: " + validModes.join(', ') 
+        });
+      }
+
+      // Validate style
+      const validStyles = ['warm', 'blunt', 'playful', 'clinical', 'moodybot'];
+      if (!validStyles.includes(style)) {
+        console.error(`[${requestId}] Invalid style: ${style}`);
+        return res.status(400).json({ 
+          code: "INVALID_STYLE",
+          message: "Invalid style. Must be one of: " + validStyles.join(', ') 
+        });
+      }
+
+      // Default to user ID 1 if not provided (for now)
+      const currentUserId = userId || 1;
+
+      // Ensure user exists in storage
+      let user = await storage.getUser(currentUserId);
+      if (!user) {
+        console.log(`[${requestId}] Creating new user ${currentUserId}`);
+        user = await storage.createUser({
+          username: `user_${currentUserId}`,
+          password: 'temp_password_123'
+        });
+      }
+
+      // Check question limit for free users
+      const limitCheck = await storage.checkQuestionLimit(currentUserId);
+      console.log(`[${requestId}] User ${currentUserId} limit check: ${limitCheck.remaining}/${limitCheck.limit}, canAsk: ${limitCheck.canAsk}`);
+      
+      if (!limitCheck.canAsk) {
+        console.log(`[${requestId}] User ${currentUserId} rate limited`);
+        return res.status(429).json({
+          code: "RATE_LIMIT_EXCEEDED",
+          message: "You've reached the end of your free trial. Upgrade to continue.",
+          remaining: limitCheck.remaining,
+          limit: limitCheck.limit
+        });
+      }
+
+      // Increment question count for free users
+      await storage.incrementQuestionCount(currentUserId);
+      
+      // Get updated limit check after incrementing
+      const updatedLimitCheck = await storage.checkQuestionLimit(currentUserId);
+      console.log(`[${requestId}] User ${currentUserId} updated limit: ${updatedLimitCheck.remaining}/${updatedLimitCheck.limit}`);
+
+      const apiKey = (process.env.OPENROUTER_API_KEY || "").trim();
+      if (!apiKey) {
+        return res.status(500).json({ error: "Server missing OPENROUTER_API_KEY" });
+      }
+
+      // Create the validation prompt
+      const validationPrompt = `You are implementing "Validation Mode" for the MoodyBot web app.
+
+GOAL
+Return concise validation statements that mirror feelings/behaviors and, when requested, add a calibrated push (negative validation) without shaming.
+
+INPUT (JSON):
+- mode: "${mode}"
+- style: "${style}"
+- intensity: ${intensity}
+- length: "${length}"
+- relationship: "${relationship}"
+- reason_tags: [${reason_tags.map(tag => `"${tag}"`).join(', ')}]
+- order: "${order}"
+- include_followup: ${include_followup}
+- context_text: "${context_text}"
+
+RULES
+1) Start with presence/accurate reflection (Level 1–2); never invalidate. (DBT validation levels)
+2) Use "because …" to name the specific behavior or value the person showed.
+3) Positive mode: validation + reason. No push.
+4) Negative mode: mirror + boundary or mild critique phrased as standards/preferences; offer a constructive nudge.
+5) Mixed mode: two beats (per order): a) validation, b) gentle counterpoint. Keep it playful or respectful per style.
+6) Keep it safe-for-work unless relationship=partner AND context indicates intimacy.
+7) Output MUST follow this schema:
+
+{
+  "output": {
+    "validation": "...",
+    "because": "...",
+    "push_pull": "... or null",
+    "followup": "... or null"
+  },
+  "notes": "brief rationale for internal QA"
+}
+
+8) No therapy/medical claims; no identity labels; no sarcasm at intensity 0–1.
+
+STYLES
+- warm: soft, reassuring
+- blunt: direct, minimal sugar
+- playful: light tease, smile in voice
+- clinical: neutral, precise
+- moodybot: smoky bar-poet cadence, still specific and humane
+
+LENGTH GUIDE
+- one_liner ≤ 18 words total
+- short 2–3 lines, ≤ 45 words
+- paragraph ≤ 120 words
+
+Now generate the response.`;
+
+      console.log(`[${requestId}] Calling OpenRouter API for validation`);
+      
+      const openRouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`,
+          "HTTP-Referer": "https://app.moodybot.ai",
+          "X-Title": "MoodyBot"
+        },
+        body: JSON.stringify({
+          model: "x-ai/grok-4",
+          messages: [
+            { role: "user", content: validationPrompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000
+        }),
+      });
+
+      if (!openRouterRes.ok) {
+        const errorText = await openRouterRes.text();
+        console.error(`[${requestId}] OpenRouter API error (${openRouterRes.status}):`, errorText);
+        
+        if (openRouterRes.status === 429) {
+          return res.status(429).json({
+            code: "RATE_LIMIT_EXCEEDED",
+            message: "AI service is rate limited. Try again in ~30s."
+          });
+        } else if (openRouterRes.status === 401 || openRouterRes.status === 403) {
+          return res.status(502).json({
+            code: "AI_SERVICE_ERROR",
+            message: "AI service authentication failed"
+          });
+        } else if (openRouterRes.status >= 500) {
+          return res.status(502).json({
+            code: "AI_SERVICE_ERROR",
+            message: "AI service is temporarily unavailable"
+          });
+        } else {
+          return res.status(502).json({
+            code: "AI_SERVICE_ERROR",
+            message: "AI service returned an error"
+          });
+        }
+      }
+
+      const json = await openRouterRes.json();
+      const aiReply = json.choices?.[0]?.message?.content || "Failed to generate validation";
+      const usage = json.usage || { total_tokens: 0 };
+
+      console.log(`[${requestId}] Generated validation response`);
+
+      // Parse the JSON response
+      let parsed = extractJsonFromFence(aiReply);
+      
+      if (!parsed) {
+        console.error(`[${requestId}] Failed to extract JSON from AI response`);
+        console.error(`[${requestId}] Raw AI response:`, aiReply);
+        
+        // Fallback: try to find JSON content manually
+        const jsonStart = aiReply.indexOf('{');
+        const jsonEnd = aiReply.lastIndexOf('}');
+        
+        if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+          const jsonContent = aiReply.substring(jsonStart, jsonEnd + 1);
+          try {
+            parsed = JSON.parse(jsonContent);
+            console.log(`[${requestId}] Successfully parsed JSON from manual extraction`);
+          } catch (error) {
+            console.error(`[${requestId}] Manual JSON extraction failed:`, error);
+            parsed = { 
+              output: {
+                validation: "I understand what you're going through.",
+                because: "You shared something meaningful with me.",
+                push_pull: null,
+                followup: null
+              },
+              notes: "Fallback response due to parsing error"
+            };
+          }
+        } else {
+          parsed = { 
+            output: {
+              validation: "I understand what you're going through.",
+              because: "You shared something meaningful with me.",
+              push_pull: null,
+              followup: null
+            },
+            notes: "Fallback response due to parsing error"
+          };
+        }
+      } else {
+        console.log(`[${requestId}] Successfully parsed JSON response`);
+      }
+
+      const responseData = {
+        output: parsed.output || {
+          validation: "I understand what you're going through.",
+          because: "You shared something meaningful with me.",
+          push_pull: null,
+          followup: null
+        },
+        notes: parsed.notes || "Generated validation response",
+        usage: {
+          tokens: usage.total_tokens || 0
+        },
+        remaining: updatedLimitCheck.remaining,
+        limit: updatedLimitCheck.limit
+      };
+      
+      console.log(`[${requestId}] Sending validation response to client`);
+      res.json(responseData);
+    } catch (error: any) {
+      console.error(`[${requestId}] Validation API error:`, error);
+      
+      if (error.message?.includes('fetch')) {
+        res.status(502).json({
+          code: "NETWORK_ERROR",
+          message: "Network error connecting to AI service"
+        });
+      } else if (error.message?.includes('timeout')) {
+        res.status(504).json({
+          code: "TIMEOUT",
+          message: "Request timed out. Please try again."
+        });
+      } else {
+        res.status(500).json({
+          code: "INTERNAL_ERROR",
+          message: "An unexpected error occurred"
+        });
+      }
+    }
+  });
+
   // Copywriter API endpoint
   app.post("/api/copywriter", async (req, res) => {
     try {

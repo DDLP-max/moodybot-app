@@ -5,6 +5,7 @@ import SimplifiedChat from "@/components/SimplifiedChat";
 import Demo from "@/pages/demo";
 import Copywriter from "@/pages/copywriter";
 import CreativeWriter from "@/pages/creative-writer";
+import Validation from "@/pages/validation";
 import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 
 import NotFound from "@/pages/not-found"; // Optional fallback
@@ -21,6 +22,11 @@ function Router() {
       <Route path="/creative-writer">
         <AppErrorBoundary>
           <CreativeWriter />
+        </AppErrorBoundary>
+      </Route>
+      <Route path="/validation">
+        <AppErrorBoundary>
+          <Validation />
         </AppErrorBoundary>
       </Route>
 
