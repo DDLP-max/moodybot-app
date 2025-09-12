@@ -172,7 +172,7 @@ export default function ValidationMode() {
           <CardHeader>
             <CardTitle className="text-white">Generate Validation Response</CardTitle>
             <CardDescription className="text-gray-300">
-              Create emotionally intelligent responses that validate feelings and behaviors
+              Cut through noise with presence. This mode mirrors back what was said and delivers calibrated validation — from warm approval to firm boundary-setting. Choose Positive, Negative, or Mixed push-pull to reinforce strengths, call out blind spots, or do both in one breath. It's not therapy or advice — it's the art of making people feel seen while keeping your own standards intact.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
