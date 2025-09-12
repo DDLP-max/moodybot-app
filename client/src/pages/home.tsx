@@ -132,7 +132,7 @@ export default function Home() {
                   onClick={() => setLocation("/creative-writer")}
                 >
                   <Feather className="mr-2 h-5 w-5 text-amber-200" />
-                  CREATIVE WRITER
+                  CREATIVE WRITER MODE
                 </Button>
                 <div className="text-center p-3 bg-background/50 rounded-lg border border-primary/20 w-full">
                   <h3 className="font-bold bg-gradient-to-r from-red-600 to-amber-500 bg-clip-text text-transparent mb-2 flex items-center justify-center text-sm">
