@@ -8,9 +8,42 @@ import { systemPromptManager } from "./systemPromptManager";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
+import { z } from "zod";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Validation schema for strict JSON parsing
+const ValidationSchema = z.object({
+  chips: z.object({
+    polarity: z.enum(["positive", "negative", "mixed"]),
+    style: z.enum(["warm", "neutral", "tough", "poetic"]),
+    length: z.enum(["one_liner", "two_three", "short_paragraph"]),
+    intensity: z.enum(["feather", "casual", "firm", "heavy"]),
+  }),
+  messages: z.object({
+    validation: z.string().min(3),
+    because: z.string().min(3),
+    depth: z.string().min(3),
+  })
+});
+
+type ValidationPayload = z.infer<typeof ValidationSchema>;
+
+// Helper function to coerce JSON from text
+function coerceFromText(txt: string) {
+  // very light salvage: try to extract JSON between first { and last }
+  const start = txt.indexOf("{");
+  const end = txt.lastIndexOf("}");
+  if (start >= 0 && end > start) {
+    try { 
+      return JSON.parse(txt.slice(start, end + 1)); 
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
 
 // Helper function to extract JSON from markdown code fences
 function extractJsonFromFence(content: string): any {
@@ -912,75 +945,33 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
       const safeIntensity = capWorkIntensity(relationship, intensity);
       const targetLevels = targetLevelByIntensity(safeIntensity).join(",");
 
-      // Create the validation prompt with DBT system
-      const validationPrompt = `You are MoodyBot's Validation Engine.
-
-MISSION
-Given a user's context, return a calibrated validation that goes BEYOND mirroring. Always use the HIGHEST DBT validation level that fits the input, escalating above Levels 1–2 where possible.
-
-DBT LADDER (use the highest applicable)
-L1 Presence — acknowledge and be with.
-L2 Accurate reflection — restate what was said (brief).
-L3 Read the unspoken — infer likely emotions or needs; verify softly.
-L4 Link to history/causes — connect present response to prior events/traits.
-L5 Normalize — show that "anyone would feel this."
-L6 Radical genuineness — human-to-human resonance as equals.
-
-GUARDRAILS
-- Validation ≠ agreement. Don't give advice or fix. No gaslighting. Avoid "should," diagnoses, or character labels. Keep it humane and specific.
-- For **Negative** mode: the "push" is a *standard/boundary*, never an insult.
-- For **Work** relationships: no sexual/appearance angles; keep intensity ≤ 2.
-- If content is crisis/abuse, prioritize safety; do not apply negative push.
-
-INPUT JSON (from app)
+      // Create the validation prompt with new schema format
+      const validationPrompt = `You are MoodyBot Validation Mode. Return ONLY JSON that matches this schema:
 {
-  "mode": "${mode}",
-  "style": "${style}",
-  "intensity": ${safeIntensity},
-  "length": "${length}",
-  "relationship": "${relationship}",
-  "reason_tags": [${reason_tags.map(tag => `"${tag}"`).join(', ')}],
-  "order": "${order}",
-  "include_followup": ${include_followup},
-  "context_text": "${context_text}",
-  "target_levels": "${targetLevels}"
+  "chips": { "polarity": "positive|negative|mixed", "style": "warm|neutral|tough|poetic", "length": "one_liner|two_three|short_paragraph", "intensity": "feather|casual|firm|heavy" },
+  "messages": { "validation": string, "because": string, "depth": string }
+}
+No prose, no backticks.
+
+User selections: relationship="${relationship}", polarity="${mode}", style="${style}", intensity=${safeIntensity}, length="${length}", tags=[${reason_tags.map(tag => `"${tag}"`).join(', ')}], order="${order}", include_followup=${include_followup}
+
+Context: "${context_text}"
+
+Examples:
+
+Example 1 (positive, warm, one_liner, feather):
+{
+  "chips": { "polarity": "positive", "style": "warm", "length": "one_liner", "intensity": "feather" },
+  "messages": { "validation": "That clearly mattered to you.", "because": "You kept showing up even when it got awkward.", "depth": "You're building trust through consistency." }
 }
 
-DEPTH MAPPING
-- intensity 0 → target L1–L2
-- intensity 1 → target L3
-- intensity 2 → target L4–L5
-- intensity 3 → target L6 (only if appropriate/safe)
-
-STRUCTURE
-1) validation: first line mirrors AND advances one rung above basic reflection.
-2) because: name the *specific* behavior/value, or the history/normalization (per level).
-3) push_pull: 
-   - positive → null
-   - negative → 1 concise boundary/standard framed as preference or expectation
-   - mixed → two beats per \`order\`: (a) validation, (b) gentle counterpoint
-4) followup: 0–1 question that deepens the convo, unless crisis content.
-
-STYLE KEYS
-- warm = gentle, supportive; blunt = direct, few hedges; playful = light tease; clinical = precise/neutral; moodybot = smoky bar-poet cadence but still specific.
-
-OUTPUT JSON
+Example 2 (negative, tough, two_three, firm):
 {
-  "output": {
-    "validation": "...",
-    "because": "...",
-    "push_pull": "... or null",
-    "followup": "... or null"
-  },
-  "notes": "1–2 lines explaining which DBT level you used and why"
+  "chips": { "polarity": "negative", "style": "tough", "length": "two_three", "intensity": "firm" },
+  "messages": { "validation": "I see why you went quiet—protecting yourself.", "because": "Public call-outs sting and make avoidance tempting.", "depth": "But disappearing after promising an update breaks trust. A short 'not ready yet' would land better." }
 }
 
-LENGTH LIMITS
-- one_liner ≤ 18 words total
-- short ≤ 45 words
-- paragraph ≤ 120 words
-
-Now generate the response.`;
+Now generate the response for the given context.`;
 
       console.log(`[${requestId}] Calling OpenRouter API for validation`);
       
@@ -997,8 +988,10 @@ Now generate the response.`;
           messages: [
             { role: "user", content: validationPrompt }
           ],
-          temperature: 0.7,
-          max_tokens: 1000
+          temperature: 0.5,
+          top_p: 0.9,
+          max_tokens: 220,
+          stop: []
         }),
       });
 
@@ -1035,57 +1028,55 @@ Now generate the response.`;
 
       console.log(`[${requestId}] Generated validation response`);
 
-      // Parse the JSON response
-      let parsed = extractJsonFromFence(aiReply);
-      
-      if (!parsed) {
-        console.error(`[${requestId}] Failed to extract JSON from AI response`);
-        console.error(`[${requestId}] Raw AI response:`, aiReply);
+      // Parse the JSON response with defensive validation
+      let jsonData: unknown;
+      try { 
+        jsonData = JSON.parse(aiReply); 
+      } catch { 
+        jsonData = coerceFromText(aiReply); 
+      }
+
+      const parsed = ValidationSchema.safeParse(jsonData);
+
+      if (!parsed.success) {
+        console.warn(`[${requestId}] Schema validation failed, creating smart fallback`);
+        console.warn(`[${requestId}] Raw AI response:`, aiReply);
+        console.warn(`[${requestId}] Validation errors:`, parsed.error.errors);
         
-        // Fallback: try to find JSON content manually
-        const jsonStart = aiReply.indexOf('{');
-        const jsonEnd = aiReply.lastIndexOf('}');
+        // Build a smart non-generic fallback from inputs
+        const because = reason_tags?.length ? `Because it shows ${reason_tags.join(", ")}.` : "Because you showed up honestly.";
+        const line = (msg: string) => {
+          if (length === "one_liner") return msg;
+          if (length === "two_three") return `${msg} Keep going—I'm here.`;
+          return msg;
+        };
         
-        if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-          const jsonContent = aiReply.substring(jsonStart, jsonEnd + 1);
-          try {
-            parsed = JSON.parse(jsonContent);
-            console.log(`[${requestId}] Successfully parsed JSON from manual extraction`);
-          } catch (error) {
-            console.error(`[${requestId}] Manual JSON extraction failed:`, error);
-            parsed = { 
-              output: {
-                validation: "I understand what you're going through.",
-                because: "You shared something meaningful with me.",
-                push_pull: null,
-                followup: null
-              },
-              notes: "Fallback response due to parsing error"
-            };
-          }
-        } else {
-          parsed = { 
-            output: {
-              validation: "I understand what you're going through.",
-              because: "You shared something meaningful with me.",
-              push_pull: null,
-              followup: null
-            },
-            notes: "Fallback response due to parsing error"
-          };
-        }
-      } else {
-        console.log(`[${requestId}] Successfully parsed JSON response`);
+        const responseData = {
+          chips: { 
+            polarity: mode, 
+            style: style === "warm" ? "warm" : style === "blunt" ? "tough" : style === "playful" ? "poetic" : "neutral", 
+            length: length === "one_liner" ? "one_liner" : length === "short" ? "two_three" : "short_paragraph", 
+            intensity: safeIntensity === 0 ? "feather" : safeIntensity === 1 ? "casual" : safeIntensity === 2 ? "firm" : "heavy" 
+          },
+          messages: {
+            validation: line(context_text ? `I hear you: ${context_text}` : "I'm with you on this."),
+            because,
+            depth: "We focus on being seen first; advice comes later."
+          },
+          _fallback: true,
+          usage: {
+            tokens: usage.total_tokens || 0
+          },
+          remaining: updatedLimitCheck.remaining,
+          limit: updatedLimitCheck.limit
+        };
+        
+        console.log(`[${requestId}] Sending fallback validation response to client`);
+        return res.json(responseData);
       }
 
       const responseData = {
-        output: parsed.output || {
-          validation: "I understand what you're going through.",
-          because: "You shared something meaningful with me.",
-          push_pull: null,
-          followup: null
-        },
-        notes: parsed.notes || "Generated validation response",
+        ...parsed.data,
         usage: {
           tokens: usage.total_tokens || 0
         },

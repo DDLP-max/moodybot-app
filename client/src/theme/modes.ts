@@ -1,4 +1,4 @@
-export const MODE_BUTTON_BASE = "inline-flex items-center justify-center px-5 py-3 font-semibold text-white shadow-lg ring-1 rounded-xl";
+export const MODE_BUTTON_BASE = "inline-flex items-center justify-center px-5 py-3 font-semibold text-white shadow-lg ring-1 rounded-none";
 
 export const MODE_THEME = {
   dynamic: { 
@@ -24,7 +24,7 @@ export const MODE_THEME = {
     hover: 'hover-bright', 
     ring: 'ring-val',
     // Legacy support for existing code
-    btn: "bg-val text-white hover-bright shadow-lg rounded-xl",
+    btn: "bg-val text-white hover-bright shadow-lg rounded-none",
     gradient: 'bg-val'
   }
 } as const;

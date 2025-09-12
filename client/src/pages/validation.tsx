@@ -48,15 +48,38 @@ const REASON_TAGS = [
 const INTENSITY_LABELS = ["Feather", "Casual", "Firm", "Heavy"];
 
 interface ValidationResponse {
-  validation: string;
-  because: string;
-  push_pull?: string;
-  followup?: string;
+  chips: {
+    polarity: string;
+    style: string;
+    length: string;
+    intensity: string;
+  };
+  messages: {
+    validation: string;
+    because: string;
+    depth: string;
+  };
+  _fallback?: boolean;
 }
 
 interface ValidationAPIResponse {
-  output: ValidationResponse;
-  notes?: string;
+  chips: {
+    polarity: string;
+    style: string;
+    length: string;
+    intensity: string;
+  };
+  messages: {
+    validation: string;
+    because: string;
+    depth: string;
+  };
+  _fallback?: boolean;
+  usage?: {
+    tokens: number;
+  };
+  remaining?: number;
+  limit?: number;
 }
 
 export default function ValidationMode() {
@@ -109,8 +132,8 @@ export default function ValidationMode() {
       if (!res.ok) throw new Error('Failed to generate validation');
       
       const data: ValidationAPIResponse = await res.json();
-      setResponse(data.output);
-      setResponseNotes(data.notes || "");
+      setResponse(data);
+      setResponseNotes(data._fallback ? "Auto-formatted result while the model re-learns the schema." : "");
       
       // Refresh question limit after successful request
       if (data.remaining !== undefined) {
@@ -125,7 +148,7 @@ export default function ValidationMode() {
 
   const handleCopy = () => {
     if (!response) return;
-    const text = [response.validation, response.because, response.push_pull, response.followup]
+    const text = [response.messages.validation, response.messages.because, response.messages.depth]
       .filter(Boolean)
       .join('\n\n');
     navigator.clipboard.writeText(text);
@@ -419,19 +442,19 @@ export default function ValidationMode() {
                   <Badge 
                     variant="secondary" 
                     className={`${
-                      mode === 'positive' ? 'bg-emerald-500 text-white' :
-                      mode === 'negative' ? 'bg-amber-500 text-white' :
+                      response.chips.polarity === 'positive' ? 'bg-emerald-500 text-white' :
+                      response.chips.polarity === 'negative' ? 'bg-amber-500 text-white' :
                       'bg-gradient-to-r from-teal-500 to-amber-500 text-white'
                     }`}
                   >
-                    {mode === 'positive' ? '✅' : mode === 'negative' ? '⚡' : '🔄'} {mode}
+                    {response.chips.polarity === 'positive' ? '✅' : response.chips.polarity === 'negative' ? '⚡' : '🔄'} {response.chips.polarity}
                   </Badge>
-                  <Badge variant="secondary" className="bg-gray-700 text-gray-300">{style}</Badge>
-                  <Badge variant="secondary" className="bg-gray-700 text-gray-300">{INTENSITY_LABELS[intensity[0]]}</Badge>
-                  <Badge variant="secondary" className="bg-gray-700 text-gray-300">{length}</Badge>
-                  {responseNotes && (
-                    <Badge variant="secondary" className="bg-val text-white">
-                      DBT: {responseNotes.match(/L[1-6]/)?.[0] || 'Level'}
+                  <Badge variant="secondary" className="bg-gray-700 text-gray-300">{response.chips.style}</Badge>
+                  <Badge variant="secondary" className="bg-gray-700 text-gray-300">{response.chips.intensity}</Badge>
+                  <Badge variant="secondary" className="bg-gray-700 text-gray-300">{response.chips.length === 'one_liner' ? '1-liner' : response.chips.length === 'two_three' ? '2-3 lines' : 'paragraph'}</Badge>
+                  {response._fallback && (
+                    <Badge variant="secondary" className="bg-orange-500 text-white">
+                      Auto-formatted
                     </Badge>
                   )}
                 </div>
@@ -439,42 +462,33 @@ export default function ValidationMode() {
                 {/* Validation Response */}
                 <div className="space-y-4">
                   <div className={`p-4 rounded-lg border-l-4 ${
-                    mode === 'positive' ? 'border-l-emerald-500 bg-emerald-500/10' :
-                    mode === 'negative' ? 'border-l-amber-500 bg-amber-500/10' :
+                    response.chips.polarity === 'positive' ? 'border-l-emerald-500 bg-emerald-500/10' :
+                    response.chips.polarity === 'negative' ? 'border-l-amber-500 bg-amber-500/10' :
                     'border-l-teal-400 bg-gradient-to-r from-teal-400/10 to-violet-500/10'
                   }`}>
                     <h4 className="font-semibold text-sm text-gray-300 mb-2">Validation</h4>
-                    <p className="text-white text-lg">{response.validation}</p>
+                    <p className="text-white text-lg">{response.messages.validation}</p>
                   </div>
 
                   <div className="p-4 rounded-lg bg-gray-800/50 border border-gray-600">
                     <h4 className="font-semibold text-sm text-gray-300 mb-2 italic">Because</h4>
-                    <p className="text-white italic">{response.because}</p>
+                    <p className="text-white italic">{response.messages.because}</p>
                   </div>
 
-                  {response.push_pull && (
-                    <div className={`p-4 rounded-lg border-l-4 ${
-                      mode === 'positive' ? 'border-l-emerald-500 bg-emerald-500/10' :
-                      mode === 'negative' ? 'border-l-amber-500 bg-amber-500/10' :
-                      'border-l-teal-400 bg-gradient-to-r from-teal-400/10 to-violet-500/10'
-                    }`}>
-                      <h4 className="font-semibold text-sm text-gray-300 mb-2">Push/Pull</h4>
-                      <p className="text-white">{response.push_pull}</p>
-                    </div>
-                  )}
-
-                  {response.followup && (
-                    <div className="p-4 rounded-full bg-purple-600 text-white text-center">
-                      <h4 className="font-semibold text-sm mb-2">Follow-up Question</h4>
-                      <p className="text-sm">{response.followup}</p>
-                    </div>
-                  )}
-
-                  {/* DBT Level Explanation */}
-                  {responseNotes && (
+                  {/* Validation Depth */}
+                  {response.messages.depth && (
                     <div className="p-4 rounded-lg bg-gray-800/50 border border-gray-600">
                       <h4 className="font-semibold text-sm text-gray-300 mb-2">Validation Depth</h4>
-                      <p className="text-sm text-gray-400 italic">{responseNotes}</p>
+                      <p className="text-sm text-gray-400 italic">{response.messages.depth}</p>
+                    </div>
+                  )}
+
+                  {/* Fallback notice */}
+                  {response._fallback && (
+                    <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
+                      <p className="text-xs text-orange-300 text-center">
+                        Auto-formatted result while the model re-learns the schema.
+                      </p>
                     </div>
                   )}
                 </div>

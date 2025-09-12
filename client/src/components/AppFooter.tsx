@@ -1,9 +1,9 @@
 export default function AppFooter() {
   return (
-    <footer className="w-full border-t border-white/10">
-      <div className="mx-auto max-w-6xl px-4 py-3 text-xs md:text-sm text-white/70 text-center">
-        Powered by <span className="font-semibold">Grok-4 via OpenRouter</span> • Full Cinematic Experience
-      </div>
+    <footer className="w-full flex items-center justify-center py-4 text-sm text-muted-foreground border-t border-white/10">
+      <span className="px-3 text-center text-white/70">
+        Powered by <span className="font-medium">Grok-4 via OpenRouter</span> • Full Cinematic Experience
+      </span>
     </footer>
   );
 }

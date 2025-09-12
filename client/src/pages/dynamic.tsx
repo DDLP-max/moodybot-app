@@ -376,7 +376,7 @@ export default function DynamicPage() {
             <Button
               onClick={() => window.open('https://moodybot.gumroad.com/l/moodybot-webapp', '_blank')}
               size="sm"
-              className="rounded-xl bg-fuchsia-600 px-3 py-2 text-sm font-semibold text-white hover:bg-fuchsia-500"
+              className="rounded-none bg-fuchsia-600 px-3 py-2 text-sm font-semibold text-white hover:bg-fuchsia-500"
             >
               Subscribe $9/month
             </Button>
@@ -397,7 +397,7 @@ export default function DynamicPage() {
                   transition={{ duration: 0.3 }}
                   className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}
                 >
-                  <div className={`inline-block max-w-[80%] p-3 rounded-xl ${
+                  <div className={`inline-block max-w-[80%] p-3 rounded-none ${
                     message.role === 'user' 
                       ? 'bg-primary text-primary-foreground' 
                       : 'bg-muted text-foreground'
@@ -428,7 +428,7 @@ export default function DynamicPage() {
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="flex-1 resize-y rounded-xl bg-black/30 border border-white/10 
+                className="flex-1 resize-y rounded-none bg-black/30 border border-white/10 
                            placeholder-white/40 text-white p-3 min-h-[52px] focus:outline-none focus:ring-2 ring-violet-400"
                 placeholder="Share your story, your pain, your truth... MoodyBot will adapt to you"
                 disabled={sendMessageMutation.isPending || isInitializing || (questionLimit?.remaining ?? 0) <= 0}
@@ -436,7 +436,7 @@ export default function DynamicPage() {
               <Button
                 type="submit"
                 disabled={sendMessageMutation.isPending || isInitializing || (questionLimit?.remaining ?? 0) <= 0}
-                className="px-4 py-3 rounded-xl bg-violet-500 hover:bg-violet-400 text-white font-semibold shadow-lg"
+                className="px-4 py-3 rounded-none bg-violet-500 hover:bg-violet-400 text-white font-semibold shadow-lg"
               >
                 {sendMessageMutation.isPending ? "Crafting..." : "Send Message"}
               </Button>
