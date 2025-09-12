@@ -9,6 +9,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { z } from "zod";
+import { validationSystem, validationFewShots } from "../client/src/lib/prompts/validationPrompt";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,6 +45,27 @@ function coerceFromText(txt: string) {
   }
   return null;
 }
+
+// Helper function to salvage JSON from malformed text
+const salvageJSON = (txt: string) => {
+  const s = txt.indexOf("{"), e = txt.lastIndexOf("}");
+  if (s >= 0 && e > s) try { return JSON.parse(txt.slice(s, e + 1)); } catch {}
+  return null;
+};
+
+// Helper function to avoid parroting user text
+const deParrot = (ctx: string) => {
+  // turn "i accidentally left the house w/ mismatching shoes…" into a short distilled theme
+  const clean = ctx.replace(/\s+/g," ").trim();
+  if (!clean) return "You showed up honestly.";
+  // strip first-person details + slangy fragments—keep the *feeling*
+  return clean
+    .replace(/^i\s+/i,"")
+    .replace(/\b(im|i'm|id|i'd)\b/gi,"")
+    .replace(/\bw\/\b/g,"with")
+    .replace(/([.!?])\s*$/,"")
+    .slice(0,120);
+};
 
 // Helper function to extract JSON from markdown code fences
 function extractJsonFromFence(content: string): any {
@@ -945,33 +967,23 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
       const safeIntensity = capWorkIntensity(relationship, intensity);
       const targetLevels = targetLevelByIntensity(safeIntensity).join(",");
 
-      // Create the validation prompt with new schema format
-      const validationPrompt = `You are MoodyBot Validation Mode. Return ONLY JSON that matches this schema:
-{
-  "chips": { "polarity": "positive|negative|mixed", "style": "warm|neutral|tough|poetic", "length": "one_liner|two_three|short_paragraph", "intensity": "feather|casual|firm|heavy" },
-  "messages": { "validation": string, "because": string, "depth": string }
-}
-No prose, no backticks.
-
-User selections: relationship="${relationship}", polarity="${mode}", style="${style}", intensity=${safeIntensity}, length="${length}", tags=[${reason_tags.map(tag => `"${tag}"`).join(', ')}], order="${order}", include_followup=${include_followup}
-
-Context: "${context_text}"
-
-Examples:
-
-Example 1 (positive, warm, one_liner, feather):
-{
-  "chips": { "polarity": "positive", "style": "warm", "length": "one_liner", "intensity": "feather" },
-  "messages": { "validation": "That clearly mattered to you.", "because": "You kept showing up even when it got awkward.", "depth": "You're building trust through consistency." }
-}
-
-Example 2 (negative, tough, two_three, firm):
-{
-  "chips": { "polarity": "negative", "style": "tough", "length": "two_three", "intensity": "firm" },
-  "messages": { "validation": "I see why you went quiet—protecting yourself.", "because": "Public call-outs sting and make avoidance tempting.", "depth": "But disappearing after promising an update breaks trust. A short 'not ready yet' would land better." }
-}
-
-Now generate the response for the given context.`;
+      // Create the validation prompt with few-shots
+      const messages = [
+        { role: "system", content: validationSystem },
+        ...validationFewShots.flatMap(s => ([
+          { role: "user", content: JSON.stringify(s.user) },
+          { role: "assistant", content: JSON.stringify(s.out) }
+        ])),
+        { role: "user", content: JSON.stringify({ 
+          context: context_text, 
+          polarity: mode, 
+          style, 
+          length, 
+          intensity: safeIntensity, 
+          relationship, 
+          tags: reason_tags 
+        }) }
+      ];
 
       console.log(`[${requestId}] Calling OpenRouter API for validation`);
       
@@ -985,13 +997,11 @@ Now generate the response for the given context.`;
         },
         body: JSON.stringify({
           model: "x-ai/grok-4",
-          messages: [
-            { role: "user", content: validationPrompt }
-          ],
+          messages,
+          response_format: { type: "json_object" },
           temperature: 0.5,
           top_p: 0.9,
-          max_tokens: 220,
-          stop: []
+          max_tokens: 220
         }),
       });
 
@@ -1033,7 +1043,7 @@ Now generate the response for the given context.`;
       try { 
         jsonData = JSON.parse(aiReply); 
       } catch { 
-        jsonData = coerceFromText(aiReply); 
+        jsonData = salvageJSON(aiReply); 
       }
 
       const parsed = ValidationSchema.safeParse(jsonData);
@@ -1044,11 +1054,12 @@ Now generate the response for the given context.`;
         console.warn(`[${requestId}] Validation errors:`, parsed.error.errors);
         
         // Build a smart non-generic fallback from inputs
+        const distilled = deParrot(context_text);
         const because = reason_tags?.length ? `Because it shows ${reason_tags.join(", ")}.` : "Because you showed up honestly.";
-        const line = (msg: string) => {
-          if (length === "one_liner") return msg;
-          if (length === "two_three") return `${msg} Keep going—I'm here.`;
-          return msg;
+        const msg = (len: string) => {
+          if (len === "one_liner") return "I hear you—thanks for being real about it.";
+          if (len === "two_three") return `I hear you—${distilled}. You're not alone; you handled it with honesty.`;
+          return `I hear you—${distilled}. It's human, not a character flaw. You named it, and that matters. We can choose the next step from here.`;
         };
         
         const responseData = {
@@ -1059,11 +1070,11 @@ Now generate the response for the given context.`;
             intensity: safeIntensity === 0 ? "feather" : safeIntensity === 1 ? "casual" : safeIntensity === 2 ? "firm" : "heavy" 
           },
           messages: {
-            validation: line(context_text ? `I hear you: ${context_text}` : "I'm with you on this."),
+            validation: msg(length),
             because,
             depth: "We focus on being seen first; advice comes later."
           },
-          _fallback: true,
+          _auto: true,
           usage: {
             tokens: usage.total_tokens || 0
           },

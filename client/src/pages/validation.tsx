@@ -17,6 +17,7 @@ import { useQuestionLimit } from "@/hooks/use-question-limit";
 import { StandardHeader, StandardFooter } from "@/components/StandardHeader";
 import { MODE_THEME } from "@/theme/modes";
 import AppFooter from "@/components/AppFooter";
+import ValidationResult from "@/components/ValidationResult";
 
 const RELATIONSHIPS = [
   { value: "stranger", label: "Stranger" },
@@ -37,8 +38,8 @@ const STYLES = [
 
 const LENGTH_OPTIONS = [
   { value: "one_liner", label: "1-liner", description: "≤18 words" },
-  { value: "short", label: "2-3 lines", description: "≤45 words" },
-  { value: "paragraph", label: "Short paragraph", description: "≤120 words" }
+  { value: "two_three", label: "2-3 lines", description: "≤45 words" },
+  { value: "short_paragraph", label: "Short paragraph", description: "≤120 words" }
 ];
 
 const REASON_TAGS = [
@@ -436,62 +437,8 @@ export default function ValidationMode() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Mode/Style/Intensity Chips */}
-                <div className="flex flex-wrap gap-2">
-                  <Badge 
-                    variant="secondary" 
-                    className={`${
-                      response.chips.polarity === 'positive' ? 'bg-emerald-500 text-white' :
-                      response.chips.polarity === 'negative' ? 'bg-amber-500 text-white' :
-                      'bg-gradient-to-r from-teal-500 to-amber-500 text-white'
-                    }`}
-                  >
-                    {response.chips.polarity === 'positive' ? '✅' : response.chips.polarity === 'negative' ? '⚡' : '🔄'} {response.chips.polarity}
-                  </Badge>
-                  <Badge variant="secondary" className="bg-gray-700 text-gray-300">{response.chips.style}</Badge>
-                  <Badge variant="secondary" className="bg-gray-700 text-gray-300">{response.chips.intensity}</Badge>
-                  <Badge variant="secondary" className="bg-gray-700 text-gray-300">{response.chips.length === 'one_liner' ? '1-liner' : response.chips.length === 'two_three' ? '2-3 lines' : 'paragraph'}</Badge>
-                  {response._fallback && (
-                    <Badge variant="secondary" className="bg-orange-500 text-white">
-                      Auto-formatted
-                    </Badge>
-                  )}
-                </div>
-
-                {/* Validation Response */}
-                <div className="space-y-4">
-                  <div className={`p-4 rounded-lg border-l-4 ${
-                    response.chips.polarity === 'positive' ? 'border-l-emerald-500 bg-emerald-500/10' :
-                    response.chips.polarity === 'negative' ? 'border-l-amber-500 bg-amber-500/10' :
-                    'border-l-teal-400 bg-gradient-to-r from-teal-400/10 to-violet-500/10'
-                  }`}>
-                    <h4 className="font-semibold text-sm text-gray-300 mb-2">Validation</h4>
-                    <p className="text-white text-lg">{response.messages.validation}</p>
-                  </div>
-
-                  <div className="p-4 rounded-lg bg-gray-800/50 border border-gray-600">
-                    <h4 className="font-semibold text-sm text-gray-300 mb-2 italic">Because</h4>
-                    <p className="text-white italic">{response.messages.because}</p>
-                  </div>
-
-                  {/* Validation Depth */}
-                  {response.messages.depth && (
-                    <div className="p-4 rounded-lg bg-gray-800/50 border border-gray-600">
-                      <h4 className="font-semibold text-sm text-gray-300 mb-2">Validation Depth</h4>
-                      <p className="text-sm text-gray-400 italic">{response.messages.depth}</p>
-                    </div>
-                  )}
-
-                  {/* Fallback notice */}
-                  {response._fallback && (
-                    <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
-                      <p className="text-xs text-orange-300 text-center">
-                        Auto-formatted result while the model re-learns the schema.
-                      </p>
-                    </div>
-                  )}
-                </div>
+              <CardContent>
+                <ValidationResult payload={response} />
               </CardContent>
             </Card>
           </motion.div>

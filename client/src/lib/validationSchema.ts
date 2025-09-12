@@ -8,9 +8,9 @@ export const ValidationSchema = z.object({
     intensity: z.enum(["feather", "casual", "firm", "heavy"]),
   }),
   messages: z.object({
-    validation: z.string().min(3),
-    because: z.string().min(3),
-    depth: z.string().min(3),
+    validation: z.string().min(5),
+    because: z.string().min(5),
+    depth: z.string().min(5)
   })
 });
 
