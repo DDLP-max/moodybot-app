@@ -56,13 +56,13 @@ export const LENGTH_RULES = {
 };
 
 export const STYLE_VOCAB = {
-  Warm:       { ack: ["that stings", "that's tough", "that's a lot"], dignity: ['you're human','you're allowed to feel this'] },
-  Direct:     { ack: ['yeah, that hurts','own it'], dignity: ['not a character flaw','you're not broken'] },
-  Playful:    { ack: ['that's a facepalm','rough beat'], dignity: ['human, not doomed','grace > perfection'] },
-  Dry:        { ack: ['not ideal','understandable'], dignity: ['human error, predictable','you're fine'] },
-  Elegant:    { ack: ['that lands hard','a tender bruise'], dignity: ['you remain intact','grace over spectacle'] },
-  Street:     { ack: ['that's rough','that'll humble you'], dignity: ['you're still solid','bounce back energy'] },
-  Professional:{ ack:['that's challenging','understandably uncomfortable'], dignity:['still competent','this doesn't define you'] },
+  Warm:       { ack: ["that stings", "that's tough", "that's a lot"], dignity: ["you're human", "you're allowed to feel this"] },
+  Direct:     { ack: ["yeah, that hurts", "own it"], dignity: ["not a character flaw", "you're not broken"] },
+  Playful:    { ack: ["that's a facepalm", "rough beat"], dignity: ["human, not doomed", "grace > perfection"] },
+  Dry:        { ack: ["not ideal", "understandable"], dignity: ["human error, predictable", "you're fine"] },
+  Elegant:    { ack: ["that lands hard", "a tender bruise"], dignity: ["you remain intact", "grace over spectacle"] },
+  Street:     { ack: ["that's rough", "that'll humble you"], dignity: ["you're still solid", "bounce back energy"] },
+  Professional:{ ack: ["that's challenging", "understandably uncomfortable"], dignity: ["still competent", "this doesn't define you"] },
 };
 
 export const INTENSITY_RULES = {
