@@ -4,8 +4,9 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Copy, Sparkles, Target, Zap, MessageSquare, MousePointer } from "lucide-react";
+import { Copy, Sparkles, Target, Zap, MessageSquare, MousePointer } from "lucide-react";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
+import { StandardHeader, StandardFooter } from "@/components/StandardHeader";
 
 interface CopyOutput {
   titles: string[];
@@ -90,29 +91,8 @@ export default function CopywriterPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <div className="border-b border-primary/20 bg-background/90 backdrop-blur-sm">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setLocation("/")}
-              className="hover:bg-primary/10"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex items-center space-x-2">
-              <Target className="text-green-500 text-xl" />
-              <span className="font-black text-lg">Copywriter Mode</span>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Sparkles className="text-green-500 h-5 w-5" />
-            <span className="text-sm text-muted-foreground">Powered by Grok-4</span>
-          </div>
-        </div>
-      </div>
+      {/* Standard Header */}
+      <StandardHeader modeName="Copywriter Mode" />
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Hero Section */}
@@ -387,6 +367,9 @@ export default function CopywriterPage() {
            </div>
          )}        
       </div>
+      
+      {/* Standard Footer */}
+      <StandardFooter />
     </div>
   );
 }

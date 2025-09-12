@@ -84,7 +84,7 @@ export default function Home() {
 
             
             {/* Mode Options with Descriptions */}
-            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-4 mb-8">
+            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 px-4 mb-8">
               {/* Dynamic Mode */}
               <div className="flex flex-col items-center space-y-3">
                 <Button 

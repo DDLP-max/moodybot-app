@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Copy, Sparkles, Feather, BookOpen, FileText, Zap } from "lucide-react";
+import { Copy, Sparkles, Feather, BookOpen, FileText, Zap } from "lucide-react";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
+import { StandardHeader, StandardFooter } from "@/components/StandardHeader";
 import { fetchJSON, FetchError } from "@/lib/fetchJSON";
 
 interface CreativeWriterResult {
@@ -622,29 +623,8 @@ export default function CreativeWriterPage() {
       {/* Subtle background texture */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(127,29,29,0.03),transparent_50%)] pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(146,64,14,0.03),transparent_50%)] pointer-events-none" />
-      {/* Header */}
-      <div className="border-b border-primary/20 bg-background/90 backdrop-blur-sm">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center space-x-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setLocation("/")}
-              className="hover:bg-primary/10"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex items-center space-x-2">
-              <Feather className="text-amber-500 text-xl" />
-              <span className="font-black text-lg">Creative Writer Mode</span>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Sparkles className="text-amber-500 h-5 w-5" />
-            <span className="text-sm text-muted-foreground">Powered by Grok-4</span>
-          </div>
-        </div>
-      </div>
+      {/* Standard Header */}
+      <StandardHeader modeName="Creative Writer Mode" />
 
       <div className="container mx-auto px-4 py-8 max-w-6xl relative z-10">
         {/* Hero Section */}
@@ -1715,6 +1695,9 @@ export default function CreativeWriterPage() {
           </div>
         </div>
       </div>
+      
+      {/* Standard Footer */}
+      <StandardFooter />
     </div>
   );
 }

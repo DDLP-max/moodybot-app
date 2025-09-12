@@ -10,10 +10,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Copy, RefreshCw, Heart, Shield, Zap, MessageSquare } from "lucide-react";
+import { Copy, RefreshCw, Heart, Shield, Zap, MessageSquare } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
+import { StandardHeader, StandardFooter } from "@/components/StandardHeader";
 
 const RELATIONSHIPS = [
   { value: "stranger", label: "Stranger" },
@@ -130,21 +131,8 @@ export default function ValidationMode() {
 
   return (
     <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #0D1B2A 0%, #1C1C1C 100%)' }}>
-      {/* Header */}
-      <div className="sticky top-0 z-50 backdrop-blur-sm border-b" style={{ backgroundColor: 'rgba(13, 27, 42, 0.9)', borderColor: 'rgba(20, 184, 166, 0.2)' }}>
-        <div className="flex items-center justify-between px-4 py-3">
-          <Button
-            variant="ghost"
-            onClick={() => setLocation("/")}
-            className="flex items-center space-x-2 text-white hover:bg-white/10"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back to Home</span>
-          </Button>
-          <h1 className="text-xl font-bold bg-gradient-to-r from-teal-400 to-violet-400 bg-clip-text text-transparent">Validation Mode</h1>
-          <div className="w-20" />
-        </div>
-      </div>
+      {/* Standard Header */}
+      <StandardHeader modeName="Validation Mode" />
 
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         {/* Question Limit Display */}
@@ -473,6 +461,9 @@ export default function ValidationMode() {
           </motion.div>
         )}
       </div>
+      
+      {/* Standard Footer */}
+      <StandardFooter />
     </div>
   );
 }
