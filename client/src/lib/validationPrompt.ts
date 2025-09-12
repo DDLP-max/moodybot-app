@@ -56,7 +56,7 @@ export const LENGTH_RULES = {
 };
 
 export const STYLE_VOCAB = {
-  Warm:       { ack: ['that stings','that's tough','that's a lot'], dignity: ['you're human','you're allowed to feel this'] },
+  Warm:       { ack: ["that stings", "that's tough", "that's a lot"], dignity: ['you're human','you're allowed to feel this'] },
   Direct:     { ack: ['yeah, that hurts','own it'], dignity: ['not a character flaw','you're not broken'] },
   Playful:    { ack: ['that's a facepalm','rough beat'], dignity: ['human, not doomed','grace > perfection'] },
   Dry:        { ack: ['not ideal','understandable'], dignity: ['human error, predictable','you're fine'] },
