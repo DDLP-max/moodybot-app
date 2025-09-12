@@ -3,8 +3,6 @@ import { Eye, Sparkles, Target, Feather } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { User } from "lucide-react";
-import { MODE_BUTTON_BASE, MODE_THEME } from "@/theme/modes";
-import AppFooter from "@/components/AppFooter";
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -150,15 +148,15 @@ export default function Home() {
               {/* Validation Mode */}
               <div className="flex flex-col items-center space-y-3">
                 <Button
-                  className={`${MODE_BUTTON_BASE} ${MODE_THEME.validation.bg} ${MODE_THEME.validation.hover} ${MODE_THEME.validation.ring} px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full`}
+                  className="bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full"
                   onClick={() => setLocation("/validation")}
                 >
-                  <span className="mr-2 text-white/80 text-lg">⚖️</span>
+                  <span className="mr-2 text-rose-200 text-lg">⚖️</span>
                   VALIDATION MODE
                 </Button>
                 <div className="text-center p-3 bg-background/50 rounded-lg border border-primary/20 w-full">
-                  <h3 className="font-bold bg-val bg-clip-text text-transparent mb-2 flex items-center justify-center text-sm">
-                    <span className="mr-2 text-teal-400 text-base">⚖️</span>
+                  <h3 className="font-bold bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent mb-2 flex items-center justify-center text-sm">
+                    <span className="mr-2 text-rose-500 text-base">⚖️</span>
                     Validation Mode
                   </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
@@ -170,7 +168,6 @@ export default function Home() {
           </motion.div>
         </section>
       </div>
-      <AppFooter />
     </div>
   );
 }
