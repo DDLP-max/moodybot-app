@@ -15,7 +15,7 @@ import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
 import { StandardHeader, StandardFooter } from "@/components/StandardHeader";
-import { MODE_BUTTON_BASE, MODE_THEME } from "@/theme/modes";
+import { MODE_THEME } from "@/theme/modes";
 import AppFooter from "@/components/AppFooter";
 
 const RELATIONSHIPS = [
@@ -365,7 +365,7 @@ export default function ValidationMode() {
             <Button
               onClick={handleGenerate}
               disabled={!context.trim() || isLoading}
-              className={`${MODE_BUTTON_BASE} ${MODE_THEME.validation.bg} ${MODE_THEME.validation.hover} ${MODE_THEME.validation.ring} w-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300`}
+              className={`${MODE_THEME.validation.bg} ${MODE_THEME.validation.hover} ${MODE_THEME.validation.ring} w-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300`}
               size="lg"
             >
               {isLoading ? (

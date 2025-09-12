@@ -3,7 +3,7 @@ import { Eye, Sparkles, Target, Feather } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { User } from "lucide-react";
-import { MODE_BUTTON_BASE, MODE_THEME } from "@/theme/modes";
+import { MODE_THEME } from "@/theme/modes";
 import AppFooter from "@/components/AppFooter";
 
 export default function Home() {
@@ -139,7 +139,7 @@ export default function Home() {
                 <div className="text-center p-3 bg-background/50 rounded-lg border border-primary/20 w-full">
                   <h3 className="font-bold bg-gradient-to-r from-red-600 to-amber-500 bg-clip-text text-transparent mb-2 flex items-center justify-center text-sm">
                     <Feather className="h-4 w-4 mr-2 text-amber-500" />
-                    Creative Writer
+                    Creative Writer Mode
                   </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     Dive-bar oracle meets copywriter. Fiction, articles, outlines, and teaser blurbs with Hank Moody swagger and Bourdain grit.
@@ -150,7 +150,7 @@ export default function Home() {
               {/* Validation Mode */}
               <div className="flex flex-col items-center space-y-3">
                 <Button
-                  className={`${MODE_BUTTON_BASE} ${MODE_THEME.validation.bg} ${MODE_THEME.validation.hover} ${MODE_THEME.validation.ring} px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full`}
+                  className={`${MODE_THEME.validation.bg} ${MODE_THEME.validation.hover} ${MODE_THEME.validation.ring} px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full`}
                   onClick={() => setLocation("/validation")}
                 >
                   <span className="mr-2 text-white/80 text-lg">⚖️</span>
