@@ -10,13 +10,15 @@ interface StandardHeaderProps {
     remaining: number;
     limit: number;
   };
+  showNewChat?: boolean;
 }
 
 export function StandardHeader({ 
   modeName, 
   modeIcon, 
   showQuestionLimit = false, 
-  questionLimit 
+  questionLimit,
+  showNewChat = true
 }: StandardHeaderProps) {
   const [, setLocation] = useLocation();
 
@@ -97,15 +99,17 @@ export function StandardHeader({
           Share
         </Button>
         
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setLocation("/chat")}
-          className="text-muted-foreground hover:text-primary"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          New Chat
-        </Button>
+        {showNewChat && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLocation("/chat")}
+            className="text-muted-foreground hover:text-primary"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New Chat
+          </Button>
+        )}
       </div>
     </div>
   );

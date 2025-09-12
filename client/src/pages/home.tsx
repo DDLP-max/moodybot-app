@@ -3,6 +3,7 @@ import { Eye, Sparkles, Target, Feather } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { User } from "lucide-react";
+import { MODE_THEME } from "@/theme/modes";
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -148,7 +149,7 @@ export default function Home() {
               {/* Validation Mode */}
               <div className="flex flex-col items-center space-y-3">
                 <Button
-                  className="bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full"
+                  className={`${MODE_THEME.validation.gradient} hover:opacity-90 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full`}
                   onClick={() => setLocation("/validation")}
                 >
                   <span className="mr-2 text-rose-200 text-lg">⚖️</span>

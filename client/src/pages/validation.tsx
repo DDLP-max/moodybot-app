@@ -15,6 +15,7 @@ import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
 import { StandardHeader, StandardFooter } from "@/components/StandardHeader";
+import { MODE_THEME } from "@/theme/modes";
 
 const RELATIONSHIPS = [
   { value: "stranger", label: "Stranger" },
@@ -139,7 +140,7 @@ export default function ValidationMode() {
   return (
     <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #0D1B2A 0%, #1C1C1C 100%)' }}>
       {/* Standard Header */}
-      <StandardHeader modeName="Validation Mode" />
+      <StandardHeader modeName="Validation Mode" showNewChat={false} />
 
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         {/* Question Limit Display */}
@@ -231,7 +232,7 @@ export default function ValidationMode() {
                     </TabsTrigger>
                     <TabsTrigger 
                       value="mixed"
-                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-amber-500 data-[state=active]:text-white"
+                      className={`data-[state=active]:${MODE_THEME.validation.gradient} data-[state=active]:text-white`}
                     >
                       🔄 Mixed
                     </TabsTrigger>
@@ -290,7 +291,7 @@ export default function ValidationMode() {
                       size="sm"
                       onClick={() => setLength(option.value)}
                       className={length === option.value 
-                        ? "bg-gradient-to-r from-teal-500 to-violet-500 hover:from-teal-600 hover:to-violet-600 text-white" 
+                        ? `${MODE_THEME.validation.gradient} hover:opacity-90 text-white` 
                         : "border-gray-600 text-gray-300 hover:bg-gray-700"
                       }
                     >
@@ -325,7 +326,7 @@ export default function ValidationMode() {
                     variant={reasonTags.includes(tag) ? "default" : "outline"}
                     className={`cursor-pointer ${
                       reasonTags.includes(tag) 
-                        ? "bg-gradient-to-r from-teal-500 to-violet-500 text-white" 
+                        ? `${MODE_THEME.validation.gradient} text-white` 
                         : "border-gray-600 text-gray-300 hover:bg-gray-700"
                     }`}
                     onClick={() => handleReasonTagToggle(tag)}
@@ -344,13 +345,13 @@ export default function ValidationMode() {
                   <TabsList className="grid w-full grid-cols-2 bg-gray-800/50">
                     <TabsTrigger 
                       value="pos_neg"
-                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-amber-500 data-[state=active]:text-white"
+                      className={`data-[state=active]:${MODE_THEME.validation.gradient} data-[state=active]:text-white`}
                     >
                       + → –
                     </TabsTrigger>
                     <TabsTrigger 
                       value="neg_pos"
-                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white"
+                      className={`data-[state=active]:${MODE_THEME.validation.gradient} data-[state=active]:text-white`}
                     >
                       – → +
                     </TabsTrigger>
@@ -363,7 +364,7 @@ export default function ValidationMode() {
             <Button
               onClick={handleGenerate}
               disabled={!context.trim() || isLoading}
-              className="w-full bg-gradient-to-r from-teal-500 to-violet-500 hover:from-teal-600 hover:to-violet-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+              className={`w-full ${MODE_THEME.validation.gradient} hover:opacity-90 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300`}
               size="lg"
             >
               {isLoading ? (
@@ -428,7 +429,7 @@ export default function ValidationMode() {
                   <Badge variant="secondary" className="bg-gray-700 text-gray-300">{INTENSITY_LABELS[intensity[0]]}</Badge>
                   <Badge variant="secondary" className="bg-gray-700 text-gray-300">{length}</Badge>
                   {responseNotes && (
-                    <Badge variant="secondary" className="bg-pink-500 text-white">
+                    <Badge variant="secondary" className={`${MODE_THEME.validation.bg} text-white`}>
                       DBT: {responseNotes.match(/L[1-6]/)?.[0] || 'Level'}
                     </Badge>
                   )}
@@ -439,7 +440,7 @@ export default function ValidationMode() {
                   <div className={`p-4 rounded-lg border-l-4 ${
                     mode === 'positive' ? 'border-l-emerald-500 bg-emerald-500/10' :
                     mode === 'negative' ? 'border-l-amber-500 bg-amber-500/10' :
-                    'border-l-teal-500 bg-gradient-to-r from-teal-500/10 to-amber-500/10'
+                    'border-l-pink-500 bg-gradient-to-r from-pink-500/10 to-rose-500/10'
                   }`}>
                     <h4 className="font-semibold text-sm text-gray-300 mb-2">Validation</h4>
                     <p className="text-white text-lg">{response.validation}</p>
@@ -454,7 +455,7 @@ export default function ValidationMode() {
                     <div className={`p-4 rounded-lg border-l-4 ${
                       mode === 'positive' ? 'border-l-emerald-500 bg-emerald-500/10' :
                       mode === 'negative' ? 'border-l-amber-500 bg-amber-500/10' :
-                      'border-l-teal-500 bg-gradient-to-r from-teal-500/10 to-amber-500/10'
+                      'border-l-pink-500 bg-gradient-to-r from-pink-500/10 to-rose-500/10'
                     }`}>
                       <h4 className="font-semibold text-sm text-gray-300 mb-2">Push/Pull</h4>
                       <p className="text-white">{response.push_pull}</p>

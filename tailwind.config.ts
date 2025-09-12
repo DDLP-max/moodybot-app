@@ -61,6 +61,12 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        mode: {
+          dynamic: { base: '#6366F1' },
+          copy: { base: '#22C55E' },
+          writer: { base: '#F59E0B' },
+          validate: { base: '#EC4899', hover: '#DB2777', ring: '#F472B6' }
+        },
       },
       keyframes: {
         "accordion-down": {

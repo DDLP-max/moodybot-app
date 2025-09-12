@@ -92,7 +92,7 @@ export default function CopywriterPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Standard Header */}
-      <StandardHeader modeName="Copywriter Mode" />
+      <StandardHeader modeName="Copywriter Mode" showNewChat={false} />
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Hero Section */}
