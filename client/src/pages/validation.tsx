@@ -15,8 +15,6 @@ import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
 import { StandardHeader, StandardFooter } from "@/components/StandardHeader";
-import { MODE_BUTTON_BASE, MODE_THEME } from "@/theme/modes";
-import AppFooter from "@/components/AppFooter";
 
 const RELATIONSHIPS = [
   { value: "stranger", label: "Stranger" },
@@ -54,11 +52,6 @@ interface ValidationResponse {
   followup?: string;
 }
 
-interface ValidationAPIResponse {
-  output: ValidationResponse;
-  notes?: string;
-}
-
 export default function ValidationMode() {
   const [, setLocation] = useLocation();
   const { questionLimit, refreshQuestionLimit } = useQuestionLimit();
@@ -72,7 +65,6 @@ export default function ValidationMode() {
   const [includeFollowup, setIncludeFollowup] = useState(false);
   const [order, setOrder] = useState<"pos_neg" | "neg_pos">("pos_neg");
   const [response, setResponse] = useState<ValidationResponse | null>(null);
-  const [responseNotes, setResponseNotes] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleReasonTagToggle = (tag: string) => {
@@ -108,9 +100,8 @@ export default function ValidationMode() {
 
       if (!res.ok) throw new Error('Failed to generate validation');
       
-      const data: ValidationAPIResponse = await res.json();
+      const data = await res.json();
       setResponse(data.output);
-      setResponseNotes(data.notes || "");
       
       // Refresh question limit after successful request
       if (data.remaining !== undefined) {
@@ -146,7 +137,7 @@ export default function ValidationMode() {
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         {/* Question Limit Display */}
         {questionLimit && (
-          <Card className="border-0 shadow-lg" style={{ backgroundColor: 'rgba(45, 212, 191, 0.05)', borderColor: 'rgba(45, 212, 191, 0.2)' }}>
+          <Card className="border-0 shadow-lg" style={{ backgroundColor: 'rgba(20, 184, 166, 0.05)', borderColor: 'rgba(20, 184, 166, 0.2)' }}>
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div className="text-center flex-1">
@@ -166,7 +157,7 @@ export default function ValidationMode() {
                   <Button
                     onClick={() => window.open('https://moodybot.gumroad.com/l/moodybot-webapp', '_blank')}
                     size="sm"
-                    className="bg-val text-white hover-bright"
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90"
                   >
                     Subscribe $9/month
                   </Button>
@@ -177,11 +168,11 @@ export default function ValidationMode() {
         )}
 
         {/* Input Section */}
-        <Card className="border-0 shadow-2xl" style={{ backgroundColor: 'rgba(45, 212, 191, 0.05)', borderColor: 'rgba(45, 212, 191, 0.2)' }}>
+        <Card className="border-0 shadow-2xl" style={{ backgroundColor: 'rgba(20, 184, 166, 0.05)', borderColor: 'rgba(20, 184, 166, 0.2)' }}>
           <CardHeader>
             <CardTitle className="text-white">Generate Validation Response</CardTitle>
             <CardDescription className="text-gray-300">
-              Cut through noise with presence. This mode mirrors back what was said and delivers calibrated validation — from warm approval to firm boundary-setting. Choose Positive, Negative, or Mixed push-pull to reinforce strengths, call out blind spots, or do both in one breath. It's not therapy or advice — it's the art of making people feel seen while keeping your own standards intact.
+              Create emotionally intelligent responses that validate feelings and behaviors
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -233,7 +224,7 @@ export default function ValidationMode() {
                     </TabsTrigger>
                     <TabsTrigger 
                       value="mixed"
-                      className={`data-[state=active]:bg-val data-[state=active]:text-white`}
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-teal-500 data-[state=active]:to-amber-500 data-[state=active]:text-white"
                     >
                       🔄 Mixed
                     </TabsTrigger>
@@ -292,7 +283,7 @@ export default function ValidationMode() {
                       size="sm"
                       onClick={() => setLength(option.value)}
                       className={length === option.value 
-                        ? `bg-val hover-bright text-white` 
+                        ? "bg-gradient-to-r from-teal-500 to-violet-500 hover:from-teal-600 hover:to-violet-600 text-white" 
                         : "border-gray-600 text-gray-300 hover:bg-gray-700"
                       }
                     >
@@ -327,7 +318,7 @@ export default function ValidationMode() {
                     variant={reasonTags.includes(tag) ? "default" : "outline"}
                     className={`cursor-pointer ${
                       reasonTags.includes(tag) 
-                        ? `bg-val text-white` 
+                        ? "bg-gradient-to-r from-teal-500 to-violet-500 text-white" 
                         : "border-gray-600 text-gray-300 hover:bg-gray-700"
                     }`}
                     onClick={() => handleReasonTagToggle(tag)}
@@ -346,13 +337,13 @@ export default function ValidationMode() {
                   <TabsList className="grid w-full grid-cols-2 bg-gray-800/50">
                     <TabsTrigger 
                       value="pos_neg"
-                      className={`data-[state=active]:bg-val data-[state=active]:text-white`}
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-amber-500 data-[state=active]:text-white"
                     >
                       + → –
                     </TabsTrigger>
                     <TabsTrigger 
                       value="neg_pos"
-                      className={`data-[state=active]:bg-val data-[state=active]:text-white`}
+                      className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-amber-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white"
                     >
                       – → +
                     </TabsTrigger>
@@ -365,7 +356,7 @@ export default function ValidationMode() {
             <Button
               onClick={handleGenerate}
               disabled={!context.trim() || isLoading}
-              className={`${MODE_BUTTON_BASE} ${MODE_THEME.validation.bg} ${MODE_THEME.validation.hover} ${MODE_THEME.validation.ring} w-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300`}
+              className="w-full bg-gradient-to-r from-teal-500 to-violet-500 hover:from-teal-600 hover:to-violet-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
               size="lg"
             >
               {isLoading ? (
@@ -387,7 +378,7 @@ export default function ValidationMode() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Card className="border-0 shadow-2xl" style={{ backgroundColor: 'rgba(45, 212, 191, 0.05)', borderColor: 'rgba(45, 212, 191, 0.2)' }}>
+            <Card className="border-0 shadow-2xl" style={{ backgroundColor: 'rgba(20, 184, 166, 0.05)', borderColor: 'rgba(20, 184, 166, 0.2)' }}>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-white">Validation Response</CardTitle>
@@ -429,11 +420,6 @@ export default function ValidationMode() {
                   <Badge variant="secondary" className="bg-gray-700 text-gray-300">{style}</Badge>
                   <Badge variant="secondary" className="bg-gray-700 text-gray-300">{INTENSITY_LABELS[intensity[0]]}</Badge>
                   <Badge variant="secondary" className="bg-gray-700 text-gray-300">{length}</Badge>
-                  {responseNotes && (
-                    <Badge variant="secondary" className="bg-val text-white">
-                      DBT: {responseNotes.match(/L[1-6]/)?.[0] || 'Level'}
-                    </Badge>
-                  )}
                 </div>
 
                 {/* Validation Response */}
@@ -441,7 +427,7 @@ export default function ValidationMode() {
                   <div className={`p-4 rounded-lg border-l-4 ${
                     mode === 'positive' ? 'border-l-emerald-500 bg-emerald-500/10' :
                     mode === 'negative' ? 'border-l-amber-500 bg-amber-500/10' :
-                    'border-l-teal-400 bg-gradient-to-r from-teal-400/10 to-violet-500/10'
+                    'border-l-teal-500 bg-gradient-to-r from-teal-500/10 to-amber-500/10'
                   }`}>
                     <h4 className="font-semibold text-sm text-gray-300 mb-2">Validation</h4>
                     <p className="text-white text-lg">{response.validation}</p>
@@ -456,7 +442,7 @@ export default function ValidationMode() {
                     <div className={`p-4 rounded-lg border-l-4 ${
                       mode === 'positive' ? 'border-l-emerald-500 bg-emerald-500/10' :
                       mode === 'negative' ? 'border-l-amber-500 bg-amber-500/10' :
-                      'border-l-teal-400 bg-gradient-to-r from-teal-400/10 to-violet-500/10'
+                      'border-l-teal-500 bg-gradient-to-r from-teal-500/10 to-amber-500/10'
                     }`}>
                       <h4 className="font-semibold text-sm text-gray-300 mb-2">Push/Pull</h4>
                       <p className="text-white">{response.push_pull}</p>
@@ -469,22 +455,15 @@ export default function ValidationMode() {
                       <p className="text-sm">{response.followup}</p>
                     </div>
                   )}
-
-                  {/* DBT Level Explanation */}
-                  {responseNotes && (
-                    <div className="p-4 rounded-lg bg-gray-800/50 border border-gray-600">
-                      <h4 className="font-semibold text-sm text-gray-300 mb-2">Validation Depth</h4>
-                      <p className="text-sm text-gray-400 italic">{responseNotes}</p>
-                    </div>
-                  )}
                 </div>
               </CardContent>
             </Card>
           </motion.div>
         )}
       </div>
-
-      <AppFooter />
+      
+      {/* Standard Footer */}
+      <StandardFooter />
     </div>
   );
 }
