@@ -18,28 +18,30 @@ import { StandardHeader, StandardFooter } from "@/components/StandardHeader";
 import { MODE_THEME } from "@/theme/modes";
 import AppFooter from "@/components/AppFooter";
 import ValidationResult from "@/components/ValidationResult";
+import { ValidationInput, ValidationOutput } from "@/lib/types/validation";
 
 const RELATIONSHIPS = [
-  { value: "stranger", label: "Stranger" },
-  { value: "acquaintance", label: "Acquaintance" },
-  { value: "friend", label: "Friend" },
-  { value: "partner", label: "Partner" },
-  { value: "coworker", label: "Coworker" },
-  { value: "client", label: "Client" }
+  { value: "Stranger", label: "Stranger" },
+  { value: "Friend", label: "Friend" },
+  { value: "Partner", label: "Partner" },
+  { value: "Family", label: "Family" },
+  { value: "Colleague", label: "Colleague" }
 ];
 
 const STYLES = [
-  { value: "warm", label: "Warm", icon: Heart },
-  { value: "blunt", label: "Blunt", icon: Shield },
-  { value: "playful", label: "Playful", icon: Zap },
-  { value: "clinical", label: "Clinical", icon: MessageSquare },
-  { value: "moodybot", label: "MoodyBot", icon: MessageSquare }
+  { value: "Warm", label: "Warm", icon: Heart },
+  { value: "Direct", label: "Direct", icon: Shield },
+  { value: "Playful", label: "Playful", icon: Zap },
+  { value: "Dry", label: "Dry", icon: MessageSquare },
+  { value: "Elegant", label: "Elegant", icon: MessageSquare },
+  { value: "Street", label: "Street", icon: MessageSquare },
+  { value: "Professional", label: "Professional", icon: MessageSquare }
 ];
 
 const LENGTH_OPTIONS = [
-  { value: "one_liner", label: "1-liner", description: "≤18 words" },
-  { value: "two_three", label: "2-3 lines", description: "≤45 words" },
-  { value: "short_paragraph", label: "Short paragraph", description: "≤120 words" }
+  { value: "one_liner", label: "1-liner", description: "≤160 chars" },
+  { value: "two_three_lines", label: "2-3 lines", description: "≤320 chars" },
+  { value: "short_paragraph", label: "Short paragraph", description: "≤520 chars" }
 ];
 
 const REASON_TAGS = [
@@ -48,37 +50,7 @@ const REASON_TAGS = [
 
 const INTENSITY_LABELS = ["Feather", "Casual", "Firm", "Heavy"];
 
-interface ValidationResponse {
-  chips: {
-    polarity: string;
-    style: string;
-    length: string;
-    intensity: string;
-  };
-  messages: {
-    validation: string;
-    because: string;
-    depth: string;
-  };
-  _fallback?: boolean;
-}
-
-interface ValidationAPIResponse {
-  chips: {
-    polarity: string;
-    style: string;
-    length: string;
-    intensity: string;
-  };
-  messages: {
-    validation: string;
-    because: string;
-    depth: string;
-  };
-  _fallback?: boolean;
-  usage?: {
-    tokens: number;
-  };
+interface ValidationAPIResponse extends ValidationOutput {
   remaining?: number;
   limit?: number;
 }
@@ -87,16 +59,14 @@ export default function ValidationMode() {
   const [, setLocation] = useLocation();
   const { questionLimit, refreshQuestionLimit } = useQuestionLimit();
   const [context, setContext] = useState("");
-  const [relationship, setRelationship] = useState("friend");
-  const [mode, setMode] = useState<"positive" | "negative" | "mixed">("positive");
-  const [style, setStyle] = useState("warm");
-  const [intensity, setIntensity] = useState([1]);
-  const [length, setLength] = useState("short");
+  const [relationship, setRelationship] = useState<ValidationInput['relationship']>("Friend");
+  const [mode, setMode] = useState<ValidationInput['mode']>("Positive");
+  const [style, setStyle] = useState<ValidationInput['style']>("Warm");
+  const [intensity, setIntensity] = useState<ValidationInput['intensity']>("Casual");
+  const [length, setLength] = useState<ValidationInput['length']>("one_liner");
   const [reasonTags, setReasonTags] = useState<string[]>([]);
   const [includeFollowup, setIncludeFollowup] = useState(false);
-  const [order, setOrder] = useState<"pos_neg" | "neg_pos">("pos_neg");
-  const [response, setResponse] = useState<ValidationResponse | null>(null);
-  const [responseNotes, setResponseNotes] = useState<string>("");
+  const [response, setResponse] = useState<ValidationOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleReasonTagToggle = (tag: string) => {
@@ -112,16 +82,16 @@ export default function ValidationMode() {
     
     setIsLoading(true);
     try {
-      const payload = {
+      const payload: ValidationInput = {
+        context,
+        relationship,
         mode,
         style,
-        intensity: intensity[0],
+        intensity,
         length,
-        relationship,
         reason_tags: reasonTags,
-        order,
         include_followup: includeFollowup,
-        context_text: context
+        userId: 1
       };
 
       const res = await fetch('/api/validation', {
@@ -134,7 +104,6 @@ export default function ValidationMode() {
       
       const data: ValidationAPIResponse = await res.json();
       setResponse(data);
-      setResponseNotes(data._fallback ? "Auto-formatted result while the model re-learns the schema." : "");
       
       // Refresh question limit after successful request
       if (data.remaining !== undefined) {
@@ -149,10 +118,7 @@ export default function ValidationMode() {
 
   const handleCopy = () => {
     if (!response) return;
-    const text = [response.messages.validation, response.messages.because, response.messages.depth]
-      .filter(Boolean)
-      .join('\n\n');
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(response.response);
   };
 
   const handleRegenerate = () => {
@@ -241,22 +207,22 @@ export default function ValidationMode() {
 
               <div className="space-y-2">
                 <Label className="text-white">Mode</Label>
-                <Tabs value={mode} onValueChange={(value) => setMode(value as any)}>
+                <Tabs value={mode} onValueChange={(value) => setMode(value as ValidationInput['mode'])}>
                   <TabsList className="grid w-full grid-cols-3 bg-gray-800/50">
                     <TabsTrigger 
-                      value="positive" 
+                      value="Positive" 
                       className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white"
                     >
                       ✅ Positive
                     </TabsTrigger>
                     <TabsTrigger 
-                      value="negative"
+                      value="Negative"
                       className="data-[state=active]:bg-amber-500 data-[state=active]:text-white"
                     >
                       ⚡ Negative
                     </TabsTrigger>
                     <TabsTrigger 
-                      value="mixed"
+                      value="Mixed"
                       className={`data-[state=active]:bg-val data-[state=active]:text-white`}
                     >
                       🔄 Mixed
@@ -288,19 +254,19 @@ export default function ValidationMode() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-white">Intensity: {INTENSITY_LABELS[intensity[0]]}</Label>
-                <Slider
-                  value={intensity}
-                  onValueChange={setIntensity}
-                  max={maxIntensity}
-                  step={1}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-gray-400">
-                  {INTENSITY_LABELS.slice(0, maxIntensity + 1).map((label, i) => (
-                    <span key={i}>{label}</span>
-                  ))}
-                </div>
+                <Label className="text-white">Intensity</Label>
+                <Select value={intensity} onValueChange={(value) => setIntensity(value as ValidationInput['intensity'])}>
+                  <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white focus:border-teal-400">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-800 border-gray-600">
+                    {INTENSITY_LABELS.map((intensityLabel) => (
+                      <SelectItem key={intensityLabel} value={intensityLabel} className="text-white hover:bg-gray-700">
+                        {intensityLabel}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -362,28 +328,6 @@ export default function ValidationMode() {
               </div>
             </div>
 
-            {/* Mixed Mode Order */}
-            {mode === "mixed" && (
-              <div className="space-y-2">
-                <Label className="text-white">Push→Pull Order</Label>
-                <Tabs value={order} onValueChange={(value) => setOrder(value as any)}>
-                  <TabsList className="grid w-full grid-cols-2 bg-gray-800/50">
-                    <TabsTrigger 
-                      value="pos_neg"
-                      className={`data-[state=active]:bg-val data-[state=active]:text-white`}
-                    >
-                      + → –
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="neg_pos"
-                      className={`data-[state=active]:bg-val data-[state=active]:text-white`}
-                    >
-                      – → +
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-            )}
 
             {/* Generate Button */}
             <Button

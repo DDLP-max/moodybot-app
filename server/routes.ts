@@ -9,7 +9,9 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { z } from "zod";
-import { validationSystem, validationFewShots } from "../client/src/lib/prompts/validationPrompt";
+import { VALIDATION_SYSTEM_PROMPT, VALIDATION_USER_PROMPT, LENGTH_RULES, VALIDATION_EXAMPLES } from "../client/src/lib/validationPrompt";
+import { tooSimilar } from "../client/src/lib/antiMirroring";
+import { ValidationInput, ValidationOutput } from "../client/src/lib/types/validation";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -870,51 +872,20 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
     const requestId = req.headers['x-request-id'] || `validation-${Date.now()}`;
     
     try {
-      const { 
-        mode, 
-        style, 
-        intensity, 
-        length, 
-        relationship, 
-        reason_tags, 
-        order, 
-        include_followup, 
-        context_text,
-        userId 
-      } = req.body;
+      const input: ValidationInput = req.body;
       
-      console.log(`[${requestId}] Validation request: mode=${mode}, style=${style}, intensity=${intensity}, userId=${userId}`);
+      console.log(`[${requestId}] Validation request: mode=${input.mode}, style=${input.style}, intensity=${input.intensity}`);
       
-      if (!mode || !style || !context_text) {
+      if (!input.mode || !input.style || !input.context) {
         console.error(`[${requestId}] Missing required fields`);
         return res.status(400).json({ 
           code: "MISSING_FIELDS",
-          message: "Missing required fields: mode, style, context_text" 
-        });
-      }
-
-      // Validate mode
-      const validModes = ['positive', 'negative', 'mixed'];
-      if (!validModes.includes(mode)) {
-        console.error(`[${requestId}] Invalid mode: ${mode}`);
-        return res.status(400).json({ 
-          code: "INVALID_MODE",
-          message: "Invalid mode. Must be one of: " + validModes.join(', ') 
-        });
-      }
-
-      // Validate style
-      const validStyles = ['warm', 'blunt', 'playful', 'clinical', 'moodybot'];
-      if (!validStyles.includes(style)) {
-        console.error(`[${requestId}] Invalid style: ${style}`);
-        return res.status(400).json({ 
-          code: "INVALID_STYLE",
-          message: "Invalid style. Must be one of: " + validStyles.join(', ') 
+          message: "Missing required fields: mode, style, context" 
         });
       }
 
       // Default to user ID 1 if not provided (for now)
-      const currentUserId = userId || 1;
+      const currentUserId = input.userId || 1;
 
       // Ensure user exists in storage
       let user = await storage.getUser(currentUserId);
@@ -952,151 +923,76 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
         return res.status(500).json({ error: "Server missing OPENROUTER_API_KEY" });
       }
 
-      // DBT Level mapping based on intensity
-      const targetLevelByIntensity = (intensity: number) => {
-        if (intensity <= 0) return ["L1", "L2"];
-        if (intensity === 1) return ["L3"];
-        if (intensity === 2) return ["L4", "L5"];
-        return ["L6"];
+      async function generate(extraConstraint = ''): Promise<string> {
+        const messages = [
+          { role: 'system', content: VALIDATION_SYSTEM_PROMPT },
+          // Add few-shot examples
+          ...VALIDATION_EXAMPLES.flatMap(ex => [
+            { role: 'user', content: JSON.stringify(ex.user) },
+            { role: 'assistant', content: ex.assistant }
+          ]),
+          { role: 'user', content: VALIDATION_USER_PROMPT(input) + (extraConstraint ? `\nAdditional constraint: ${extraConstraint}` : '') }
+        ];
+
+        const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+            'HTTP-Referer': 'https://app.moodybot.ai',
+            'X-Title': 'MoodyBot'
+          },
+          body: JSON.stringify({
+            model: 'x-ai/grok-4',
+            temperature: 0.6,
+            top_p: 0.9,
+            messages,
+          }),
+        });
+        const json = await r.json();
+        return json.choices?.[0]?.message?.content?.trim() ?? '';
+      }
+
+      let response = await generate();
+      let regenerated = false;
+
+      // Anti-mirroring check
+      if (tooSimilar(input.context, response)) {
+        console.log(`[${requestId}] Response too similar to input, regenerating`);
+        response = await generate('Do not reuse any phrasing from the input. Use fresh language, name the feeling, and reframe with dignity.');
+        regenerated = true;
+      }
+
+      // Enforce length
+      const rule = LENGTH_RULES[input.length];
+      if (rule) {
+        // naive sentence split; refine as needed
+        let sentences = response.split(/(?<=[\.!?])\s+/);
+        if (sentences.length > rule.maxSentences) {
+          sentences = sentences.slice(0, rule.maxSentences);
+        }
+        response = sentences.join(' ');
+        if (response.length > rule.maxChars) response = response.slice(0, rule.maxChars).trim();
+      }
+
+      const out: ValidationOutput = {
+        response,
+        meta: {
+          style: input.style,
+          mode: input.mode,
+          intensity: input.intensity,
+          length: input.length,
+          auto_formatted: true,
+          regenerated,
+        },
       };
 
-      // Cap intensity for workplace relationships
-      const capWorkIntensity = (relationship: string, intensity: number) =>
-        (["coworker", "client"].includes(relationship) ? Math.min(intensity, 2) : intensity);
-
-      const safeIntensity = capWorkIntensity(relationship, intensity);
-      const targetLevels = targetLevelByIntensity(safeIntensity).join(",");
-
-      // Create the validation prompt with few-shots
-      const messages = [
-        { role: "system", content: validationSystem },
-        ...validationFewShots.flatMap(s => ([
-          { role: "user", content: JSON.stringify(s.user) },
-          { role: "assistant", content: JSON.stringify(s.out) }
-        ])),
-        { role: "user", content: JSON.stringify({ 
-          context: context_text, 
-          polarity: mode, 
-          style, 
-          length, 
-          intensity: safeIntensity, 
-          relationship, 
-          tags: reason_tags 
-        }) }
-      ];
-
-      console.log(`[${requestId}] Calling OpenRouter API for validation`);
-      
-      const openRouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-          "HTTP-Referer": "https://app.moodybot.ai",
-          "X-Title": "MoodyBot"
-        },
-        body: JSON.stringify({
-          model: "x-ai/grok-4",
-          messages,
-          response_format: { type: "json_object" },
-          temperature: 0.5,
-          top_p: 0.9,
-          max_tokens: 220
-        }),
-      });
-
-      if (!openRouterRes.ok) {
-        const errorText = await openRouterRes.text();
-        console.error(`[${requestId}] OpenRouter API error (${openRouterRes.status}):`, errorText);
-        
-        if (openRouterRes.status === 429) {
-          return res.status(429).json({
-            code: "RATE_LIMIT_EXCEEDED",
-            message: "AI service is rate limited. Try again in ~30s."
-          });
-        } else if (openRouterRes.status === 401 || openRouterRes.status === 403) {
-          return res.status(502).json({
-            code: "AI_SERVICE_ERROR",
-            message: "AI service authentication failed"
-          });
-        } else if (openRouterRes.status >= 500) {
-          return res.status(502).json({
-            code: "AI_SERVICE_ERROR",
-            message: "AI service is temporarily unavailable"
-          });
-        } else {
-          return res.status(502).json({
-            code: "AI_SERVICE_ERROR",
-            message: "AI service returned an error"
-          });
-        }
-      }
-
-      const json = await openRouterRes.json();
-      const aiReply = json.choices?.[0]?.message?.content || "Failed to generate validation";
-      const usage = json.usage || { total_tokens: 0 };
-
-      console.log(`[${requestId}] Generated validation response`);
-
-      // Parse the JSON response with defensive validation
-      let jsonData: unknown;
-      try { 
-        jsonData = JSON.parse(aiReply); 
-      } catch { 
-        jsonData = salvageJSON(aiReply); 
-      }
-
-      const parsed = ValidationSchema.safeParse(jsonData);
-
-      if (!parsed.success) {
-        console.warn(`[${requestId}] Schema validation failed, creating smart fallback`);
-        console.warn(`[${requestId}] Raw AI response:`, aiReply);
-        console.warn(`[${requestId}] Validation errors:`, parsed.error.errors);
-        
-        // Build a smart non-generic fallback from inputs
-        const distilled = deParrot(context_text);
-        const because = reason_tags?.length ? `Because it shows ${reason_tags.join(", ")}.` : "Because you showed up honestly.";
-        const msg = (len: string) => {
-          if (len === "one_liner") return "I hear you—thanks for being real about it.";
-          if (len === "two_three") return `I hear you—${distilled}. You're not alone; you handled it with honesty.`;
-          return `I hear you—${distilled}. It's human, not a character flaw. You named it, and that matters. We can choose the next step from here.`;
-        };
-        
-        const responseData = {
-          chips: { 
-            polarity: mode, 
-            style: style === "warm" ? "warm" : style === "blunt" ? "tough" : style === "playful" ? "poetic" : "neutral", 
-            length: length === "one_liner" ? "one_liner" : length === "short" ? "two_three" : "short_paragraph", 
-            intensity: safeIntensity === 0 ? "feather" : safeIntensity === 1 ? "casual" : safeIntensity === 2 ? "firm" : "heavy" 
-          },
-          messages: {
-            validation: msg(length),
-            because,
-            depth: "We focus on being seen first; advice comes later."
-          },
-          _auto: true,
-          usage: {
-            tokens: usage.total_tokens || 0
-          },
-          remaining: updatedLimitCheck.remaining,
-          limit: updatedLimitCheck.limit
-        };
-        
-        console.log(`[${requestId}] Sending fallback validation response to client`);
-        return res.json(responseData);
-      }
-
-      const responseData = {
-        ...parsed.data,
-        usage: {
-          tokens: usage.total_tokens || 0
-        },
+      console.log(`[${requestId}] Sending validation response to client`);
+      res.json({
+        ...out,
         remaining: updatedLimitCheck.remaining,
         limit: updatedLimitCheck.limit
-      };
-      
-      console.log(`[${requestId}] Sending validation response to client`);
-      res.json(responseData);
+      });
     } catch (error: any) {
       console.error(`[${requestId}] Validation API error:`, error);
       
