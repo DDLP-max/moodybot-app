@@ -1,3 +1,5 @@
+export const MODE_BUTTON_BASE = "inline-flex items-center justify-center px-5 py-3 font-semibold text-white shadow-lg ring-1 rounded-xl";
+
 export const MODE_THEME = {
   dynamic: { 
     bg: 'bg-indigo-500', 
@@ -18,11 +20,11 @@ export const MODE_THEME = {
     gradient: 'bg-gradient-to-r from-amber-500 to-orange-500'
   },
   validation: { 
-    btn: "bg-val text-white hover-bright shadow-lg rounded-xl",
-    ring: "ring-val",
-    // Legacy support for existing code
     bg: 'bg-val', 
     hover: 'hover-bright', 
+    ring: 'ring-val',
+    // Legacy support for existing code
+    btn: "bg-val text-white hover-bright shadow-lg rounded-xl",
     gradient: 'bg-val'
   }
 } as const;

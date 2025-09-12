@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Eye, Plus, Image, X, Upload } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
+import AppFooter from "@/components/AppFooter";
 
 interface Message {
   role: string;
@@ -763,6 +764,7 @@ export default function Chat() {
           </p>
         </div>
       </div>
+      <AppFooter />
     </div>
   );
 }

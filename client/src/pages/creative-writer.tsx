@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Copy, Sparkles, Feather, BookOpen, FileText, Zap } from "lucide-react";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
 import { StandardHeader, StandardFooter } from "@/components/StandardHeader";
+import AppFooter from "@/components/AppFooter";
 import { fetchJSON, FetchError } from "@/lib/fetchJSON";
 
 interface CreativeWriterResult {
@@ -624,7 +625,7 @@ export default function CreativeWriterPage() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(127,29,29,0.03),transparent_50%)] pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(146,64,14,0.03),transparent_50%)] pointer-events-none" />
       {/* Standard Header */}
-      <StandardHeader modeName="Creative Writer Mode" showNewChat={false} />
+      <StandardHeader modeName="Creative Writer Mode" />
 
       <div className="container mx-auto px-4 py-8 max-w-6xl relative z-10">
         {/* Hero Section */}
@@ -1696,8 +1697,7 @@ export default function CreativeWriterPage() {
         </div>
       </div>
       
-      {/* Standard Footer */}
-      <StandardFooter />
+      <AppFooter />
     </div>
   );
 }

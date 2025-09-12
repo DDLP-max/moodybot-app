@@ -3,7 +3,8 @@ import { Eye, Sparkles, Target, Feather } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { User } from "lucide-react";
-import { MODE_THEME } from "@/theme/modes";
+import { MODE_BUTTON_BASE, MODE_THEME } from "@/theme/modes";
+import AppFooter from "@/components/AppFooter";
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -149,7 +150,7 @@ export default function Home() {
               {/* Validation Mode */}
               <div className="flex flex-col items-center space-y-3">
                 <Button
-                  className={`${MODE_THEME.validation.btn} ${MODE_THEME.validation.ring} px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full`}
+                  className={`${MODE_BUTTON_BASE} ${MODE_THEME.validation.bg} ${MODE_THEME.validation.hover} ${MODE_THEME.validation.ring} px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full`}
                   onClick={() => setLocation("/validation")}
                 >
                   <span className="mr-2 text-white/80 text-lg">⚖️</span>
@@ -169,6 +170,7 @@ export default function Home() {
           </motion.div>
         </section>
       </div>
+      <AppFooter />
     </div>
   );
 }

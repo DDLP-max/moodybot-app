@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Copy, Sparkles, Target, Zap, MessageSquare, MousePointer } from "lucide-react";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
 import { StandardHeader, StandardFooter } from "@/components/StandardHeader";
+import AppFooter from "@/components/AppFooter";
 
 interface CopyOutput {
   titles: string[];
@@ -92,7 +93,7 @@ export default function CopywriterPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Standard Header */}
-      <StandardHeader modeName="Copywriter Mode" showNewChat={false} />
+      <StandardHeader modeName="Copywriter Mode" />
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Hero Section */}
@@ -368,8 +369,7 @@ export default function CopywriterPage() {
          )}        
       </div>
       
-      {/* Standard Footer */}
-      <StandardFooter />
+      <AppFooter />
     </div>
   );
 }

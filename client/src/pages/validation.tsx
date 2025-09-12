@@ -15,7 +15,8 @@ import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
 import { StandardHeader, StandardFooter } from "@/components/StandardHeader";
-import { MODE_THEME } from "@/theme/modes";
+import { MODE_BUTTON_BASE, MODE_THEME } from "@/theme/modes";
+import AppFooter from "@/components/AppFooter";
 
 const RELATIONSHIPS = [
   { value: "stranger", label: "Stranger" },
@@ -140,7 +141,7 @@ export default function ValidationMode() {
   return (
     <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #0D1B2A 0%, #1C1C1C 100%)' }}>
       {/* Standard Header */}
-      <StandardHeader modeName="Validation Mode" showNewChat={false} />
+      <StandardHeader modeName="Validation Mode" />
 
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         {/* Question Limit Display */}
@@ -364,7 +365,7 @@ export default function ValidationMode() {
             <Button
               onClick={handleGenerate}
               disabled={!context.trim() || isLoading}
-              className={`w-full ${MODE_THEME.validation.btn} ${MODE_THEME.validation.ring} font-semibold shadow-lg hover:shadow-xl transition-all duration-300`}
+              className={`${MODE_BUTTON_BASE} ${MODE_THEME.validation.bg} ${MODE_THEME.validation.hover} ${MODE_THEME.validation.ring} w-full font-semibold shadow-lg hover:shadow-xl transition-all duration-300`}
               size="lg"
             >
               {isLoading ? (
@@ -482,9 +483,8 @@ export default function ValidationMode() {
           </motion.div>
         )}
       </div>
-      
-      {/* Standard Footer */}
-      <StandardFooter />
+
+      <AppFooter />
     </div>
   );
 }
