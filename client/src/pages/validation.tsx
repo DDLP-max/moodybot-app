@@ -52,6 +52,11 @@ interface ValidationResponse {
   followup?: string;
 }
 
+interface ValidationAPIResponse {
+  output: ValidationResponse;
+  notes?: string;
+}
+
 export default function ValidationMode() {
   const [, setLocation] = useLocation();
   const { questionLimit, refreshQuestionLimit } = useQuestionLimit();
@@ -65,6 +70,7 @@ export default function ValidationMode() {
   const [includeFollowup, setIncludeFollowup] = useState(false);
   const [order, setOrder] = useState<"pos_neg" | "neg_pos">("pos_neg");
   const [response, setResponse] = useState<ValidationResponse | null>(null);
+  const [responseNotes, setResponseNotes] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleReasonTagToggle = (tag: string) => {
@@ -100,8 +106,9 @@ export default function ValidationMode() {
 
       if (!res.ok) throw new Error('Failed to generate validation');
       
-      const data = await res.json();
+      const data: ValidationAPIResponse = await res.json();
       setResponse(data.output);
+      setResponseNotes(data.notes || "");
       
       // Refresh question limit after successful request
       if (data.remaining !== undefined) {
@@ -137,7 +144,7 @@ export default function ValidationMode() {
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         {/* Question Limit Display */}
         {questionLimit && (
-          <Card className="border-0 shadow-lg" style={{ backgroundColor: 'rgba(20, 184, 166, 0.05)', borderColor: 'rgba(20, 184, 166, 0.2)' }}>
+          <Card className="border-0 shadow-lg" style={{ backgroundColor: 'rgba(236, 72, 153, 0.05)', borderColor: 'rgba(236, 72, 153, 0.2)' }}>
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div className="text-center flex-1">
@@ -168,7 +175,7 @@ export default function ValidationMode() {
         )}
 
         {/* Input Section */}
-        <Card className="border-0 shadow-2xl" style={{ backgroundColor: 'rgba(20, 184, 166, 0.05)', borderColor: 'rgba(20, 184, 166, 0.2)' }}>
+        <Card className="border-0 shadow-2xl" style={{ backgroundColor: 'rgba(236, 72, 153, 0.05)', borderColor: 'rgba(236, 72, 153, 0.2)' }}>
           <CardHeader>
             <CardTitle className="text-white">Generate Validation Response</CardTitle>
             <CardDescription className="text-gray-300">
@@ -378,7 +385,7 @@ export default function ValidationMode() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Card className="border-0 shadow-2xl" style={{ backgroundColor: 'rgba(20, 184, 166, 0.05)', borderColor: 'rgba(20, 184, 166, 0.2)' }}>
+            <Card className="border-0 shadow-2xl" style={{ backgroundColor: 'rgba(236, 72, 153, 0.05)', borderColor: 'rgba(236, 72, 153, 0.2)' }}>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-white">Validation Response</CardTitle>
@@ -420,6 +427,11 @@ export default function ValidationMode() {
                   <Badge variant="secondary" className="bg-gray-700 text-gray-300">{style}</Badge>
                   <Badge variant="secondary" className="bg-gray-700 text-gray-300">{INTENSITY_LABELS[intensity[0]]}</Badge>
                   <Badge variant="secondary" className="bg-gray-700 text-gray-300">{length}</Badge>
+                  {responseNotes && (
+                    <Badge variant="secondary" className="bg-pink-500 text-white">
+                      DBT: {responseNotes.match(/L[1-6]/)?.[0] || 'Level'}
+                    </Badge>
+                  )}
                 </div>
 
                 {/* Validation Response */}
@@ -453,6 +465,14 @@ export default function ValidationMode() {
                     <div className="p-4 rounded-full bg-purple-600 text-white text-center">
                       <h4 className="font-semibold text-sm mb-2">Follow-up Question</h4>
                       <p className="text-sm">{response.followup}</p>
+                    </div>
+                  )}
+
+                  {/* DBT Level Explanation */}
+                  {responseNotes && (
+                    <div className="p-4 rounded-lg bg-gray-800/50 border border-gray-600">
+                      <h4 className="font-semibold text-sm text-gray-300 mb-2">Validation Depth</h4>
+                      <p className="text-sm text-gray-400 italic">{responseNotes}</p>
                     </div>
                   )}
                 </div>
