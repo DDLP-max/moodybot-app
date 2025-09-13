@@ -8,7 +8,7 @@ import { Image, X, Upload, Sparkles } from "lucide-react";
 import PageTitle from "@/components/PageTitle";
 import { useMutation } from "@tanstack/react-query";
 import { dynamicPersonaEngine, type PersonaAnalysis } from "@/lib/dynamicPersonaEngine";
-import { useQuestionLimit } from "@/hooks/use-question-limit";
+import { useFreeReplies } from "@/features/freeReplies/useFreeReplies";
 import ModeShell from "@/components/ModeShell";
 import ModeCard from "@/components/ModeCard";
 import AppFooter from "@/components/AppFooter";
@@ -27,7 +27,7 @@ export default function DynamicPage() {
   const [message, setMessage] = useState("");
   const [currentSession, setCurrentSession] = useState<{ mode: string; sessionId: number; userId: number } | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
-  const { questionLimit, refreshQuestionLimit } = useQuestionLimit();
+  const { ready, count, consume } = useFreeReplies(3);
   const [currentPersonaAnalysis, setCurrentPersonaAnalysis] = useState<PersonaAnalysis | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -135,10 +135,8 @@ export default function DynamicPage() {
 
       const data = await response.json();
       
-      // Update question limit with the response data
-      if (data.remaining !== undefined && data.limit !== undefined) {
-        refreshQuestionLimit();
-      }
+      // Consume one free reply
+      consume();
       
       // Return the AI response
       if (data.aiMessage && data.aiMessage.content) {
@@ -192,7 +190,7 @@ export default function DynamicPage() {
   const handleSendMessage = async () => {
     if (!message.trim()) return;
     if (sendMessageMutation.isPending || isInitializing) return;
-    if ((questionLimit?.remaining ?? 0) <= 0) return;
+    if (!ready || count <= 0) return;
 
     const messageText = message;
     setMessage("");
@@ -311,11 +309,11 @@ export default function DynamicPage() {
         <div className="rounded-2xl border border-white/10 bg-gradient-to-r from-emerald-500/20 to-fuchsia-500/20 p-3 mb-4">
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm text-white/90">
-              {questionLimit ? (
-                questionLimit.remaining > 0 
-                  ? `${questionLimit.remaining} free question${questionLimit.remaining === 1 ? '' : 's'} remaining`
+              {ready ? (
+                count > 0 
+                  ? `${count} free question${count === 1 ? '' : 's'} remaining`
                   : 'No free questions remaining'
-              ) : 'Unlimited emotional intelligence upgrades'}
+              ) : 'Loading...'}
             </span>
             <Button
               onClick={() => window.open('https://moodybot.gumroad.com/l/moodybot-webapp', '_blank')}
@@ -378,14 +376,14 @@ export default function DynamicPage() {
                 className="flex-1 resize-y rounded-none bg-black/30 border border-white/10 
                            placeholder-white/40 text-white p-3 min-h-[52px] focus:outline-none focus:ring-2 ring-violet-400"
                 placeholder="Share your story, your pain, your truth... MoodyBot will adapt to you"
-                disabled={sendMessageMutation.isPending || isInitializing || (questionLimit?.remaining ?? 0) <= 0}
+                disabled={sendMessageMutation.isPending || isInitializing || !ready || count <= 0}
               />
               <Button
                 type="submit"
-                disabled={sendMessageMutation.isPending || isInitializing || (questionLimit?.remaining ?? 0) <= 0}
+                disabled={sendMessageMutation.isPending || isInitializing || !ready || count <= 0}
                 className="px-4 py-3 rounded-none bg-violet-500 hover:bg-violet-400 text-white font-semibold shadow-lg"
               >
-                {sendMessageMutation.isPending ? "Crafting..." : "Send Message"}
+                {sendMessageMutation.isPending ? "Crafting..." : (!ready || count <= 0) ? "Subscribe to continue" : "Send Message"}
               </Button>
             </form>
             

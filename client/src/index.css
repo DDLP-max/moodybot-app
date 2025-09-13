@@ -231,3 +231,9 @@
     padding-top: 1rem;
   }
 }
+
+/* Custom breakpoint ~400px so we can hide actions sooner than sm */
+@media (min-width: 400px) {
+  .xs\:flex { display: flex; }
+  .xs\:hidden { display: none; }
+}
