@@ -162,7 +162,7 @@ export default function ValidationMode() {
       {/* Standard Header */}
       <StandardHeader modeName="Validation Mode" />
 
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="max-w-4xl mx-auto p-6 pb-24 space-y-6">
         {/* Question Limit Display */}
         {questionLimit && (
           <Card className="border-0 shadow-lg" style={{ backgroundColor: 'rgba(45, 212, 191, 0.05)', borderColor: 'rgba(45, 212, 191, 0.2)' }}>
@@ -200,7 +200,7 @@ export default function ValidationMode() {
           <CardHeader>
             <CardTitle className="text-white">Generate Validation Response</CardTitle>
             <CardDescription className="text-gray-300">
-              Cut through noise with presence. This mode mirrors back what was said and delivers calibrated validation — from warm approval to firm boundary-setting. Choose Positive, Negative, or Mixed push-pull to reinforce strengths, call out blind spots, or do both in one breath. It's not therapy or advice — it's the art of making people feel seen while keeping your own standards intact.
+              Cut through noise with presence. This mode names the feeling underneath and delivers calibrated validation — from warm approval to firm boundary-setting. Choose Positive, Negative, or Mixed push-pull to reinforce strengths, call out blind spots, or do both in one breath. It's not therapy or advice — it's the art of making people feel seen while keeping your standards intact.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">

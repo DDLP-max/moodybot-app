@@ -28,7 +28,10 @@ export function StandardHeader({
   };
 
   return (
-    <div className="flex items-center justify-between p-4 border-b border-primary/20 bg-surface/50">
+    <div 
+      className="flex items-center justify-between p-4 border-b border-primary/20 bg-surface/50 sticky top-0 z-50 backdrop-blur-sm"
+      style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}
+    >
       <div className="flex items-center space-x-3">
         <Button
           variant="ghost"

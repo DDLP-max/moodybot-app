@@ -95,7 +95,7 @@ export default function CopywriterPage() {
       {/* Standard Header */}
       <StandardHeader modeName="Copywriter Mode" />
 
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-8 pb-24 max-w-4xl">
         {/* Hero Section */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-black mb-4 bg-gradient-to-r from-green-500 to-teal-600 bg-clip-text text-transparent">

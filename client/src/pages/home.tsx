@@ -10,7 +10,7 @@ export default function Home() {
   const [, setLocation] = useLocation();
 
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Fixed Navigation Bar */}
       <nav className="fixed top-0 w-full z-50 bg-background/90 backdrop-blur-sm border-b border-primary/20" style={{ paddingTop: 'max(env(safe-area-inset-top), 0.75rem)' }}>
         <div className="flex items-center justify-between px-4 py-3">
@@ -33,7 +33,7 @@ export default function Home() {
 
       <div className="pt-16" style={{ paddingTop: 'calc(4rem + max(env(safe-area-inset-top), 0.75rem))' }}>
         {/* Hero Section */}
-        <section className="relative h-screen flex items-center justify-center overflow-hidden" style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}>
+        <section className="relative min-h-screen flex items-center justify-center" style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}>
           <div className="absolute inset-0 bg-gradient-to-b from-background/50 to-background">
             <div className="w-full h-full bg-gradient-to-br from-primary/10 via-background to-accent/5" />
           </div>
@@ -97,10 +97,6 @@ export default function Home() {
                   DYNAMIC MODE
                 </Button>
                 <div className="text-center p-3 bg-background/50 rounded-lg border border-primary/20 w-full">
-                  <h3 className="font-bold text-blue-500 mb-2 flex items-center justify-center text-sm">
-                    <Eye className="h-4 w-4 mr-2" />
-                    Dynamic Mode
-                  </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     AI-powered persona selection. MoodyBot automatically adapts to your emotional state and message content.
                   </p>
@@ -117,10 +113,6 @@ export default function Home() {
                   COPYWRITER MODE
                 </Button>
                 <div className="text-center p-3 bg-background/50 rounded-lg border border-primary/20 w-full">
-                  <h3 className="font-bold text-green-500 mb-2 flex items-center justify-center text-sm">
-                    <Target className="h-4 w-4 mr-2" />
-                    Copywriter Mode
-                  </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     From Ogilvy to Outlaw: MoodyBot's Copy Engine. Create compelling titles, hooks, CTAs, and captions with brutal honesty.
                   </p>
@@ -137,10 +129,6 @@ export default function Home() {
                   CREATIVE WRITER MODE
                 </Button>
                 <div className="text-center p-3 bg-background/50 rounded-lg border border-primary/20 w-full">
-                  <h3 className="font-bold bg-gradient-to-r from-red-600 to-amber-500 bg-clip-text text-transparent mb-2 flex items-center justify-center text-sm">
-                    <Feather className="h-4 w-4 mr-2 text-amber-500" />
-                    Creative Writer Mode
-                  </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     Dive-bar oracle meets copywriter. Fiction, articles, outlines, and teaser blurbs with Hank Moody swagger and Bourdain grit.
                   </p>
@@ -157,10 +145,6 @@ export default function Home() {
                   VALIDATION MODE
                 </Button>
                 <div className="text-center p-3 bg-background/50 rounded-lg border border-primary/20 w-full">
-                  <h3 className="font-bold bg-val bg-clip-text text-transparent mb-2 flex items-center justify-center text-sm">
-                    <span className="mr-2 text-teal-400 text-base">⚖️</span>
-                    Validation Mode
-                  </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     Positive, negative, or mixed push-pull. Make people feel seen, set boundaries, or do both with precision.
                   </p>
