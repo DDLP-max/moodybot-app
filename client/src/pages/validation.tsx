@@ -14,7 +14,6 @@ import { Copy, RefreshCw, Heart, Shield, Zap, MessageSquare } from "lucide-react
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
-import { StandardHeader, StandardFooter } from "@/components/StandardHeader";
 import { MODE_THEME } from "@/theme/modes";
 import AppFooter from "@/components/AppFooter";
 import ValidationResult from "@/components/ValidationResult";
@@ -146,10 +145,7 @@ export default function ValidationMode() {
 
   return (
     <div className="page-scroll flex-1 text-white" style={{ background: 'linear-gradient(135deg, #0D1B2A 0%, #1C1C1C 100%)' }}>
-      {/* Standard Header */}
-      <StandardHeader modeName="Validation Mode" />
-
-      <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-6 pb-24 space-y-6">
+      <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 pt-6 pb-24 space-y-6">
         {/* Question Limit Display */}
         {questionLimit && (
           <Card className="border-0 shadow-lg" style={{ backgroundColor: 'rgba(45, 212, 191, 0.05)', borderColor: 'rgba(45, 212, 191, 0.2)' }}>

@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { Eye, Sparkles, Target, Feather } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { User } from "lucide-react";
 import { MODE_THEME } from "@/theme/modes";
 import AppFooter from "@/components/AppFooter";
 
@@ -11,27 +10,7 @@ export default function Home() {
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground">
-      {/* Fixed Navigation Bar */}
-      <nav className="fixed top-0 w-full z-50 bg-background/90 backdrop-blur-sm border-b border-primary/20" style={{ paddingTop: 'max(env(safe-area-inset-top), 0.75rem)' }}>
-        <div className="flex items-center justify-between px-4 py-3">
-          <a 
-            href="https://moodybot.ai" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-          >
-            <Eye className="text-primary text-xl" />
-            <span className="font-black text-lg gradient-text">MoodyBot</span>
-          </a>
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary">
-              <User className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-      </nav>
-
-      <div className="pt-16" style={{ paddingTop: 'calc(4rem + max(env(safe-area-inset-top), 0.75rem))' }}>
+      <div className="pt-6">
         {/* Hero Section */}
         <section className="relative min-h-[100dvh] flex items-center justify-center" style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}>
           <div className="absolute inset-0 bg-gradient-to-b from-background/50 to-background">

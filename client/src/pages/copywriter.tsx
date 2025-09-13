@@ -6,7 +6,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Copy, Sparkles, Target, Zap, MessageSquare, MousePointer } from "lucide-react";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
-import { StandardHeader, StandardFooter } from "@/components/StandardHeader";
 import AppFooter from "@/components/AppFooter";
 
 interface CopyOutput {
@@ -92,10 +91,7 @@ export default function CopywriterPage() {
 
   return (
     <div className="page-scroll flex-1 bg-background text-foreground">
-      {/* Standard Header */}
-      <StandardHeader modeName="Copywriter Mode" />
-
-      <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 pb-24">
+      <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 pt-6 pb-24">
         {/* Hero Section */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-black mb-4 bg-gradient-to-r from-green-500 to-teal-600 bg-clip-text text-transparent">

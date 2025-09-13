@@ -23,6 +23,9 @@
     --val-start: #2DD4BF; /* teal-400 */
     --val-end: #8B5CF6; /* violet-500 (lavender-ish) */
     --val-ring: #A78BFA; /* violet-400 for focus/ring */
+    
+    /* Header height for scroll padding */
+    --header-h: 64px;
   }
 
   html.dark {
@@ -53,6 +56,10 @@
     overflow-y: auto !important;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
+  }
+
+  html {
+    scroll-padding-top: calc(var(--header-h) + env(safe-area-inset-top));
   }
 
   body {
