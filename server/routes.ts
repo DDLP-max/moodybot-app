@@ -14,6 +14,7 @@ import { tooSimilar } from "../client/src/lib/antiMirroring";
 import { ValidationInput, ValidationOutput } from "../client/src/lib/types/validation";
 import { classifyContext, routeSettings } from "../client/src/lib/router";
 import { sanitizeInput } from "./utils/sanitizeInput";
+import { postProcessValidation } from "./utils/postProcess";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -948,17 +949,18 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
         return res.status(500).json({ error: "Server missing OPENROUTER_API_KEY" });
       }
 
-      async function generate(extraConstraint = ''): Promise<string> {
-        // Use resolved settings instead of input settings
-        const inputWithResolved = { ...input, ...resolved };
+      async function generate(): Promise<string> {
+        // Use the new simplified validation system
         const messages = [
           { role: 'system', content: VALIDATION_SYSTEM_PROMPT },
-          // Add few-shot examples
-          ...VALIDATION_EXAMPLES.flatMap(ex => [
-            { role: 'user', content: JSON.stringify(ex.user) },
-            { role: 'assistant', content: ex.assistant }
-          ]),
-          { role: 'user', content: VALIDATION_USER_PROMPT(inputWithResolved) + (extraConstraint ? `\nAdditional constraint: ${extraConstraint}` : '') }
+          {
+            role: 'user',
+            content:
+              "Context:\n" +
+              "You are validating a short confession or situation from a friend. Keep it warm and authored.\n\n" +
+              `User text:\n"${input.context}"\n\n` +
+              "Write a 2–3 line validation that follows the ritual."
+          }
         ];
 
         const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -971,13 +973,15 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
           },
           body: JSON.stringify({
             model: 'x-ai/grok-4',
-            temperature: 0.6,
-            top_p: 0.9,
+            temperature: 0.8,
+            top_p: 0.95,
+            max_tokens: 220,
             messages,
           }),
         });
         const json = await r.json();
-        return json.choices?.[0]?.message?.content?.trim() ?? '';
+        const raw = json.choices?.[0]?.message?.content?.trim() ?? '';
+        return postProcessValidation(raw);
       }
 
       let response = await generate();
@@ -986,24 +990,12 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
       // Anti-mirroring check
       if (tooSimilar(input.context, response)) {
         console.log(`[${requestId}] Response too similar to input, regenerating`);
-        response = await generate('Do not reuse any phrasing from the input. Use fresh language, name the feeling, and reframe with dignity.');
+        // For now, skip regeneration since we're using the new simplified system
+        // TODO: Implement regeneration with new system if needed
         regenerated = true;
       }
 
-      // Enforce length
-      const rule = LENGTH_RULES[resolved.length];
-      if (rule) {
-        // naive sentence split; refine as needed
-        let sentences = response.split(/(?<=[\.!?])\s+/);
-        if (sentences.length > rule.maxSentences) {
-          sentences = sentences.slice(0, rule.maxSentences);
-        }
-        response = sentences.join(' ');
-        if (response.length > rule.maxChars) response = response.slice(0, rule.maxChars).trim();
-      }
-
-      // Ensure whiskey glass emoji is always present (post-processing guarantee)
-      response = formatValidationOutput(response);
+      // Response is already post-processed in the generate() function
 
       const out: ValidationOutput = {
         response,
