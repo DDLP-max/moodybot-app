@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Copy, RefreshCw, Heart, Shield, Zap, MessageSquare } from "lucide-react";
+import { Copy, RefreshCw, Heart, Shield, Zap, MessageSquare, Lock, Unlock } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
@@ -68,6 +68,15 @@ export default function ValidationMode() {
   const [includeFollowup, setIncludeFollowup] = useState(false);
   const [response, setResponse] = useState<ValidationOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Auto Mode state
+  const [auto, setAuto] = useState(true);
+  const [locks, setLocks] = useState({ 
+    mode: true, 
+    style: true, 
+    intensity: true, 
+    length: true 
+  });
 
   const handleReasonTagToggle = (tag: string) => {
     setReasonTags(prev => 
@@ -76,6 +85,24 @@ export default function ValidationMode() {
         : [...prev, tag]
     );
   };
+
+  const handleLockToggle = (field: keyof typeof locks) => {
+    setLocks(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
+  };
+
+  // Update controls with resolved values from API response
+  useEffect(() => {
+    if (response?.meta?.resolved) {
+      const resolved = response.meta.resolved;
+      setMode(resolved.mode as ValidationInput['mode']);
+      setStyle(resolved.style as ValidationInput['style']);
+      setIntensity(resolved.intensity as ValidationInput['intensity']);
+      setLength(resolved.length as ValidationInput['length']);
+    }
+  }, [response]);
 
   const handleGenerate = async () => {
     if (!context.trim()) return;
@@ -91,6 +118,8 @@ export default function ValidationMode() {
         length,
         reason_tags: reasonTags,
         include_followup: includeFollowup,
+        auto,
+        locks,
         userId: 1
       };
 
@@ -187,6 +216,25 @@ export default function ValidationMode() {
               />
             </div>
 
+            {/* Auto Mode Toggle */}
+            <div className="flex items-center justify-between p-4 bg-gray-800/30 rounded-lg border border-gray-600">
+              <div className="space-y-1">
+                <Label className="text-white font-medium">Auto Mode</Label>
+                <p className="text-sm text-gray-300">
+                  Automatically detect emotion and choose optimal settings
+                </p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={auto}
+                  onCheckedChange={setAuto}
+                />
+                <span className="text-sm text-gray-300">
+                  {auto ? 'Auto On' : 'Auto Off'}
+                </span>
+              </div>
+            </div>
+
             {/* Relationship and Mode */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -206,37 +254,70 @@ export default function ValidationMode() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-white">Mode</Label>
-                <Tabs value={mode} onValueChange={(value) => setMode(value as ValidationInput['mode'])}>
+                <div className="flex items-center justify-between">
+                  <Label className="text-white">Mode</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleLockToggle('mode')}
+                    className="p-1 h-6 w-6 text-gray-400 hover:text-white"
+                  >
+                    {locks.mode ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
+                  </Button>
+                </div>
+                <Tabs 
+                  value={mode} 
+                  onValueChange={(value) => setMode(value as ValidationInput['mode'])}
+                >
                   <TabsList className="grid w-full grid-cols-3 bg-gray-800/50">
                     <TabsTrigger 
                       value="Positive" 
                       className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white"
+                      disabled={auto && locks.mode}
                     >
                       ✅ Positive
                     </TabsTrigger>
                     <TabsTrigger 
                       value="Negative"
                       className="data-[state=active]:bg-amber-500 data-[state=active]:text-white"
+                      disabled={auto && locks.mode}
                     >
                       ⚡ Negative
                     </TabsTrigger>
                     <TabsTrigger 
                       value="Mixed"
                       className={`data-[state=active]:bg-val data-[state=active]:text-white`}
+                      disabled={auto && locks.mode}
                     >
                       🔄 Mixed
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
+                {auto && locks.mode && (
+                  <p className="text-xs text-gray-400">Auto-selected based on emotion</p>
+                )}
               </div>
             </div>
 
             {/* Style and Intensity */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-white">Style</Label>
-                <Select value={style} onValueChange={setStyle}>
+                <div className="flex items-center justify-between">
+                  <Label className="text-white">Style</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleLockToggle('style')}
+                    className="p-1 h-6 w-6 text-gray-400 hover:text-white"
+                  >
+                    {locks.style ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
+                  </Button>
+                </div>
+                <Select 
+                  value={style} 
+                  onValueChange={setStyle}
+                  disabled={auto && locks.style}
+                >
                   <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white focus:border-teal-400">
                     <SelectValue />
                   </SelectTrigger>
@@ -251,11 +332,28 @@ export default function ValidationMode() {
                     ))}
                   </SelectContent>
                 </Select>
+                {auto && locks.style && (
+                  <p className="text-xs text-gray-400">Auto-selected based on emotion</p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label className="text-white">Intensity</Label>
-                <Select value={intensity} onValueChange={(value) => setIntensity(value as ValidationInput['intensity'])}>
+                <div className="flex items-center justify-between">
+                  <Label className="text-white">Intensity</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleLockToggle('intensity')}
+                    className="p-1 h-6 w-6 text-gray-400 hover:text-white"
+                  >
+                    {locks.intensity ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
+                  </Button>
+                </div>
+                <Select 
+                  value={intensity} 
+                  onValueChange={(value) => setIntensity(value as ValidationInput['intensity'])}
+                  disabled={auto && locks.intensity}
+                >
                   <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white focus:border-teal-400">
                     <SelectValue />
                   </SelectTrigger>
@@ -267,13 +365,26 @@ export default function ValidationMode() {
                     ))}
                   </SelectContent>
                 </Select>
+                {auto && locks.intensity && (
+                  <p className="text-xs text-gray-400">Auto-selected based on emotion</p>
+                )}
               </div>
             </div>
 
             {/* Length and Follow-up */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-white">Length</Label>
+                <div className="flex items-center justify-between">
+                  <Label className="text-white">Length</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleLockToggle('length')}
+                    className="p-1 h-6 w-6 text-gray-400 hover:text-white"
+                  >
+                    {locks.length ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
+                  </Button>
+                </div>
                 <div className="flex space-x-2">
                   {LENGTH_OPTIONS.map((option) => (
                     <Button
@@ -281,6 +392,7 @@ export default function ValidationMode() {
                       variant={length === option.value ? "default" : "outline"}
                       size="sm"
                       onClick={() => setLength(option.value)}
+                      disabled={auto && locks.length}
                       className={length === option.value 
                         ? `bg-val hover-bright text-white` 
                         : "border-gray-600 text-gray-300 hover:bg-gray-700"
@@ -291,7 +403,10 @@ export default function ValidationMode() {
                   ))}
                 </div>
                 <p className="text-xs text-gray-400">
-                  {LENGTH_OPTIONS.find(o => o.value === length)?.description}
+                  {auto && locks.length 
+                    ? "Auto-selected based on emotion" 
+                    : LENGTH_OPTIONS.find(o => o.value === length)?.description
+                  }
                 </p>
               </div>
 

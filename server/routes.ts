@@ -12,6 +12,7 @@ import { z } from "zod";
 import { VALIDATION_SYSTEM_PROMPT, VALIDATION_USER_PROMPT, LENGTH_RULES, VALIDATION_EXAMPLES } from "../client/src/lib/validationPrompt";
 import { tooSimilar } from "../client/src/lib/antiMirroring";
 import { ValidationInput, ValidationOutput } from "../client/src/lib/types/validation";
+import { classifyContext, routeSettings } from "../client/src/lib/router";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -873,16 +874,31 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
     
     try {
       const input: ValidationInput = req.body;
+      const auto = !!input.auto;
       
-      console.log(`[${requestId}] Validation request: mode=${input.mode}, style=${input.style}, intensity=${input.intensity}`);
+      console.log(`[${requestId}] Validation request: auto=${auto}, mode=${input.mode}, style=${input.style}, intensity=${input.intensity}`);
       
-      if (!input.mode || !input.style || !input.context) {
-        console.error(`[${requestId}] Missing required fields`);
+      if (!input.context) {
+        console.error(`[${requestId}] Missing required field: context`);
         return res.status(400).json({ 
           code: "MISSING_FIELDS",
-          message: "Missing required fields: mode, style, context" 
+          message: "Missing required field: context" 
         });
       }
+
+      // 1) Route if auto (unless users locked fields)
+      let router = classifyContext(input.context);
+      let routed = routeSettings(router, input.reason_tags ?? []);
+
+      const resolved = {
+        mode: input.locks?.mode ? (input.mode!) : routed.mode,
+        style: input.locks?.style ? (input.style!) : routed.style,
+        intensity: input.locks?.intensity ? (input.intensity!) : routed.intensity,
+        length: input.locks?.length ? (input.length!) : routed.length,
+      };
+
+      console.log(`[${requestId}] Router meta:`, router);
+      console.log(`[${requestId}] Resolved settings:`, resolved);
 
       // Default to user ID 1 if not provided (for now)
       const currentUserId = input.userId || 1;
@@ -924,6 +940,8 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
       }
 
       async function generate(extraConstraint = ''): Promise<string> {
+        // Use resolved settings instead of input settings
+        const inputWithResolved = { ...input, ...resolved };
         const messages = [
           { role: 'system', content: VALIDATION_SYSTEM_PROMPT },
           // Add few-shot examples
@@ -931,7 +949,7 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
             { role: 'user', content: JSON.stringify(ex.user) },
             { role: 'assistant', content: ex.assistant }
           ]),
-          { role: 'user', content: VALIDATION_USER_PROMPT(input) + (extraConstraint ? `\nAdditional constraint: ${extraConstraint}` : '') }
+          { role: 'user', content: VALIDATION_USER_PROMPT(inputWithResolved) + (extraConstraint ? `\nAdditional constraint: ${extraConstraint}` : '') }
         ];
 
         const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -964,7 +982,7 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
       }
 
       // Enforce length
-      const rule = LENGTH_RULES[input.length];
+      const rule = LENGTH_RULES[resolved.length];
       if (rule) {
         // naive sentence split; refine as needed
         let sentences = response.split(/(?<=[\.!?])\s+/);
@@ -978,10 +996,9 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
       const out: ValidationOutput = {
         response,
         meta: {
-          style: input.style,
-          mode: input.mode,
-          intensity: input.intensity,
-          length: input.length,
+          resolved,
+          auto_used: auto,
+          router,
           auto_formatted: true,
           regenerated,
         },
