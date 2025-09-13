@@ -152,7 +152,8 @@ Disallowed:
 
 Output Rules:
 - Return ONLY the \`response\` string unless \`include_followup=true\` then add a single supportive follow-up question on the next line prefixed with "—".
-- No headers, labels, or emojis unless the user's \`style\` = Playful.`;
+- No headers, labels, or emojis unless the user's \`style\` = Playful.
+- Always finish your response with the emoji 🥃`;
 
 import { ValidationInput } from './types/validation';
 
@@ -195,6 +196,14 @@ export const INTENSITY_RULES = {
   Firm:    { exclaim: 0, hedges: 0 },
   Heavy:   { exclaim: 0, hedges: 0 }, // slower cadence, weightier nouns
 };
+
+// Post-processing function to ensure whiskey glass emoji is always present
+export function formatValidationOutput(text: string): string {
+  const trimmed = text.trim();
+  return trimmed.endsWith("🥃")
+    ? trimmed
+    : `${trimmed} 🥃`;
+}
 
 // Few-shot examples
 export const VALIDATION_EXAMPLES = [

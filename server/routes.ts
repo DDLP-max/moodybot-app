@@ -9,7 +9,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { z } from "zod";
-import { VALIDATION_SYSTEM_PROMPT, VALIDATION_USER_PROMPT, LENGTH_RULES, VALIDATION_EXAMPLES } from "../client/src/lib/validationPrompt";
+import { VALIDATION_SYSTEM_PROMPT, VALIDATION_USER_PROMPT, LENGTH_RULES, VALIDATION_EXAMPLES, formatValidationOutput } from "../client/src/lib/validationPrompt";
 import { tooSimilar } from "../client/src/lib/antiMirroring";
 import { ValidationInput, ValidationOutput } from "../client/src/lib/types/validation";
 import { classifyContext, routeSettings } from "../client/src/lib/router";
@@ -992,6 +992,9 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
         response = sentences.join(' ');
         if (response.length > rule.maxChars) response = response.slice(0, rule.maxChars).trim();
       }
+
+      // Ensure whiskey glass emoji is always present (post-processing guarantee)
+      response = formatValidationOutput(response);
 
       const out: ValidationOutput = {
         response,
