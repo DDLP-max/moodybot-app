@@ -4,14 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Eye, Image, X, Upload, Sparkles } from "lucide-react";
+import { Image, X, Upload, Sparkles } from "lucide-react";
+import PageTitle from "@/components/PageTitle";
 import { useMutation } from "@tanstack/react-query";
 import { dynamicPersonaEngine, type PersonaAnalysis } from "@/lib/dynamicPersonaEngine";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
-import { getShareUrl } from "@/config/environment";
 import ModeShell from "@/components/ModeShell";
 import ModeCard from "@/components/ModeCard";
-import UpgradeBanner from "@/components/UpgradeBanner";
 import AppFooter from "@/components/AppFooter";
 
 interface Message {
@@ -301,87 +300,35 @@ export default function DynamicPage() {
 
   return (
     <div className="page-scroll flex-1 bg-background text-foreground">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-primary/20 bg-surface/50">
-        <div className="flex items-center space-x-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setLocation("/")}
-            className="text-muted-foreground hover:text-primary"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex items-center space-x-2">
-            <Eye className="text-primary text-xl" />
-            <span className="font-black text-lg gradient-text">MoodyBot</span>
-            <span className="text-sm text-muted-foreground">• Dynamic Mode</span>
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          {/* X Profile Link */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => window.open('https://x.com/MoodyBotAI', '_blank')}
-            className="text-muted-foreground hover:text-primary"
-          >
-            <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-            </svg>
-            @MoodyBotAI
-          </Button>
-          
-          {/* Share Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              const shareUrl = getShareUrl();
-              
-              if (navigator.share) {
-                navigator.share({
-                  title: 'MoodyBot - AI Emotional Intelligence',
-                  text: 'Check out MoodyBot - the AI that adapts to your emotional state and provides personalized support!',
-                  url: shareUrl
-                });
-              } else {
-                navigator.clipboard.writeText(shareUrl);
-              }
-            }}
-            className="text-muted-foreground hover:text-primary"
-          >
-            <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
-            </svg>
-            Share
-          </Button>
-        </div>
-      </div>
+      <div className="container mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 pt-4">
+        <PageTitle
+          title="MoodyBot • Dynamic Mode"
+          subtitle="Share your story, your pain, your truth — MoodyBot will adapt to you."
+          back
+        />
 
-      <ModeShell max="4xl">
-        {/* Top banner INSIDE the container */}
-        <UpgradeBanner
-          left={
-            <span>
+        {/* promo banner */}
+        <div className="rounded-2xl border border-white/10 bg-gradient-to-r from-emerald-500/20 to-fuchsia-500/20 p-3 mb-4">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm text-white/90">
               {questionLimit ? (
                 questionLimit.remaining > 0 
                   ? `${questionLimit.remaining} free question${questionLimit.remaining === 1 ? '' : 's'} remaining`
                   : 'No free questions remaining'
               ) : 'Unlimited emotional intelligence upgrades'}
             </span>
-          }
-          cta={
             <Button
               onClick={() => window.open('https://moodybot.gumroad.com/l/moodybot-webapp', '_blank')}
               size="sm"
-              className="rounded-none bg-fuchsia-600 px-3 py-2 text-sm font-semibold text-white hover:bg-fuchsia-500"
+              className="rounded-lg bg-[#7A3AF9] px-3 py-1.5 text-sm font-medium hover:brightness-110"
             >
               Subscribe $9/month
             </Button>
-          }
-        />
+          </div>
+        </div>
+
+        {/* main chat card */}
+        <section className="rounded-2xl border border-white/10 bg-white/5 p-4">
 
         {/* Chat panel */}
         <ModeCard className="mt-6">
@@ -450,9 +397,8 @@ export default function DynamicPage() {
             </div>
           </div>
         </ModeCard>
-      </ModeShell>
-
-      <AppFooter />
+        </section>
+      </div>
     </div>
   );
 }
