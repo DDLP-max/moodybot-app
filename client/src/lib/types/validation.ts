@@ -1,7 +1,9 @@
+export type ValidationMode = 'positive' | 'negative' | 'mixed' | 'auto';
+
 export type ValidationInput = {
   context: string;            // the raw message the user wrote
   relationship?: 'Friend' | 'Partner' | 'Family' | 'Colleague' | 'Stranger';
-  mode?: 'Positive' | 'Negative' | 'Mixed';
+  mode?: 'Positive' | 'Negative' | 'Mixed' | 'Auto';
   style?: 'Warm' | 'Direct' | 'Playful' | 'Dry' | 'Elegant' | 'Street' | 'Professional';
   intensity?: 'Feather' | 'Casual' | 'Firm' | 'Heavy';
   length?: 'one_liner' | 'two_three_lines' | 'short_paragraph';

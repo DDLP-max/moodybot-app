@@ -91,7 +91,7 @@ export default function CopywriterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-[100dvh] bg-background text-foreground">
       {/* Standard Header */}
       <StandardHeader modeName="Copywriter Mode" />
 

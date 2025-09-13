@@ -10,7 +10,7 @@ export default function Home() {
   const [, setLocation] = useLocation();
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-[100dvh] bg-background text-foreground">
       {/* Fixed Navigation Bar */}
       <nav className="fixed top-0 w-full z-50 bg-background/90 backdrop-blur-sm border-b border-primary/20" style={{ paddingTop: 'max(env(safe-area-inset-top), 0.75rem)' }}>
         <div className="flex items-center justify-between px-4 py-3">
@@ -33,7 +33,7 @@ export default function Home() {
 
       <div className="pt-16" style={{ paddingTop: 'calc(4rem + max(env(safe-area-inset-top), 0.75rem))' }}>
         {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center justify-center" style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}>
+        <section className="relative min-h-[100dvh] flex items-center justify-center" style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}>
           <div className="absolute inset-0 bg-gradient-to-b from-background/50 to-background">
             <div className="w-full h-full bg-gradient-to-br from-primary/10 via-background to-accent/5" />
           </div>
