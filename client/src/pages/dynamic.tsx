@@ -290,7 +290,7 @@ export default function DynamicPage() {
 
   if (isInitializing) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+      <div className="page-scroll flex-1 bg-background text-foreground flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Initializing MoodyBot...</p>
@@ -300,7 +300,7 @@ export default function DynamicPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="page-scroll flex-1 bg-background text-foreground">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-primary/20 bg-surface/50">
         <div className="flex items-center space-x-3">

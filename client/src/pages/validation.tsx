@@ -145,11 +145,11 @@ export default function ValidationMode() {
   const maxIntensity = isWorkplace ? 2 : 3;
 
   return (
-    <div className="min-h-[100dvh] text-white" style={{ background: 'linear-gradient(135deg, #0D1B2A 0%, #1C1C1C 100%)' }}>
+    <div className="page-scroll flex-1 text-white" style={{ background: 'linear-gradient(135deg, #0D1B2A 0%, #1C1C1C 100%)' }}>
       {/* Standard Header */}
       <StandardHeader modeName="Validation Mode" />
 
-      <div className="max-w-4xl mx-auto p-6 pb-24 space-y-6">
+      <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-6 pb-24 space-y-6">
         {/* Question Limit Display */}
         {questionLimit && (
           <Card className="border-0 shadow-lg" style={{ backgroundColor: 'rgba(45, 212, 191, 0.05)', borderColor: 'rgba(45, 212, 191, 0.2)' }}>

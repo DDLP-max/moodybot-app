@@ -620,14 +620,14 @@ export default function CreativeWriterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-red-900/5 to-amber-900/5 text-foreground relative">
+    <div className="page-scroll flex-1 bg-gradient-to-br from-background via-red-900/5 to-amber-900/5 text-foreground relative">
       {/* Subtle background texture */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(127,29,29,0.03),transparent_50%)] pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(146,64,14,0.03),transparent_50%)] pointer-events-none" />
       {/* Standard Header */}
       <StandardHeader modeName="Creative Writer Mode" />
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl relative z-10">
+      <div className="container mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8 pb-24 relative z-10">
         {/* Hero Section */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-black mb-4 bg-gradient-to-r from-red-700 to-amber-500 bg-clip-text text-transparent">

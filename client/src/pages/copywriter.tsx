@@ -91,11 +91,11 @@ export default function CopywriterPage() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground">
+    <div className="page-scroll flex-1 bg-background text-foreground">
       {/* Standard Header */}
       <StandardHeader modeName="Copywriter Mode" />
 
-      <div className="container mx-auto px-4 py-8 pb-24 max-w-4xl">
+      <div className="container mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 pb-24">
         {/* Hero Section */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-black mb-4 bg-gradient-to-r from-green-500 to-teal-600 bg-clip-text text-transparent">
