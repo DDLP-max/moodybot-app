@@ -14,6 +14,7 @@ import { Copy, RefreshCw, Heart, Shield, Zap, MessageSquare } from "lucide-react
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
+import { sanitizeInput } from "@/utils/sanitizeInput";
 import { MODE_THEME } from "@/theme/modes";
 import AppFooter from "@/components/AppFooter";
 import ValidationResult from "@/components/ValidationResult";
@@ -93,11 +94,14 @@ export default function ValidationMode() {
     
     setIsLoading(true);
     try {
+      // Sanitize the context input
+      const sanitizedContext = sanitizeInput(context);
+      
       // Resolve mode if auto
-      const resolvedMode = resolveMode(mode, context);
+      const resolvedMode = resolveMode(mode, sanitizedContext);
       
       const payload: ValidationInput = {
-        context,
+        context: sanitizedContext,
         relationship,
         mode: resolvedMode.charAt(0).toUpperCase() + resolvedMode.slice(1) as 'Positive' | 'Negative' | 'Mixed',
         style,

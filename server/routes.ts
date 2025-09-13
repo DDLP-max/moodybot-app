@@ -13,6 +13,7 @@ import { VALIDATION_SYSTEM_PROMPT, VALIDATION_USER_PROMPT, LENGTH_RULES, VALIDAT
 import { tooSimilar } from "../client/src/lib/antiMirroring";
 import { ValidationInput, ValidationOutput } from "../client/src/lib/types/validation";
 import { classifyContext, routeSettings } from "../client/src/lib/router";
+import { sanitizeInput } from "./utils/sanitizeInput";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -885,6 +886,14 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
           message: "Missing required field: context" 
         });
       }
+
+      // Sanitize the input context
+      const sanitizedContext = sanitizeInput(input.context);
+      console.log(`[${requestId}] Original context: "${input.context}"`);
+      console.log(`[${requestId}] Sanitized context: "${sanitizedContext}"`);
+      
+      // Update input with sanitized context
+      input.context = sanitizedContext;
 
       // 1) Route if auto (unless users locked fields)
       let router = classifyContext(input.context);
