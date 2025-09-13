@@ -750,7 +750,7 @@ export default function CreativeWriterPage() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 min-h-screen">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Input Section */}
           <div className="space-y-6 pb-24">
             {/* Content Setup */}
