@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 
 export const dynamic = "force-dynamic";
-
-const Body = z.object({
-  userId: z.string().min(1),
-  mode: z.enum(["dynamic", "validation", "creative", "copywriter"]).optional(),
-});
 
 // Simple in-memory session store for demo purposes
 // In production, this would connect to your database
@@ -30,29 +24,16 @@ async function createSession({ userId, mode }: { userId: string; mode: string })
 
 export async function POST(req: Request) {
   try {
-    const json = await req.json();
-    const { userId, mode } = Body.parse(json);
-
-    const session = await createSession({ userId, mode: mode ?? "dynamic" });
-    // session must include an id
-    if (!session?.id) {
+    const { userId, mode = "dynamic" } = await req.json();
+    if (!userId) {
       return NextResponse.json(
-        { error: "Session has no id" },
-        { status: 500, headers: { "X-MB-Route": "chat/sessions" } }
-      );
-    }
-
-    return NextResponse.json(
-      { id: session.id },
-      { status: 200, headers: { "X-MB-Route": "chat/sessions" } }
-    );
-  } catch (err) {
-    if (err instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Invalid payload", details: err.flatten() },
+        { error: "Missing userId" },
         { status: 400, headers: { "X-MB-Route": "chat/sessions" } }
       );
     }
+    const session = await createSession({ userId, mode });
+    return NextResponse.json({ id: session.id }, { headers: { "X-MB-Route": "chat/sessions" } });
+  } catch {
     return NextResponse.json(
       { error: "Failed to create chat session" },
       { status: 500, headers: { "X-MB-Route": "chat/sessions" } }

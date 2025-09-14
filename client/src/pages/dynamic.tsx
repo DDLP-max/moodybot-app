@@ -10,7 +10,7 @@ import { dynamicPersonaEngine, type PersonaAnalysis } from "@/lib/dynamicPersona
 import { useFreeResponses } from "@/hooks/useFreeResponses";
 import { useSubscription } from "@/hooks/useSubscription";
 import { getShareUrl } from "@/config/environment";
-import { extractUserId, extractSessionId, toNumericId } from "@/lib/sessionUtils";
+import { toNumericId } from "@/lib/sessionUtils";
 import ModeShell from "@/components/ModeShell";
 import ModeCard from "@/components/ModeCard";
 import UpgradeBanner from "@/components/UpgradeBanner";
@@ -50,19 +50,22 @@ export default function DynamicPage() {
         setIsInitializing(true);
         console.log("Starting session initialization...");
 
+        // Step 1: Get or create user ID (no body required)
         const uRes = await fetch("/api/users", { method: "POST" });
         console.log("User response status:", uRes.status);
-
-        if (!uRes.ok) throw new Error(`Failed to get/create user: ${uRes.status}`);
-        const uJson = await uRes.json();
-
-        const userId: string | undefined = extractUserId(uJson);
+        
+        if (!uRes.ok) {
+          throw new Error(`Failed to get/create user: ${uRes.status}`);
+        }
+        
+        const { id: userId } = await uRes.json();
         console.log("User created/retrieved with ID:", userId);
 
         if (!userId) {
           throw new Error("No userId returned from /api/users");
         }
 
+        // Step 2: Create chat session with the userId
         const sRes = await fetch("/api/chat/sessions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -70,17 +73,18 @@ export default function DynamicPage() {
         });
 
         console.log("Session response status:", sRes.status);
-        if (sRes.status === 400) {
-          const j = await sRes.json();
-          throw new Error(`Invalid session payload: ${JSON.stringify(j)}`);
+        
+        if (!sRes.ok) {
+          const errorText = await sRes.text();
+          throw new Error(`Failed to create chat session: ${sRes.status} - ${errorText}`);
         }
-        if (!sRes.ok) throw new Error("Failed to create chat session");
 
-        const sJson = await sRes.json();
-        const sessionId: string | undefined = extractSessionId(sJson);
-        if (!sessionId) throw new Error("No session id returned");
-
+        const { id: sessionId } = await sRes.json();
         console.log("Session created successfully:", sessionId);
+
+        if (!sessionId) {
+          throw new Error("No session id returned from /api/chat/sessions");
+        }
         
         setCurrentSession({
           mode: "dynamic",
@@ -90,6 +94,8 @@ export default function DynamicPage() {
 
       } catch (error) {
         console.error("Session initialization error:", error);
+        // Don't set session on error - UI will show "No active session"
+        setCurrentSession(null);
       } finally {
         setIsInitializing(false);
       }
