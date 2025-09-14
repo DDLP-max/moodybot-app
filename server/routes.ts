@@ -130,6 +130,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: "MoodyBot server is running", timestamp: new Date().toISOString() });
   });
 
+  // API fingerprint route
+  app.get("/api/_meta", (req, res) => {
+    res.set({ "X-MB-Route": "_meta" });
+    res.json({ ok: true, timestamp: new Date().toISOString() });
+  });
+
   // Root endpoint - serve the React app in production, JSON in development
   app.get("/", (req, res) => {
     if (process.env.NODE_ENV === 'production') {
@@ -167,26 +173,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // Create user
+  // Create or get user (body-optional, always returns { id })
   app.post("/api/users", async (req, res) => {
     try {
-      const userData = insertUserSchema.parse(req.body);
-      
-      // Check if user already exists
-      const existingUser = await storage.getUserByUsername(userData.username);
-      if (existingUser) {
-        return res.json(existingUser);
+      // If body provided, use it; otherwise create a simple user
+      let user;
+      if (req.body && req.body.username) {
+        const userData = insertUserSchema.parse(req.body);
+        
+        // Check if user already exists
+        const existingUser = await storage.getUserByUsername(userData.username);
+        if (existingUser) {
+          user = existingUser;
+        } else {
+          user = await storage.createUser(userData);
+        }
+      } else {
+        // Create a simple demo user with timestamp-based ID
+        const demoUserId = Date.now();
+        user = await storage.createUser({
+          username: `user_${demoUserId}`,
+          password: 'demo_password'
+        });
       }
       
-      const user = await storage.createUser(userData);
-      res.json(user);
+      res.set({ "X-MB-Route": "users" });
+      res.json({ id: user.id.toString() });
     } catch (error) {
       console.error("User creation error:", error);
+      res.set({ "X-MB-Route": "users" });
       if (error instanceof Error) {
         res.status(400).json({ error: error.message });
       } else {
         res.status(400).json({ error: "Invalid user data" });
       }
+    }
+  });
+
+  // GET endpoint for users (same as POST)
+  app.get("/api/users", async (req, res) => {
+    try {
+      // Create a simple demo user with timestamp-based ID
+      const demoUserId = Date.now();
+      const user = await storage.createUser({
+        username: `user_${demoUserId}`,
+        password: 'demo_password'
+      });
+      
+      res.set({ "X-MB-Route": "users" });
+      res.json({ id: user.id.toString() });
+    } catch (error) {
+      console.error("User creation error:", error);
+      res.set({ "X-MB-Route": "users" });
+      res.status(500).json({ error: "Failed to create user" });
     }
   });
 

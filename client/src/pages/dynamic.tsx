@@ -51,9 +51,16 @@ export default function DynamicPage() {
         console.log("Starting session initialization...");
 
         // Step 1: Get or create user ID (no body required)
-        const uRes = await fetch("/api/users", { method: "GET" }); // GET or POST is fine now
-        if (!uRes.ok) throw new Error(`users ${uRes.status}`);
-        const { id: userId } = await uRes.json();
+        const uRes = await fetch("/api/users", { method: "GET", credentials: "include" });
+        const ctype = uRes.headers.get("content-type") || "";
+        const raw = await uRes.text();
+        if (!uRes.ok) throw new Error(`users ${uRes.status}: ${raw.slice(0,120)}`);
+        let userId: string | undefined;
+        if (ctype.includes("application/json")) {
+          ({ id: userId } = JSON.parse(raw));
+        } else {
+          throw new Error(`users returned HTML (check middleware/routes): ${raw.slice(0,120)}`);
+        }
         if (!userId) throw new Error("No userId");
 
         // Emergency fallback: ensure we have a userId from cookie if API fails
