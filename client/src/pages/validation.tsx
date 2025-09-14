@@ -14,7 +14,8 @@ import { Copy, RefreshCw, Heart, Shield, Zap, MessageSquare } from "lucide-react
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
-import { StandardHeader, StandardFooter } from "@/components/StandardHeader";
+import { StandardHeader } from "@/components/StandardHeader";
+import AppFooter from "@/components/AppFooter";
 
 const RELATIONSHIPS = [
   { value: "stranger", label: "Stranger" },
@@ -463,7 +464,7 @@ export default function ValidationMode() {
       </div>
       
       {/* Standard Footer */}
-      <StandardFooter />
+      <AppFooter />
     </div>
   );
 }

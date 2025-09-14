@@ -6,7 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Copy, Sparkles, Target, Zap, MessageSquare, MousePointer } from "lucide-react";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
-import { StandardHeader, StandardFooter } from "@/components/StandardHeader";
+import { StandardHeader } from "@/components/StandardHeader";
+import AppFooter from "@/components/AppFooter";
 
 interface CopyOutput {
   titles: string[];
@@ -369,7 +370,7 @@ export default function CopywriterPage() {
       </div>
       
       {/* Standard Footer */}
-      <StandardFooter />
+      <AppFooter />
     </div>
   );
 }

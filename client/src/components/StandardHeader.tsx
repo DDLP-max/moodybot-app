@@ -115,7 +115,7 @@ export function StandardFooter() {
   return (
     <div className="text-center py-4 border-t border-primary/20 bg-surface/30">
       <p className="text-xs text-muted-foreground">
-        Powered by Grok-4 via OpenRouter • Full Cinematic Experience
+        Powered by <span className="font-medium">Grok-4</span> via OpenRouter
       </p>
     </div>
   );
