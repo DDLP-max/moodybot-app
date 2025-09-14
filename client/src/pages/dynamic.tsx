@@ -51,16 +51,27 @@ export default function DynamicPage() {
         console.log("Starting session initialization...");
 
         // Step 1: Get or create user ID (no body required)
-        const uRes = await fetch("/api/users", { method: "POST" });
+        const uRes = await fetch("/api/users", { method: "GET" }); // GET or POST is fine now
         if (!uRes.ok) throw new Error(`users ${uRes.status}`);
         const { id: userId } = await uRes.json();
         if (!userId) throw new Error("No userId");
+
+        // Emergency fallback: ensure we have a userId from cookie if API fails
+        let finalUserId = userId;
+        if (!finalUserId) {
+          let uid = document.cookie.match(/(?:^|;)\s*mb_uid=([^;]+)/)?.[1];
+          if (!uid) {
+            uid = crypto.randomUUID();
+            document.cookie = `mb_uid=${uid}; Path=/; Max-Age=31536000; SameSite=Lax`;
+          }
+          finalUserId = uid;
+        }
 
         // Step 2: Create chat session with the userId
         const sRes = await fetch("/api/chat/sessions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, mode: "dynamic" }),
+          body: JSON.stringify({ userId: finalUserId, mode: "dynamic" }),
         });
         if (!sRes.ok) throw new Error(`sessions ${sRes.status}`);
         const { id: sessionId } = await sRes.json();
@@ -68,7 +79,7 @@ export default function DynamicPage() {
         setCurrentSession({
           mode: "dynamic",
           sessionId: toNumericId(sessionId),
-          userId: toNumericId(userId),
+          userId: toNumericId(finalUserId),
         });
 
       } catch (error) {

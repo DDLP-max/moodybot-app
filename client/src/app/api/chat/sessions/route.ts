@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,16 +26,26 @@ async function createSession({ userId, mode }: { userId: string; mode: string })
 
 export async function POST(req: Request) {
   try {
-    const { userId, mode = "dynamic" } = await req.json();
+    const jar = cookies();
+    const cookieId = jar.get("mb_uid")?.value;
+    let { userId, mode = "dynamic" } = await req.json().catch(() => ({}));
+    userId = userId || cookieId;
+
     if (!userId) {
       return NextResponse.json(
         { error: "Missing userId" },
         { status: 400, headers: { "X-MB-Route": "chat/sessions" } }
       );
     }
+
     const session = await createSession({ userId, mode });
-    return NextResponse.json({ id: session.id }, { headers: { "X-MB-Route": "chat/sessions" } });
-  } catch {
+    if (!session?.id) throw new Error("no session id");
+
+    return NextResponse.json(
+      { id: session.id },
+      { headers: { "X-MB-Route": "chat/sessions" } }
+    );
+  } catch (e) {
     return NextResponse.json(
       { error: "Failed to create chat session" },
       { status: 500, headers: { "X-MB-Route": "chat/sessions" } }

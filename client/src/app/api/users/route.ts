@@ -1,21 +1,40 @@
+// app/api/users/route.ts
 import { NextResponse } from "next/server";
-import { getOrCreateUserId } from "@/app/lib/user";
+import { cookies } from "next/headers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST() {
+function getOrCreateUserId() {
+  const jar = cookies();
+  let id = jar.get("mb_uid")?.value;
+  if (!id) {
+    id = crypto.randomUUID();
+    jar.set("mb_uid", id, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: true,
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+    });
+  }
+  return id;
+}
+
+async function handler() {
   try {
-    const id = getOrCreateUserId();           // no body parsing
-    return NextResponse.json({ id }, { headers: { "X-MB-Route": "users" } });
+    const id = getOrCreateUserId();
+    return NextResponse.json(
+      { id },
+      { status: 200, headers: { "X-MB-Route": "users" } }
+    );
   } catch (e) {
     return NextResponse.json(
-      { error: "Failed to get/create user" },
+      { error: "users failed" },
       { status: 500, headers: { "X-MB-Route": "users" } }
     );
   }
 }
 
-export async function GET() {                 // helpful for quick checks
-  return POST();
-}
+export async function POST() { return handler(); }
+export async function GET()  { return handler(); }
