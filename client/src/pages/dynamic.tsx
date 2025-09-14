@@ -4,18 +4,17 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Eye, Image, X, Upload, Sparkles } from "lucide-react";
+import { Image, Upload, Sparkles } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { dynamicPersonaEngine, type PersonaAnalysis } from "@/lib/dynamicPersonaEngine";
 import { useFreeResponses } from "@/hooks/useFreeResponses";
 import { useSubscription } from "@/hooks/useSubscription";
-import { getShareUrl } from "@/config/environment";
 import { toNumericId } from "@/lib/sessionUtils";
 import ModeShell from "@/components/ModeShell";
 import ModeCard from "@/components/ModeCard";
 import UpgradeBanner from "@/components/UpgradeBanner";
-import FreeQuotaBanner from "@/components/FreeQuotaBanner";
 import AppFooter from "@/components/AppFooter";
+import StandardHeader from "@/components/StandardHeader";
 
 interface Message {
   role: string;
@@ -310,64 +309,7 @@ export default function DynamicPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-primary/20 bg-surface/50">
-        <div className="flex items-center space-x-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setLocation("/")}
-            className="text-muted-foreground hover:text-primary"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex items-center space-x-2">
-            <Eye className="text-primary text-xl" />
-            <span className="font-black text-lg gradient-text">MoodyBot</span>
-            <span className="text-sm text-muted-foreground">• Dynamic Mode</span>
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          {/* X Profile Link */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => window.open('https://x.com/MoodyBotAI', '_blank')}
-            className="text-muted-foreground hover:text-primary"
-          >
-            <svg className="h-4 w-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-            </svg>
-            @MoodyBotAI
-          </Button>
-          
-          {/* Share Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              const shareUrl = getShareUrl();
-              
-              if (navigator.share) {
-                navigator.share({
-                  title: 'MoodyBot - AI Emotional Intelligence',
-                  text: 'Check out MoodyBot - the AI that adapts to your emotional state and provides personalized support!',
-                  url: shareUrl
-                });
-              } else {
-                navigator.clipboard.writeText(shareUrl);
-              }
-            }}
-            className="text-muted-foreground hover:text-primary"
-          >
-            <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
-            </svg>
-            Share
-          </Button>
-        </div>
-      </div>
+      <StandardHeader modeLabel="Dynamic Mode" />
 
       <ModeShell max="4xl">
         {/* Top banner INSIDE the container */}
@@ -460,12 +402,6 @@ export default function DynamicPage() {
         </div>
       </ModeShell>
 
-      {/* Free Quota Banner */}
-      <FreeQuotaBanner 
-        remaining={freeLeft}
-        limit={3}
-        isLoading={loadingFree || loadingSub}
-      />
 
       {/* Subscribe CTA when gated */}
       {isGated && (
