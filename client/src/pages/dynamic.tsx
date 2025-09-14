@@ -1,17 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Eye, Image, X, Upload, Sparkles } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { dynamicPersonaEngine, type PersonaAnalysis } from "@/lib/dynamicPersonaEngine";
-import { useQuestionLimit } from "@/hooks/use-question-limit";
+import { useFreeResponses } from "@/hooks/useFreeResponses";
+import { useSubscription } from "@/hooks/useSubscription";
 import { getShareUrl } from "@/config/environment";
 import ModeShell from "@/components/ModeShell";
 import ModeCard from "@/components/ModeCard";
 import UpgradeBanner from "@/components/UpgradeBanner";
+import FreeQuotaBanner from "@/components/FreeQuotaBanner";
 import AppFooter from "@/components/AppFooter";
 
 interface Message {
@@ -28,9 +30,17 @@ export default function DynamicPage() {
   const [message, setMessage] = useState("");
   const [currentSession, setCurrentSession] = useState<{ mode: string; sessionId: number; userId: number } | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
-  const { questionLimit, refreshQuestionLimit } = useQuestionLimit();
   const [currentPersonaAnalysis, setCurrentPersonaAnalysis] = useState<PersonaAnalysis | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Use improved quota hooks
+  const { freeLeft, isLoading: loadingFree, decrement } = useFreeResponses();
+  const { isSubscribed, isLoading: loadingSub } = useSubscription();
+
+  // Robust gating logic
+  const isGated = useMemo(() => {
+    return !isSubscribed && freeLeft <= 0;
+  }, [isSubscribed, freeLeft]);
 
   // Initialize session on component mount
   useEffect(() => {
@@ -93,7 +103,7 @@ export default function DynamicPage() {
         }
 
         // Refresh question limit
-        refreshQuestionLimit();
+        // Quota handled by useFreeResponses hook
 
       } catch (error) {
         console.error("Session initialization error:", error);
@@ -103,7 +113,7 @@ export default function DynamicPage() {
     };
 
     initializeSession();
-  }, [refreshQuestionLimit]);
+  }, []);
 
   // Send message mutation
   const sendMessageMutation = useMutation({
@@ -138,7 +148,7 @@ export default function DynamicPage() {
       
       // Update question limit with the response data
       if (data.remaining !== undefined && data.limit !== undefined) {
-        refreshQuestionLimit();
+        // Quota handled by useFreeResponses hook
       }
       
       // Return the AI response
@@ -154,11 +164,14 @@ export default function DynamicPage() {
     onSuccess: async (aiReply) => {
       console.log("Message sent successfully:", aiReply);
       
+      // Decrement free responses only on successful API call
+      decrement();
+      
       // Add only the AI response since user message was already added
       const aiMessage: Message = {
         role: "assistant",
         content: aiReply,
-        personaAnalysis: currentPersonaAnalysis
+        personaAnalysis: currentPersonaAnalysis || undefined
       };
       
       setMessages(prev => {
@@ -193,7 +206,7 @@ export default function DynamicPage() {
   const handleSendMessage = async () => {
     if (!message.trim()) return;
     if (sendMessageMutation.isPending || isInitializing) return;
-    if ((questionLimit?.remaining ?? 0) <= 0) return;
+    if (isGated) return;
 
     const messageText = message;
     setMessage("");
@@ -202,7 +215,7 @@ export default function DynamicPage() {
     const userMessage: Message = {
       role: "user",
       content: messageText,
-      personaAnalysis: currentPersonaAnalysis
+      personaAnalysis: currentPersonaAnalysis || undefined
     };
     
     setMessages(prev => {
@@ -365,11 +378,10 @@ export default function DynamicPage() {
         <UpgradeBanner
           left={
             <span>
-              {questionLimit ? (
-                questionLimit.remaining > 0 
-                  ? `${questionLimit.remaining} free question${questionLimit.remaining === 1 ? '' : 's'} remaining`
-                  : 'No free questions remaining'
-              ) : 'Unlimited emotional intelligence upgrades'}
+              {freeLeft > 0 
+                ? `${freeLeft} free question${freeLeft === 1 ? '' : 's'} remaining`
+                : 'No free questions remaining'
+              }
             </span>
           }
           cta={
@@ -384,7 +396,7 @@ export default function DynamicPage() {
         />
 
         {/* Chat panel */}
-        <ModeCard className="mt-6">
+        <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm shadow-xl mt-6">
           {/* Message history */}
           <div className="p-4 md:p-6 min-h-[40vh]">
             <AnimatePresence>
@@ -431,11 +443,11 @@ export default function DynamicPage() {
                 className="flex-1 resize-y rounded-xl bg-black/30 border border-white/10 
                            placeholder-white/40 text-white p-3 min-h-[52px] focus:outline-none focus:ring-2 ring-violet-400"
                 placeholder="Share your story, your pain, your truth... MoodyBot will adapt to you"
-                disabled={sendMessageMutation.isPending || isInitializing || (questionLimit?.remaining ?? 0) <= 0}
+                disabled={sendMessageMutation.isPending || isInitializing || isGated}
               />
               <Button
                 type="submit"
-                disabled={sendMessageMutation.isPending || isInitializing || (questionLimit?.remaining ?? 0) <= 0}
+                disabled={sendMessageMutation.isPending || isInitializing || isGated}
                 className="px-4 py-3 rounded-xl bg-violet-500 hover:bg-violet-400 text-white font-semibold shadow-lg"
               >
                 {sendMessageMutation.isPending ? "Crafting..." : "Send Message"}
@@ -449,8 +461,22 @@ export default function DynamicPage() {
               </p>
             </div>
           </div>
-        </ModeCard>
+        </div>
       </ModeShell>
+
+      {/* Free Quota Banner */}
+      <FreeQuotaBanner 
+        remaining={freeLeft}
+        limit={3}
+        isLoading={loadingFree || loadingSub}
+      />
+
+      {/* Subscribe CTA when gated */}
+      {isGated && (
+        <div className="rounded-xl bg-gradient-to-r from-slate-800/60 to-slate-700/60 p-4 text-sm text-center">
+          You've used your 3 free replies. Subscribe to continue.
+        </div>
+      )}
 
       <AppFooter />
     </div>
