@@ -559,7 +559,7 @@ export default function Chat() {
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Powered by Grok-4 via OpenRouter • Full Cinematic Experience
+            Powered by <span className="font-medium">Grok-4</span> via OpenRouter
           </p>
           {questionLimit && (
             <div className="flex items-center justify-center space-x-2 mt-2">

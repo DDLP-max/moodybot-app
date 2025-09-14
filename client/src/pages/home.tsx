@@ -3,8 +3,7 @@ import { Eye, Sparkles, Target, Feather } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { User } from "lucide-react";
-import { MODE_THEME } from "@/theme/modes";
-import AppFooter from "@/components/AppFooter";
+import ModeCard from "@/components/ModeCard";
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -85,92 +84,43 @@ export default function Home() {
             
 
             
-            {/* Mode Options with Descriptions */}
+            {/* Mode Options */}
             <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 px-4 mb-8">
-              {/* Dynamic Mode */}
-              <div className="flex flex-col items-center space-y-3">
-                <Button 
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full"
-                  onClick={() => setLocation("/dynamic")}
-                >
-                  <Eye className="mr-2 h-5 w-5" />
-                  DYNAMIC MODE
-                </Button>
-                <div className="text-center p-3 bg-background/50 rounded-lg border border-primary/20 w-full">
-                  <h3 className="font-bold text-blue-500 mb-2 flex items-center justify-center text-sm">
-                    <Eye className="h-4 w-4 mr-2" />
-                    Dynamic Mode
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    AI-powered persona selection. MoodyBot automatically adapts to your emotional state and message content.
-                  </p>
-                </div>
-              </div>
+              <ModeCard
+                title="Dynamic Mode"
+                icon={<Eye className="h-5 w-5 text-blue-500" />}
+                description="AI-powered persona selection. MoodyBot automatically adapts to your emotional state and message content."
+                href="/dynamic"
+                hideHeading
+              />
               
-              {/* Copywriter Mode */}
-              <div className="flex flex-col items-center space-y-3">
-                <Button 
-                  className="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full"
-                  onClick={() => setLocation("/copywriter")}
-                >
-                  <Target className="mr-2 h-5 w-5" />
-                  COPYWRITER MODE
-                </Button>
-                <div className="text-center p-3 bg-background/50 rounded-lg border border-primary/20 w-full">
-                  <h3 className="font-bold text-green-500 mb-2 flex items-center justify-center text-sm">
-                    <Target className="h-4 w-4 mr-2" />
-                    Copywriter Mode
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    From Ogilvy to Outlaw: MoodyBot's Copy Engine. Create compelling titles, hooks, CTAs, and captions with brutal honesty.
-                  </p>
-                </div>
-              </div>
+              <ModeCard
+                title="Copywriter Mode"
+                icon={<Target className="h-5 w-5 text-green-500" />}
+                description="From Ogilvy to Outlaw: MoodyBot's Copy Engine. Create compelling titles, hooks, CTAs, and captions with brutal honesty."
+                href="/copywriter"
+                hideHeading
+              />
               
-              {/* Creative Writer Mode */}
-              <div className="flex flex-col items-center space-y-3">
-                <Button
-                  className="bg-gradient-to-r from-red-700 to-amber-500 hover:from-red-800 hover:to-amber-600 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full"
-                  onClick={() => setLocation("/creative-writer")}
-                >
-                  <Feather className="mr-2 h-5 w-5 text-amber-200" />
-                  CREATIVE WRITER MODE
-                </Button>
-                <div className="text-center p-3 bg-background/50 rounded-lg border border-primary/20 w-full">
-                  <h3 className="font-bold bg-gradient-to-r from-red-600 to-amber-500 bg-clip-text text-transparent mb-2 flex items-center justify-center text-sm">
-                    <Feather className="h-4 w-4 mr-2 text-amber-500" />
-                    Creative Writer Mode
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Dive-bar oracle meets copywriter. Fiction, articles, outlines, and teaser blurbs with Hank Moody swagger and Bourdain grit.
-                  </p>
-                </div>
-              </div>
+              <ModeCard
+                title="Creative Writer Mode"
+                icon={<Feather className="h-5 w-5 text-amber-500" />}
+                description="Dive-bar oracle meets copywriter. Fiction, articles, outlines, and teaser blurbs with Hank Moody swagger and Bourdain grit."
+                href="/creative-writer"
+                hideHeading
+              />
 
-              {/* Validation Mode */}
-              <div className="flex flex-col items-center space-y-3">
-                <Button
-                  className={`${MODE_THEME.validation.bg} ${MODE_THEME.validation.hover} ${MODE_THEME.validation.ring} px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full`}
-                  onClick={() => setLocation("/validation")}
-                >
-                  <span className="mr-2 text-white/80 text-lg">⚖️</span>
-                  VALIDATION MODE
-                </Button>
-                <div className="text-center p-3 bg-background/50 rounded-lg border border-primary/20 w-full">
-                  <h3 className="font-bold bg-val bg-clip-text text-transparent mb-2 flex items-center justify-center text-sm">
-                    <span className="mr-2 text-teal-400 text-base">⚖️</span>
-                    Validation Mode
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Positive, negative, or mixed push-pull. Make people feel seen, set boundaries, or do both with precision.
-                  </p>
-                </div>
-              </div>
+              <ModeCard
+                title="Validation Mode"
+                icon={<span className="text-rose-500 text-lg">⚖️</span>}
+                description="Positive, negative, or mixed push-pull. Make people feel seen, set boundaries, or do both with precision."
+                href="/validation"
+                hideHeading
+              />
             </div>
           </motion.div>
         </section>
       </div>
-      <AppFooter />
     </div>
   );
 }

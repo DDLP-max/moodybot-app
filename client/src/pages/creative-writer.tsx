@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Copy, Sparkles, Feather, BookOpen, FileText, Zap } from "lucide-react";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
-import { StandardHeader, StandardFooter } from "@/components/StandardHeader";
+import { StandardHeader } from "@/components/StandardHeader";
 import AppFooter from "@/components/AppFooter";
 import { fetchJSON, FetchError } from "@/lib/fetchJSON";
 
@@ -1697,6 +1697,7 @@ export default function CreativeWriterPage() {
         </div>
       </div>
       
+      {/* Standard Footer */}
       <AppFooter />
     </div>
   );
