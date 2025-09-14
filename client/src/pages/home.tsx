@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { Eye, Sparkles, Target, Feather } from "lucide-react";
+import { Eye, Sparkles, Target, Feather, BadgeCheck, PenSquare, Scale } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { User } from "lucide-react";
 import ModeCard from "@/components/ModeCard";
+import AppFooter from "@/components/AppFooter";
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -84,6 +85,37 @@ export default function Home() {
             
 
             
+            {/* TOP MODE BUTTONS */}
+            <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 px-4">
+              <a href="/dynamic" className="block rounded-xl p-3 text-center font-bold tracking-wide
+                bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-400 shadow hover:opacity-90 transition">
+                <span className="inline-flex items-center gap-2 justify-center">
+                  <Eye className="h-4 w-4" /> DYNAMIC MODE
+                </span>
+              </a>
+
+              <a href="/copywriter" className="block rounded-xl p-3 text-center font-bold tracking-wide
+                bg-gradient-to-r from-emerald-500 to-teal-400 shadow hover:opacity-90 transition">
+                <span className="inline-flex items-center gap-2 justify-center">
+                  <BadgeCheck className="h-4 w-4" /> COPYWRITER MODE
+                </span>
+              </a>
+
+              <a href="/creative-writer" className="block rounded-xl p-3 text-center font-bold tracking-wide
+                bg-gradient-to-r from-rose-500 to-amber-400 shadow hover:opacity-90 transition">
+                <span className="inline-flex items-center gap-2 justify-center">
+                  <PenSquare className="h-4 w-4" /> CREATIVE WRITER MODE
+                </span>
+              </a>
+
+              <a href="/validation" className="block rounded-xl p-3 text-center font-bold tracking-wide
+                bg-gradient-to-r from-teal-400 to-violet-400 shadow hover:opacity-90 transition">
+                <span className="inline-flex items-center gap-2 justify-center">
+                  <Scale className="h-4 w-4" /> VALIDATION MODE
+                </span>
+              </a>
+            </div>
+
             {/* Mode Options */}
             <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 px-4 mb-8">
               <ModeCard
@@ -91,7 +123,6 @@ export default function Home() {
                 icon={<Eye className="h-5 w-5 text-blue-500" />}
                 description="AI-powered persona selection. MoodyBot automatically adapts to your emotional state and message content."
                 href="/dynamic"
-                hideHeading
               />
               
               <ModeCard
@@ -99,7 +130,6 @@ export default function Home() {
                 icon={<Target className="h-5 w-5 text-green-500" />}
                 description="From Ogilvy to Outlaw: MoodyBot's Copy Engine. Create compelling titles, hooks, CTAs, and captions with brutal honesty."
                 href="/copywriter"
-                hideHeading
               />
               
               <ModeCard
@@ -107,7 +137,6 @@ export default function Home() {
                 icon={<Feather className="h-5 w-5 text-amber-500" />}
                 description="Dive-bar oracle meets copywriter. Fiction, articles, outlines, and teaser blurbs with Hank Moody swagger and Bourdain grit."
                 href="/creative-writer"
-                hideHeading
               />
 
               <ModeCard
@@ -115,12 +144,14 @@ export default function Home() {
                 icon={<span className="text-rose-500 text-lg">⚖️</span>}
                 description="Positive, negative, or mixed push-pull. Make people feel seen, set boundaries, or do both with precision."
                 href="/validation"
-                hideHeading
               />
             </div>
           </motion.div>
         </section>
       </div>
+      
+      {/* Footer */}
+      <AppFooter />
     </div>
   );
 }

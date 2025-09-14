@@ -5,7 +5,6 @@ type ModeCardProps = {
   href: string;
   icon?: React.ReactNode;
   description?: string;
-  hideHeading?: boolean; // NEW
 };
 
 export default function ModeCard({
@@ -13,7 +12,6 @@ export default function ModeCard({
   href,
   icon,
   description,
-  hideHeading = false,   // default: show heading
 }: ModeCardProps) {
   return (
     <a href={href} aria-label={title}>
@@ -21,15 +19,11 @@ export default function ModeCard({
         <CardHeader className="p-6">
           <div className="flex items-center gap-2">
             {icon}
-            {!hideHeading && (                       // <-- only render if NOT hidden
-              <CardTitle className="text-base">{title}</CardTitle>
-            )}
+            {/* no CardTitle here */}
           </div>
 
           {description && (
-            <CardDescription className={hideHeading ? "mt-0" : "mt-1"}>
-              {description}
-            </CardDescription>
+            <CardDescription className="mt-0">{description}</CardDescription>
           )}
         </CardHeader>
       </Card>
