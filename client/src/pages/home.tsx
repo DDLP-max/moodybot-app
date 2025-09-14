@@ -83,7 +83,7 @@ export default function Home() {
             
 
             
-            {/* Mode Options with Descriptions */}
+            {/* Mode Options */}
             <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 px-4 mb-8">
               {/* Dynamic Mode */}
               <div className="flex flex-col items-center space-y-3">
@@ -94,15 +94,6 @@ export default function Home() {
                   <Eye className="mr-2 h-5 w-5" />
                   DYNAMIC MODE
                 </Button>
-                <div className="text-center p-3 bg-background/50 rounded-lg border border-primary/20 w-full">
-                  <h3 className="font-bold text-blue-500 mb-2 flex items-center justify-center text-sm">
-                    <Eye className="h-4 w-4 mr-2" />
-                    Dynamic Mode
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    AI-powered persona selection. MoodyBot automatically adapts to your emotional state and message content.
-                  </p>
-                </div>
               </div>
               
               {/* Copywriter Mode */}
@@ -114,15 +105,6 @@ export default function Home() {
                   <Target className="mr-2 h-5 w-5" />
                   COPYWRITER MODE
                 </Button>
-                <div className="text-center p-3 bg-background/50 rounded-lg border border-primary/20 w-full">
-                  <h3 className="font-bold text-green-500 mb-2 flex items-center justify-center text-sm">
-                    <Target className="h-4 w-4 mr-2" />
-                    Copywriter Mode
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    From Ogilvy to Outlaw: MoodyBot's Copy Engine. Create compelling titles, hooks, CTAs, and captions with brutal honesty.
-                  </p>
-                </div>
               </div>
               
               {/* Creative Writer Mode */}
@@ -134,15 +116,6 @@ export default function Home() {
                   <Feather className="mr-2 h-5 w-5 text-amber-200" />
                   CREATIVE WRITER MODE
                 </Button>
-                <div className="text-center p-3 bg-background/50 rounded-lg border border-primary/20 w-full">
-                  <h3 className="font-bold bg-gradient-to-r from-red-600 to-amber-500 bg-clip-text text-transparent mb-2 flex items-center justify-center text-sm">
-                    <Feather className="h-4 w-4 mr-2 text-amber-500" />
-                    Creative Writer
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Dive-bar oracle meets copywriter. Fiction, articles, outlines, and teaser blurbs with Hank Moody swagger and Bourdain grit.
-                  </p>
-                </div>
               </div>
 
               {/* Validation Mode */}
@@ -154,15 +127,6 @@ export default function Home() {
                   <span className="mr-2 text-rose-200 text-lg">⚖️</span>
                   VALIDATION MODE
                 </Button>
-                <div className="text-center p-3 bg-background/50 rounded-lg border border-primary/20 w-full">
-                  <h3 className="font-bold bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent mb-2 flex items-center justify-center text-sm">
-                    <span className="mr-2 text-rose-500 text-base">⚖️</span>
-                    Validation Mode
-                  </h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Positive, negative, or mixed push-pull. Make people feel seen, set boundaries, or do both with precision.
-                  </p>
-                </div>
               </div>
             </div>
           </motion.div>
