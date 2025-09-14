@@ -6,11 +6,8 @@ export function getOrCreateUserId() {
   if (!id) {
     id = crypto.randomUUID();
     jar.set("mb_uid", id, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: true,
-      path: "/",
-      maxAge: 60 * 60 * 24 * 365, // 1y
+      httpOnly: true, sameSite: "lax", secure: true,
+      path: "/", maxAge: 60 * 60 * 24 * 365, // 1 year
     });
   }
   return id;

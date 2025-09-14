@@ -52,18 +52,9 @@ export default function DynamicPage() {
 
         // Step 1: Get or create user ID (no body required)
         const uRes = await fetch("/api/users", { method: "POST" });
-        console.log("User response status:", uRes.status);
-        
-        if (!uRes.ok) {
-          throw new Error(`Failed to get/create user: ${uRes.status}`);
-        }
-        
+        if (!uRes.ok) throw new Error(`users ${uRes.status}`);
         const { id: userId } = await uRes.json();
-        console.log("User created/retrieved with ID:", userId);
-
-        if (!userId) {
-          throw new Error("No userId returned from /api/users");
-        }
+        if (!userId) throw new Error("No userId");
 
         // Step 2: Create chat session with the userId
         const sRes = await fetch("/api/chat/sessions", {
@@ -71,20 +62,8 @@ export default function DynamicPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId, mode: "dynamic" }),
         });
-
-        console.log("Session response status:", sRes.status);
-        
-        if (!sRes.ok) {
-          const errorText = await sRes.text();
-          throw new Error(`Failed to create chat session: ${sRes.status} - ${errorText}`);
-        }
-
+        if (!sRes.ok) throw new Error(`sessions ${sRes.status}`);
         const { id: sessionId } = await sRes.json();
-        console.log("Session created successfully:", sessionId);
-
-        if (!sessionId) {
-          throw new Error("No session id returned from /api/chat/sessions");
-        }
         
         setCurrentSession({
           mode: "dynamic",

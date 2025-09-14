@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { getOrCreateUserId } from "@/app/lib/user";
 
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST() {
   try {
-    const id = getOrCreateUserId();        // no body required
-    // optional: upsert into DB here
+    const id = getOrCreateUserId();           // no body parsing
     return NextResponse.json({ id }, { headers: { "X-MB-Route": "users" } });
   } catch (e) {
     return NextResponse.json(
@@ -16,6 +16,6 @@ export async function POST() {
   }
 }
 
-export async function GET() {              // nice to have
+export async function GET() {                 // helpful for quick checks
   return POST();
 }
