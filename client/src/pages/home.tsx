@@ -3,6 +3,7 @@ import { Eye, Sparkles, Target, Feather } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { User } from "lucide-react";
+import ModeCard from "@/components/ModeCard";
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -85,49 +86,37 @@ export default function Home() {
             
             {/* Mode Options */}
             <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 px-4 mb-8">
-              {/* Dynamic Mode */}
-              <div className="flex flex-col items-center space-y-3">
-                <Button 
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full"
-                  onClick={() => setLocation("/dynamic")}
-                >
-                  <Eye className="mr-2 h-5 w-5" />
-                  DYNAMIC MODE
-                </Button>
-              </div>
+              <ModeCard
+                title="Dynamic Mode"
+                icon={<Eye className="h-5 w-5 text-blue-500" />}
+                description="AI-powered persona selection. MoodyBot automatically adapts to your emotional state and message content."
+                href="/dynamic"
+                hideHeading
+              />
               
-              {/* Copywriter Mode */}
-              <div className="flex flex-col items-center space-y-3">
-                <Button 
-                  className="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full"
-                  onClick={() => setLocation("/copywriter")}
-                >
-                  <Target className="mr-2 h-5 w-5" />
-                  COPYWRITER MODE
-                </Button>
-              </div>
+              <ModeCard
+                title="Copywriter Mode"
+                icon={<Target className="h-5 w-5 text-green-500" />}
+                description="From Ogilvy to Outlaw: MoodyBot's Copy Engine. Create compelling titles, hooks, CTAs, and captions with brutal honesty."
+                href="/copywriter"
+                hideHeading
+              />
               
-              {/* Creative Writer Mode */}
-              <div className="flex flex-col items-center space-y-3">
-                <Button
-                  className="bg-gradient-to-r from-red-700 to-amber-500 hover:from-red-800 hover:to-amber-600 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full"
-                  onClick={() => setLocation("/creative-writer")}
-                >
-                  <Feather className="mr-2 h-5 w-5 text-amber-200" />
-                  CREATIVE WRITER MODE
-                </Button>
-              </div>
+              <ModeCard
+                title="Creative Writer Mode"
+                icon={<Feather className="h-5 w-5 text-amber-500" />}
+                description="Dive-bar oracle meets copywriter. Fiction, articles, outlines, and teaser blurbs with Hank Moody swagger and Bourdain grit."
+                href="/creative-writer"
+                hideHeading
+              />
 
-              {/* Validation Mode */}
-              <div className="flex flex-col items-center space-y-3">
-                <Button
-                  className="bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 px-6 sm:px-8 py-4 font-black text-base sm:text-lg shadow-brutal hover:shadow-neon transition-all duration-300 transform hover:scale-105 w-full"
-                  onClick={() => setLocation("/validation")}
-                >
-                  <span className="mr-2 text-rose-200 text-lg">⚖️</span>
-                  VALIDATION MODE
-                </Button>
-              </div>
+              <ModeCard
+                title="Validation Mode"
+                icon={<span className="text-rose-500 text-lg">⚖️</span>}
+                description="Positive, negative, or mixed push-pull. Make people feel seen, set boundaries, or do both with precision."
+                href="/validation"
+                hideHeading
+              />
             </div>
           </motion.div>
         </section>
