@@ -10,6 +10,7 @@ import { dynamicPersonaEngine, type PersonaAnalysis } from "@/lib/dynamicPersona
 import { useFreeResponses } from "@/hooks/useFreeResponses";
 import { useSubscription } from "@/hooks/useSubscription";
 import { getShareUrl } from "@/config/environment";
+import { extractUserId, extractSessionId, toNumericId } from "@/lib/sessionUtils";
 import ModeShell from "@/components/ModeShell";
 import ModeCard from "@/components/ModeCard";
 import UpgradeBanner from "@/components/UpgradeBanner";
@@ -48,62 +49,44 @@ export default function DynamicPage() {
       try {
         setIsInitializing(true);
         console.log("Starting session initialization...");
-        
-        // First, try to create a default user if it doesn't exist
-        let userId = 1;
-        try {
-          console.log("Attempting to create/get user...");
-          const userResponse = await fetch("/api/users", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              username: "moodybot_user",
-              password: "default_password"
-            }),
-          });
-          
-          console.log("User response status:", userResponse.status);
-          
-          if (userResponse.ok) {
-            const userData = await userResponse.json();
-            userId = userData.userId;
-            console.log("User created/retrieved with ID:", userId);
-          } else {
-            console.log("User creation failed, using default ID");
-          }
-        } catch (userError) {
-          console.log("User creation error, using default ID:", userError);
+
+        const uRes = await fetch("/api/users", { method: "POST" });
+        console.log("User response status:", uRes.status);
+
+        if (!uRes.ok) throw new Error(`Failed to get/create user: ${uRes.status}`);
+        const uJson = await uRes.json();
+
+        const userId: string | undefined = extractUserId(uJson);
+        console.log("User created/retrieved with ID:", userId);
+
+        if (!userId) {
+          throw new Error("No userId returned from /api/users");
         }
 
-        // Create a new session
-        console.log("Creating new session...");
-        const newSessionResponse = await fetch("/api/chat/sessions", {
+        const sRes = await fetch("/api/chat/sessions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            userId: userId,
-            mode: "savage",
-            title: "New Chat"
-          }),
+          body: JSON.stringify({ userId, mode: "dynamic" }),
         });
-        
-        console.log("Session response status:", newSessionResponse.status);
-        
-        if (newSessionResponse.ok) {
-          const sessionData = await newSessionResponse.json();
-          console.log("Session created:", sessionData);
-          setCurrentSession({
-            mode: sessionData.mode,
-            sessionId: sessionData.sessionId,
-            userId: userId
-          });
-        } else {
-          const errorText = await newSessionResponse.text();
-          console.error("Session creation failed:", errorText);
-        }
 
-        // Refresh question limit
-        // Quota handled by useFreeResponses hook
+        console.log("Session response status:", sRes.status);
+        if (sRes.status === 400) {
+          const j = await sRes.json();
+          throw new Error(`Invalid session payload: ${JSON.stringify(j)}`);
+        }
+        if (!sRes.ok) throw new Error("Failed to create chat session");
+
+        const sJson = await sRes.json();
+        const sessionId: string | undefined = extractSessionId(sJson);
+        if (!sessionId) throw new Error("No session id returned");
+
+        console.log("Session created successfully:", sessionId);
+        
+        setCurrentSession({
+          mode: "dynamic",
+          sessionId: toNumericId(sessionId),
+          userId: toNumericId(userId),
+        });
 
       } catch (error) {
         console.error("Session initialization error:", error);
@@ -207,6 +190,16 @@ export default function DynamicPage() {
     if (!message.trim()) return;
     if (sendMessageMutation.isPending || isInitializing) return;
     if (isGated) return;
+
+    // Check for active session
+    if (!currentSession) {
+      console.error("No active session");
+      setMessages(prev => [...prev, { 
+        role: "assistant", 
+        content: "No active session. Please refresh to re-initialize." 
+      }]);
+      return;
+    }
 
     const messageText = message;
     setMessage("");
