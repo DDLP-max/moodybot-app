@@ -97,16 +97,19 @@ export default function ValidationMode() {
     setError(null);
     
     try {
+      // Map UI controls to proper API contract
       const payload = {
-        mode,
-        style,
-        intensity: intensity[0],
-        length,
-        relationship,
-        reason_tags: reasonTags,
-        order,
+        message: sanitize(context),
+        relationship: relationship as "stranger" | "acquaintance" | "friend" | "partner" | "family" | "coworker" | "mentor" | "self",
+        mode: mode as "positive" | "negative" | "mixed",
+        style: style === "moodybot" ? "MoodyBot" : style === "warm" ? "Gentle" : style === "blunt" ? "Direct" : style === "clinical" ? "Clinical" : style === "playful" ? "Playful" : "MoodyBot",
+        intensity: intensity[0] === 0 ? "feather" : intensity[0] === 1 ? "casual" : intensity[0] === 2 ? "firm" : "heavy",
+        length: length === "one_liner" ? "1-line" : length === "short" ? "2-3-lines" : "short-paragraph",
         include_followup: includeFollowup,
-        context_text: sanitize(context),
+        followup_style: "question" as const,
+        tags: reasonTags,
+        system_flavor: "validation" as const,
+        version: "v1" as const,
         // Add regeneration parameters if needed
         ...(regenerateWithBiggerBudget && lastRequest ? {
           max_tokens: (lastRequest.max_tokens || 260) + 120,
@@ -116,20 +119,31 @@ export default function ValidationMode() {
       };
 
       // Debug logging to verify form state is wired correctly
-      console.debug('REQ →', {
-        context: payload.context_text,
-        relationship: payload.relationship,
-        mode: payload.mode,
-        intensity: payload.intensity,
-        length: payload.length,
-        style: payload.style,
-        reasonTags: payload.reason_tags,
-        includeFollowup: payload.include_followup,
-        params: { n: 3, temperature: 0.75, max_tokens: 260 }
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.groupCollapsed("VALIDATION → request payload");
+        console.table(payload); // must show: relationship, mode, style, intensity, length, include_followup, tags
+        console.groupEnd();
+      }
 
       // Store the request for potential regeneration
       setLastRequest(payload);
+      
+      // Line-count guard for development
+      const assertLength = (text: string, length: "1-line"|"2-3-lines"|"short-paragraph") => {
+        const lines = text.trim().split(/\n+/);
+        if (length === "1-line" && lines.length !== 1) {
+          console.error("Length fail: 1-line", { text, lines: lines.length });
+          throw new Error("Length fail: 1-line");
+        }
+        if (length === "2-3-lines" && lines.length > 3) {
+          console.error("Length fail: 2-3-lines", { text, lines: lines.length });
+          throw new Error("Length fail: 2-3-lines");
+        }
+        if (length === "short-paragraph" && lines.length !== 1) {
+          console.error("Length fail: short-paragraph", { text, lines: lines.length });
+          throw new Error("Length fail: short-paragraph");
+        }
+      };
 
       const res = await fetch('/api/validation', {
         method: 'POST',
@@ -152,6 +166,19 @@ export default function ValidationMode() {
         followup: json.followup || "",
         meta: json.meta
       };
+      
+      // Assert length compliance in development
+      if (process.env.NODE_ENV === 'development') {
+        try {
+          const validLengths = ["1-line", "2-3-lines", "short-paragraph"] as const;
+          if (validLengths.includes(payload.length as any)) {
+            assertLength(formattedOutput.validation, payload.length as "1-line"|"2-3-lines"|"short-paragraph");
+          }
+        } catch (e) {
+          console.warn("Length assertion failed:", e);
+        }
+      }
+      
       setResponse(formattedOutput);
       
       // Refresh question limit after successful request
@@ -504,7 +531,7 @@ export default function ValidationMode() {
                     'border-l-teal-500 bg-gradient-to-r from-teal-500/10 to-amber-500/10'
                   }`}>
                     <h4 className="font-semibold text-sm text-gray-300 mb-2">Validation</h4>
-                    <p className="text-white text-lg">{response.validation}</p>
+                    <p className="text-white text-lg" data-testid="validation-output">{response.validation}</p>
                   </div>
 
                   {/* Only show "because" if it's not an engine reason */}

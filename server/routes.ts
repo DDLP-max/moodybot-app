@@ -28,6 +28,7 @@ import {
 import { moodyFallback, mapLengthToFallback, mapIntensityToFallback } from "./lib/moodyFallback";
 import { tryRepairJson } from "./lib/jsonRepair";
 import { ValidationSchema } from "./lib/validationSchema";
+import { ValidationReq, ValidationRes } from "../shared/validationContracts";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -687,7 +688,7 @@ Generate the ${mode} in MoodyBot voice. Obey structure and word counts. No meta 
         temperature: 0.7,
         max_tokens: Math.min(max_words * 1.5, 8000) // Better token estimation: ~1.5 tokens per word
       };
-
+      
       const openRouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -920,40 +921,41 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
 
   // Validation Mode API endpoint - MoodyBot Voice
   app.post("/api/validation", async (req, res) => {
+    const ROUTE_ID = "validation";
     const requestId = req.headers['x-request-id'] || `validation-${Date.now()}`;
     
     try {
+      // Parse and validate the request body using Zod schema
+      const parseResult = ValidationReq.safeParse(req.body);
+      if (!parseResult.success) {
+        console.error(`[${requestId}] ValidationReq parse error:`, parseResult.error.flatten());
+        return res.status(400).json({ 
+          code: "INVALID_PAYLOAD",
+          message: "Invalid request payload",
+          details: parseResult.error.flatten()
+        });
+      }
+      
+      const payload = parseResult.data;
+      if (process.env.NODE_ENV === 'development') {
+        console.info("VAL/PAYLOAD", JSON.stringify(payload, null, 2));
+      }
+      
+      // Extract fields for backward compatibility
       const { 
+        message: context_text,
         mode, 
         style, 
         intensity, 
         length, 
         relationship, 
-        reason_tags, 
-        order, 
+        tags: reason_tags, 
         include_followup, 
-        context_text,
-        userId 
-      } = req.body;
+        followup_style
+      } = payload;
       
-      console.log(`[${requestId}] Validation request: mode=${mode}, style=${style}, intensity=${intensity}, userId=${userId}`);
-      
-      // Log what we're actually sending to the model
-      console.log('PROMPT INPUT →', {
-        context: context_text?.slice(0, 120),
-        mode: mode,
-        length: length,
-        intensity: intensity,
-        reasonTags: reason_tags
-      });
-      
-      if (!mode || !style || !context_text) {
-        console.error(`[${requestId}] Missing required fields`);
-        return res.status(400).json({ 
-          code: "MISSING_FIELDS",
-          message: "Missing required fields: mode, style, context_text" 
-        });
-      }
+      // Default to user ID 1 if not provided (for now)
+      const userId = 1;
 
       // Validate mode
       const validModes = ['positive', 'negative', 'mixed'];
@@ -1020,22 +1022,48 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
       console.log(`[${requestId}] Calling OpenRouter API for validation with candidates`);
       
       const n = 3; // candidate count
-      const max_tokens = length === 'short' ? 200 : length === 'medium' ? 260 : 320;
-      const temperature = intensityToTemp(intensity || 2);
+      const max_tokens = length === '1-line' ? 200 : length === '2-3-lines' ? 260 : 320;
+      const temperature = intensityToTemp(typeof intensity === 'string' ? 
+        intensity === 'feather' ? 0 : intensity === 'casual' ? 1 : intensity === 'firm' ? 2 : 3 : 
+        intensity || 2);
+
+      // Build system prompt that honors ALL UI controls explicitly
+      const systemPrompt = `
+You are MoodyBot's Validation Engine.
+Honor ALL controls exactly:
+
+relationship = ${relationship}
+mode = ${mode}
+style = ${style}
+intensity = ${intensity}
+length = ${length}
+tags = [${reason_tags.join(", ") || "none"}]
+
+Rules:
+- If length="1-line": return ONE sentence. No line breaks.
+- If length="2-3-lines": return up to 3 short lines separated by newlines.
+- If length="short-paragraph": 3–5 sentences, one paragraph.
+- If include_followup=true: append ONE ${followup_style || "question"} at the end.
+- When mode="positive" and intensity in ["feather","casual"], avoid combative phrasing.
+- Speak directly AS a ${relationship}. Keep style consistent with ${style}.
+
+CRITICAL: Return **only** a minified JSON object with keys:
+{"validation": string, "because": string, "followup": string|optional, "tags": string[]}
+
+Do not include prose, code fences, or explanations. If you cannot comply, still return the JSON above.
+
+Never echo their text verbatim. Never apologize. Be memorable.`;
 
       const messages = [
-        { role: "system", content: SYSTEM_VALIDATION_PROMPT },
-        { role: "user", content: buildUserPrompt({ 
-          text: context_text, 
-          relationship, 
-          mode, 
-          intensity, 
-          style, 
-          length, 
-          tags: reason_tags, 
-          followup: include_followup 
-        }) },
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `Content:\n${context_text}` },
       ];
+      
+      // Debug logging to verify system prompt includes all controls
+      if (process.env.NODE_ENV === 'development') {
+        console.info("VAL/SYSTEM_PROMPT >>>\n" + systemPrompt);
+        console.info("VAL/USER_MSG >>>\n" + `Content:\n${context_text}`);
+      }
       
       // Sanitize payload to only include allowed OpenRouter keys
       const ALLOWED_KEYS = new Set([
@@ -1149,18 +1177,50 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
           const schemaResult = ValidationSchema.safeParse(obj);
           if (schemaResult.success) {
             // Enforce length constraints
-            const maxLines = length === "1-liner" ? 1 : length === "2-3 lines" ? 3 : 6;
-            obj.validation = enforceLength(obj.validation, maxLines);
-            
-            // Ensure exactly one space before 🥃
-            obj.validation = obj.validation.replace(/\s*🥃$/, '').trimEnd() + ' 🥃';
+            const maxLines = length === "1-line" ? 1 : length === "2-3-lines" ? 3 : 6;
+          obj.validation = enforceLength(obj.validation, maxLines);
+          
+          // Ensure exactly one space before 🥃
+          obj.validation = obj.validation.replace(/\s*🥃$/, '').trimEnd() + ' 🥃';
+          
+            // Hard ban list for recycled templates
+            const BAN = [
+              /that wasn'?t luck/i,
+              /you were swinging/i,
+              /most people drift/i,
+              /that'?s why it hit/i,
+              /you didn'?t get lucky/i,
+              /that wasn'?t noise/i,
+              /repeatable, earned/i,
+              /you got serious and it shows/i
+            ];
             
             // Calculate score with diversity rewards and template penalties
             const tagHit = (reason_tags || []).some((tag: string) => new RegExp(`\\b${tag}\\b`, 'i').test(text)) ? 0.5 : 0;
             const address = /\b(you|your|let's|here's)\b/i.test(text) ? 0.5 : 0;
             
-            // Penalize overused template phrases
-            const templatePenalty = (text.match(/\b(signal|noise|earned|repeatable|shows|didn't get lucky)\b/gi) || []).length * -0.5;
+            // Length compliance scoring
+            const lines = text.trim().split(/\n+/).length;
+            let lengthScore = 0;
+            if (length === "1-line" && lines === 1) lengthScore = 2;
+            else if (length === "2-3-lines" && lines <= 3) lengthScore = 2;
+            else if (length === "short-paragraph" && lines <= 6) lengthScore = 2;
+            
+            // Mode-specific scoring
+            let modeScore = 0;
+            if (mode === "positive" && /proud|earned|faith|grace|family|sisterhood|leadership/i.test(text)) modeScore = 1.5;
+            if (mode === "negative" && /proof|posture|ship|rep|confetti|cadence/i.test(text)) modeScore = 1.5;
+            if (mode === "mixed" && /win|logged|make|repeatable|good move|tighten/i.test(text)) modeScore = 1.5;
+            
+            // Harshness penalty when it shouldn't be harsh
+            let tonePenalty = 0;
+            if (mode === "positive" && (intensity === "feather" || intensity === "casual")) {
+              if (/(wasn'?t luck|swing|hit|drift|tough love)/i.test(text)) tonePenalty = -2;
+            }
+            
+            // Ban list penalty
+            let banPenalty = 0;
+            BAN.forEach(rx => { if (rx.test(text)) banPenalty -= 3.5; });
             
             // Reward fresh metaphors and unusual word choices
             const freshMetaphors = /\b(storms?|scars?|neon|glass|cracked|midnight|roads?|blade|edge|rhythm|static|gravity|carved|foundation)\b/i.test(text) ? 1 : 0;
@@ -1171,16 +1231,17 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
             const structureVariety = sentenceLengths.length > 1 && 
               (Math.max(...sentenceLengths) - Math.min(...sentenceLengths)) > 5 ? 0.5 : 0;
             
-            const score = (text.length >= 70 && text.length <= 240 ? 2 : 0)
+            const score = lengthScore
+                        + modeScore
                         + (/[!?]/.test(text) ? 1 : 0) // no em-dash boost
                         + (/\b(you|that|this)\b/i.test(text) ? 1 : 0)
                         + (text.includes('🥃') ? 0.5 : 0)
                         + tagHit + address + freshMetaphors + structureVariety
-                        + templatePenalty
+                        + tonePenalty + banPenalty
                         - Math.max(0, (text.match(/—/g) || []).length - 1); // penalize overuse of em dashes
-            
-            valid.push({ score, text, obj, finish });
-            okCount++;
+          
+          valid.push({ score, text, obj, finish });
+          okCount++;
           } else {
             // Try repair + re-validate
             const repaired = tryRepairJson(truncatedText);
@@ -1188,8 +1249,8 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
             const zr = ValidationSchema.safeParse(reparsed);
             if (zr.success) {
               const repairedObj = zr.data;
-              // Enforce length constraints
-              const maxLines = length === "1-liner" ? 1 : length === "2-3 lines" ? 3 : 6;
+            // Enforce length constraints
+            const maxLines = length === "1-line" ? 1 : length === "2-3-lines" ? 3 : 6;
               repairedObj.validation = enforceLength(repairedObj.validation, maxLines);
               
               // Ensure exactly one space before 🥃
@@ -1266,7 +1327,7 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
           const obj = parseJsonSafe(repaired);
           if (obj && obj.validation) {
             // Enforce length constraints
-            const maxLines = length === "1-liner" ? 1 : length === "2-3 lines" ? 3 : 6;
+            const maxLines = length === "1-line" ? 1 : length === "2-3-lines" ? 3 : 6;
             obj.validation = enforceLength(obj.validation, maxLines);
             
             // Ensure exactly one space before 🥃
@@ -1290,9 +1351,11 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
         
         const fallbackResponse = moodyFallback({
           mode: mode as "positive" | "negative" | "mixed",
-          length: mapLengthToFallback(length || "short"),
-          intensity: mapIntensityToFallback(intensity || 2),
-          style: style === "moodybot" ? "moodybot" : "plain",
+          length: mapLengthToFallback(length || "short-paragraph"),
+          intensity: mapIntensityToFallback(typeof intensity === 'string' ? 
+            intensity === 'feather' ? 0 : intensity === 'casual' ? 1 : intensity === 'firm' ? 2 : 3 : 
+            intensity || 2),
+          style: style === "MoodyBot" ? "moodybot" : "plain",
           reasonTags: reason_tags,
           includeFollowup: include_followup,
           userMsg: context_text
@@ -1301,7 +1364,7 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
         console.log(`[${requestId}] Using moody fallback response`, { reason: "no_valid_candidates" });
         res.set({ 
           "Cache-Control": "no-store", 
-          "X-MB-Route": "validation",
+          "X-MB-Route": ROUTE_ID,
           "X-OpenRouter-Model": MODEL_VALIDATION
         });
         return res.json({ 
@@ -1311,6 +1374,12 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
           remaining: updatedLimitCheck.remaining,
           limit: updatedLimitCheck.limit,
           meta: {
+            relationship: relationship,
+            mode: mode,
+            style: style,
+            intensity: intensity,
+            length: length,
+            tags: reason_tags,
             finish_reason: "fallback",
             candidate_count: 0,
             was_repaired: false
@@ -1327,6 +1396,23 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
       // Pick the best candidate with rotation to prevent similar responses
       const sortedCandidates = valid.sort((a, b) => b.score - a.score);
       let best = sortedCandidates[0];
+      
+      // BAN tripwire - check if chosen text contains banned phrases
+      const BAN = [
+        /that wasn'?t luck/i,
+        /you were swinging/i,
+        /most people drift/i,
+        /that'?s why it hit/i,
+        /you didn'?t get lucky/i,
+        /that wasn'?t noise/i,
+        /repeatable, earned/i,
+        /you got serious and it shows/i
+      ];
+      
+      if (BAN.some(rx => rx.test(best.text))) {
+        console.error("BAN_HIT", best.text);
+        return res.status(500).json({ error: "BANNED_TEMPLATE" });
+      }
       
       // Simple rotation: if we have multiple candidates, occasionally pick the second-best
       // This prevents the same high-scoring template from always winning
@@ -1354,7 +1440,7 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
       console.log(`[${requestId}] Sending validation response to client`);
       res.set({ 
         "Cache-Control": "no-store", 
-        "X-MB-Route": "validation",
+        "X-MB-Route": ROUTE_ID,
         "X-OpenRouter-Model": MODEL_VALIDATION
       });
       res.json({ 
@@ -1364,6 +1450,12 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
         remaining: updatedLimitCheck.remaining,
         limit: updatedLimitCheck.limit,
         meta: {
+          relationship: relationship,
+          mode: mode,
+          style: style,
+          intensity: intensity,
+          length: length,
+          tags: reason_tags,
           finish_reason: best.finish,
           candidate_count: valid.length,
           was_repaired: best.score === 1
@@ -1476,14 +1568,14 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
       };
 
       const copywriterPayload = {
-        model: MODEL_DYNAMIC,  // Use Grok-4 as requested
-        messages: [
-          { role: "system", content: systemPrompt },
-          developerMessage,
-          { role: "user", content: `Generate marketing copy for: ${description}. IMPORTANT: Provide ALL requested asset types (headlines, hooks, CTAs, short captions, and long captions) in the JSON response. Do not skip any sections.` }
-        ],
-        temperature: 0.5, // Lower temperature for more consistent copy
-        max_tokens: 4000
+          model: MODEL_DYNAMIC,  // Use Grok-4 as requested
+          messages: [
+            { role: "system", content: systemPrompt },
+            developerMessage,
+            { role: "user", content: `Generate marketing copy for: ${description}. IMPORTANT: Provide ALL requested asset types (headlines, hooks, CTAs, short captions, and long captions) in the JSON response. Do not skip any sections.` }
+          ],
+          temperature: 0.5, // Lower temperature for more consistent copy
+          max_tokens: 4000
       };
 
       const openRouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
