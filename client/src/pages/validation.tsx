@@ -115,6 +115,19 @@ export default function ValidationMode() {
         } : {})
       };
 
+      // Debug logging to verify form state is wired correctly
+      console.debug('REQ →', {
+        context: payload.context_text,
+        relationship: payload.relationship,
+        mode: payload.mode,
+        intensity: payload.intensity,
+        length: payload.length,
+        style: payload.style,
+        reasonTags: payload.reason_tags,
+        includeFollowup: payload.include_followup,
+        params: { n: 3, temperature: 0.75, max_tokens: 260 }
+      });
+
       // Store the request for potential regeneration
       setLastRequest(payload);
 

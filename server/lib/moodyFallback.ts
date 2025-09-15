@@ -1,3 +1,10 @@
+import crypto from "crypto";
+
+function pick<T>(arr: T[], seed: string) {
+  const h = crypto.createHash('sha256').update(seed).digest()[0];
+  return arr[h % arr.length];
+}
+
 export function moodyFallback(payload: {
   mode: "positive" | "negative" | "mixed",
   length: "one" | "two_three" | "short_para",
@@ -7,61 +14,69 @@ export function moodyFallback(payload: {
   includeFollowup?: boolean,
   userMsg: string
 }) {
-  const tone = {
-    feather: ["soft", "warm"],
-    casual: ["easy", "straight"],
-    firm:   ["steady", "clear"],
-    heavy:  ["direct", "no-sugar"]
-  }[payload.intensity];
+  const seeds = payload.userMsg.slice(0, 80) + "|" + payload.mode + "|" + payload.length + "|" + payload.intensity;
 
-  const tagHook = (payload.reasonTags?.length ? ` This is about ${payload.reasonTags.slice(0,3).join(", ")}.` : "");
-  
-  const core = {
-    positive: [
-      "You didn't get lucky. You got serious and it shows.",
-      "That wasn't noise. That was signal. Repeatable, earned."
-    ],
-    negative: [
-      "Slow down. Pride is loud; proof is quiet.",
-      "You're selling the sizzle before the steak's even warm."
-    ],
-    mixed: [
-      "Credit where due: you moved the needle. Now make it repeatable.",
-      "Win logged. Now do it without the victory dance."
-    ]
-  }[payload.mode];
+  const pos = [
+    "You carved something steady out of the chaos.",
+    "That wasn't luck. That was you swinging with intent.",
+    "You turned intent into process. Keep running it.",
+    "You fought gravity, bent the day your way.",
+    "Most people drift, you aimed. That's why it hit."
+  ];
+  const mix = [
+    "Good move; now tighten the loop.",
+    "Solid step; systemize it next.",
+    "You're building rhythm people can't ignore.",
+    "Sharp edge, steady hand. Keep it coming.",
+    "That's the kind of foundation you can build on."
+  ];
+  const neg = [
+    "Less confetti, more cadence.",
+    "Brag later. Build the loop now.",
+    "Proof beats posture. Ship the next rep.",
+    "Cut through the static. Make it stick.",
+    "Stop selling the sizzle. Cook the steak."
+  ];
+  const bank = payload.mode === "positive" ? pos : payload.mode === "mixed" ? mix : neg;
+
+  const opener = pick(bank, seeds);
+  const tail = payload.reasonTags?.length ? ` This touches ${payload.reasonTags.slice(0,3).join(", ")}.` : "";
 
   const follow = payload.includeFollowup
-    ? "What would 'repeatable' look like this week? One action you can execute twice." 
+    ? pick([
+        "What's the smallest step you can repeat twice this week?",
+        "Name the one lever you can pull again by Friday.",
+        "If this worked once, what's the copy-and-paste version?",
+        "What's your next move in this rhythm?",
+        "How do you bottle this lightning?"
+      ], seeds)
     : "";
 
-  // length shaping
-  const build = {
-    one:    () => `${core[0]}${tagHook} 🥃`,
-    two_three: () => `${core[0]} ${core[1]}${tagHook} 🥃`,
-    short_para: () => `${core[0]} ${core[1]}${tagHook} ${follow ? ("\n\n" + follow) : ""} 🥃`,
-  }[payload.length];
+  const lines = {
+    one: () => `${opener}${tail} 🥃`,
+    two_three: () => `${opener} ${pick(bank.filter(l=>l!==opener).concat(["Bank it, rerun it."]), seeds)}${tail} 🥃`,
+    short_para: () => `${opener} ${pick(bank.filter(l=>l!==opener), seeds)}${tail} ${follow ? ("\n\n" + follow) : ""} 🥃`
+  }[payload.length]();
 
   return {
-    tags: [payload.mode, payload.style, payload.intensity, payload.length],
-    validation: build(),
-    because: undefined, // do NOT surface engine reasons in UI
-    followup: payload.includeFollowup ? follow : undefined
+    validation: lines,
+    followup: payload.includeFollowup ? follow : undefined,
+    tags: [payload.mode, payload.intensity, payload.length, ...(payload.reasonTags?.slice(0,3) || [])]
   };
 }
 
-// Helper to map API length values to fallback length values
+// Helper to map API length values to fallback length values with stylistic roles
 export function mapLengthToFallback(length: string): "one" | "two_three" | "short_para" {
   switch (length) {
     case "1-liner":
-      return "one";
+      return "one"; // Shot glass
     case "2-3 lines":
-      return "two_three";
+      return "two_three"; // Pint
     case "short":
     case "medium":
     case "long":
     default:
-      return "short_para";
+      return "short_para"; // Bottle
   }
 }
 

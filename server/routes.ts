@@ -27,6 +27,7 @@ import {
 } from "./lib/models";
 import { moodyFallback, mapLengthToFallback, mapIntensityToFallback } from "./lib/moodyFallback";
 import { tryRepairJson } from "./lib/jsonRepair";
+import { ValidationSchema } from "./lib/validationSchema";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -930,6 +931,15 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
       
       console.log(`[${requestId}] Validation request: mode=${mode}, style=${style}, intensity=${intensity}, userId=${userId}`);
       
+      // Log what we're actually sending to the model
+      console.log('PROMPT INPUT →', {
+        context: context_text?.slice(0, 120),
+        mode: mode,
+        length: length,
+        intensity: intensity,
+        reasonTags: reason_tags
+      });
+      
       if (!mode || !style || !context_text) {
         console.error(`[${requestId}] Missing required fields`);
         return res.status(400).json({ 
@@ -1025,11 +1035,12 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
         messages,
         n,
         max_tokens,
-        temperature,      // 0.6 feather → 0.95 heavy
-        top_p: 0.92,
+        temperature: Math.max(0.75, temperature), // Ensure minimum randomization
+        top_p: 0.9,
         frequency_penalty: 0.15,
         presence_penalty: 0.10,
-        response_format: { type: "json_object" }
+        response_format: { type: "json_object" },
+        provider: { cache: false } // Disable caching to avoid identical responses
       };
       
       console.log(`[${requestId}] Request metrics:`, {
@@ -1106,22 +1117,89 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
         
         const obj = parseJsonSafe(truncatedText);
         if (obj && obj.validation) {
-          // Enforce length constraints
-          const maxLines = length === "1-liner" ? 1 : length === "2-3 lines" ? 3 : 6;
-          obj.validation = enforceLength(obj.validation, maxLines);
-          
-          // Ensure exactly one space before 🥃
-          obj.validation = obj.validation.replace(/\s*🥃$/, '').trimEnd() + ' 🥃';
-          
-          // Calculate score
-          const score = (text.length >= 70 && text.length <= 240 ? 2 : 0)
-                      + (/[!?]/.test(text) ? 1 : 0) // no em-dash boost
-                      + (/\b(you|that|this)\b/i.test(text) ? 1 : 0)
-                      + (text.includes('🥃') ? 0.5 : 0)
-                      - Math.max(0, (text.match(/—/g) || []).length - 1); // penalize overuse of em dashes
-          
-          valid.push({ score, text, obj, finish });
-          okCount++;
+          // Try schema validation first
+          const schemaResult = ValidationSchema.safeParse(obj);
+          if (schemaResult.success) {
+            // Enforce length constraints
+            const maxLines = length === "1-liner" ? 1 : length === "2-3 lines" ? 3 : 6;
+            obj.validation = enforceLength(obj.validation, maxLines);
+            
+            // Ensure exactly one space before 🥃
+            obj.validation = obj.validation.replace(/\s*🥃$/, '').trimEnd() + ' 🥃';
+            
+            // Calculate score with diversity rewards and template penalties
+            const tagHit = (reason_tags || []).some((tag: string) => new RegExp(`\\b${tag}\\b`, 'i').test(text)) ? 0.5 : 0;
+            const address = /\b(you|your|let's|here's)\b/i.test(text) ? 0.5 : 0;
+            
+            // Penalize overused template phrases
+            const templatePenalty = (text.match(/\b(signal|noise|earned|repeatable|shows|didn't get lucky)\b/gi) || []).length * -0.5;
+            
+            // Reward fresh metaphors and unusual word choices
+            const freshMetaphors = /\b(storms?|scars?|neon|glass|cracked|midnight|roads?|blade|edge|rhythm|static|gravity|carved|foundation)\b/i.test(text) ? 1 : 0;
+            
+            // Reward varied sentence structure (mix of short and long sentences)
+            const sentences = text.split(/[.!?]+/).filter((s: string) => s.trim().length > 0);
+            const sentenceLengths = sentences.map((s: string) => s.trim().split(/\s+/).length);
+            const structureVariety = sentenceLengths.length > 1 && 
+              (Math.max(...sentenceLengths) - Math.min(...sentenceLengths)) > 5 ? 0.5 : 0;
+            
+            const score = (text.length >= 70 && text.length <= 240 ? 2 : 0)
+                        + (/[!?]/.test(text) ? 1 : 0) // no em-dash boost
+                        + (/\b(you|that|this)\b/i.test(text) ? 1 : 0)
+                        + (text.includes('🥃') ? 0.5 : 0)
+                        + tagHit + address + freshMetaphors + structureVariety
+                        + templatePenalty
+                        - Math.max(0, (text.match(/—/g) || []).length - 1); // penalize overuse of em dashes
+            
+            valid.push({ score, text, obj, finish });
+            okCount++;
+          } else {
+            // Try repair + re-validate
+            const repaired = tryRepairJson(truncatedText);
+            const reparsed = parseJsonSafe(repaired);
+            const zr = ValidationSchema.safeParse(reparsed);
+            if (zr.success) {
+              const repairedObj = zr.data;
+              // Enforce length constraints
+              const maxLines = length === "1-liner" ? 1 : length === "2-3 lines" ? 3 : 6;
+              repairedObj.validation = enforceLength(repairedObj.validation, maxLines);
+              
+              // Ensure exactly one space before 🥃
+              repairedObj.validation = repairedObj.validation.replace(/\s*🥃$/, '').trimEnd() + ' 🥃';
+              
+              // Calculate score for repaired content with diversity rewards
+              const tagHit = (reason_tags || []).some((tag: string) => new RegExp(`\\b${tag}\\b`, 'i').test(repaired)) ? 0.5 : 0;
+              const address = /\b(you|your|let's|here's)\b/i.test(repaired) ? 0.5 : 0;
+              
+              // Penalize overused template phrases
+              const templatePenalty = (repaired.match(/\b(signal|noise|earned|repeatable|shows|didn't get lucky)\b/gi) || []).length * -0.5;
+              
+              // Reward fresh metaphors and unusual word choices
+              const freshMetaphors = /\b(storms?|scars?|neon|glass|cracked|midnight|roads?|blade|edge|rhythm|static|gravity|carved|foundation)\b/i.test(repaired) ? 1 : 0;
+              
+              // Reward varied sentence structure
+              const sentences = repaired.split(/[.!?]+/).filter((s: string) => s.trim().length > 0);
+              const sentenceLengths = sentences.map((s: string) => s.trim().split(/\s+/).length);
+              const structureVariety = sentenceLengths.length > 1 && 
+                (Math.max(...sentenceLengths) - Math.min(...sentenceLengths)) > 5 ? 0.5 : 0;
+              
+              const score = (repaired.length >= 70 && repaired.length <= 240 ? 2 : 0)
+                          + (/[!?]/.test(repaired) ? 1 : 0)
+                          + (/\b(you|that|this)\b/i.test(repaired) ? 1 : 0)
+                          + (repaired.includes('🥃') ? 0.5 : 0)
+                          + tagHit + address + freshMetaphors + structureVariety
+                          + templatePenalty
+                          - Math.max(0, (repaired.match(/—/g) || []).length - 1)
+                          - 0.5; // slight penalty for being repaired
+              
+              valid.push({ score, text: repaired, obj: repairedObj, finish });
+              okCount++;
+              console.log(`[${requestId}] Successfully repaired and validated candidate`);
+            } else {
+              console.warn(`[${requestId}] Schema validation failed even after repair`, { finish });
+              failCount++;
+            }
+          }
         } else {
           console.warn(`[${requestId}] JSON parse failed; attempting fallback`, { finish });
           failCount++;
@@ -1130,6 +1208,21 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
       
       console.log(`[${requestId}] Parse results: {ok_count: ${okCount}, fail_count: ${failCount}}`);
       console.log(`[${requestId}] Finish reason counts:`, finishReasonCounts);
+
+      // Deduplicate candidates before scoring
+      const uniq = new Map<string, typeof valid[0]>();
+      for (const c of valid) {
+        const t = (c?.text || '').trim();
+        if (!t) continue;
+        const key = t.replace(/\s+/g,' ').toLowerCase();
+        if (!uniq.has(key)) uniq.set(key, c);
+      }
+      const deduped = Array.from(uniq.values());
+      console.log(`[${requestId}] Deduplicated candidates: ${valid.length} → ${deduped.length}`);
+      
+      // Use deduped candidates for final selection
+      valid.length = 0;
+      valid.push(...deduped);
 
       // Try repair on all candidates before giving up
       if (valid.length === 0) {
@@ -1185,7 +1278,7 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
         });
         return res.json({ 
           text: fallbackResponse.validation,
-          because: fallbackResponse.because,
+          because: undefined, // Fallback doesn't include because
           followup: fallbackResponse.followup || "",
           remaining: updatedLimitCheck.remaining,
           limit: updatedLimitCheck.limit,
@@ -1193,16 +1286,32 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
             finish_reason: "fallback",
             candidate_count: 0,
             was_repaired: false
+          },
+          _meta: {
+            fallback_used: true,
+            finish_counts: finishReasonCounts,
+            ok_count: okCount,
+            fail_count: failCount
           }
         });
       }
 
-      // Pick the best candidate from valid ones
-      const best = valid.sort((a, b) => b.score - a.score)[0];
-      console.log(`[${requestId}] Selected best candidate from ${valid.length} options:`, {
+      // Pick the best candidate with rotation to prevent similar responses
+      const sortedCandidates = valid.sort((a, b) => b.score - a.score);
+      let best = sortedCandidates[0];
+      
+      // Simple rotation: if we have multiple candidates, occasionally pick the second-best
+      // This prevents the same high-scoring template from always winning
+      if (sortedCandidates.length > 1 && Math.random() < 0.3) {
+        best = sortedCandidates[1];
+        console.log(`[${requestId}] Rotated to second-best candidate for variety`);
+      }
+      
+      console.log(`[${requestId}] Selected candidate from ${valid.length} options:`, {
         score: best.score,
         finish_reason: best.finish,
-        candidate_count: `${valid.length}/${data?.choices?.length || 0}`
+        candidate_count: `${valid.length}/${data?.choices?.length || 0}`,
+        was_rotated: best === sortedCandidates[1]
       });
 
       const usage = data.usage || { total_tokens: 0 };
@@ -1230,6 +1339,12 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
           finish_reason: best.finish,
           candidate_count: valid.length,
           was_repaired: best.score === 1
+        },
+        _meta: {
+          fallback_used: false,
+          finish_counts: finishReasonCounts,
+          ok_count: okCount,
+          fail_count: failCount
         }
       });
     } catch (error: any) {
