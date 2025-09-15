@@ -972,97 +972,37 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
 
       const apiKey = (process.env.OPENROUTER_API_KEY || "").trim();
       if (!apiKey) {
+        console.error(`[${requestId}] Missing OPENROUTER_API_KEY`);
         return res.status(500).json({ error: "Server missing OPENROUTER_API_KEY" });
       }
+      console.log(`[${requestId}] API Key present: ${apiKey.substring(0, 10)}...`);
 
-      // MoodyBot Voice System Prompt
-      const SYSTEM_PROMPT = `
-You are MoodyBot, not a therapist. You validate *feelings and motives*, not facts.
-Sound human, specific, and incisive. Avoid generic counseling language.
-Prefer metaphor, contrast, and concrete details. Never mirror the user's text verbatim.
-Always return JSON ONLY in this exact shape:
-{"validation":"...","because":"...","push_pull":"...","followup":"..."}
-Include keys with empty strings if not applicable. Do not include markdown fences.
-`;
-
-      // Length limits
-      const LENGTH_LIMITS: Record<string, number> = {
-        one_liner: 18,   // words
-        short: 45,
-        paragraph: 120,
-      };
-
-      // Style hints for MoodyBot voice
-      const StyleHints: Record<string, string> = {
-        warm: "Warm, genuinely supportive, human. No therapy clichés.",
-        blunt: "Direct, no fluff. Respectful but sharp. Say the quiet part out loud.",
-        playful: "Light, witty, a little mischievous. Still validating, never mocking the user.",
-        clinical: "Calm, precise, emotionally literate but not cold. No jargon.",
-        moodybot:
-          "Voicey, metaphor-rich, gritty wit. Use contrast and sensory detail. One tasteful emoji allowed at most — 🥃 — and only if it fits.",
-      };
-
-      // Build MoodyBot prompt
-      const maxWords = LENGTH_LIMITS[length] || 45;
-      const tone = StyleHints[style];
-
-      const pushPullBlock = mode === "mixed"
-        ? (order === "pos_neg"
-            ? `Push–Pull Order: Start positive (validation), then a respectful challenge.` 
-            : `Push–Pull Order: Start with the challenge, then end with reassurance.`)
-        : `Push–Pull: "${mode}" only (no second movement).`;
-
-      const intensityGuide = [
-        "Feather: softly reflective.",
-        "Casual: normal conversational tone.",
-        "Firm: confident, no hedging.",
-        "Heavy: raw, punchy, but never cruel.",
-      ][intensity] || "Casual: normal conversational tone.";
-
-      const reasons = reason_tags?.length
-        ? `Prefer to ground validation in: ${reason_tags.join(", ")}.`
-        : `Choose the most honest reason to validate, even if not flattering.`;
-
-      const validationPrompt = `
-Context:
-${context_text}
-
-Relationship: ${relationship}
-Style: ${style} — ${tone}
-Intensity: ${intensity} — ${intensityGuide}
-Length cap: ≤ ${maxWords} words for the *validation* string. Keep other fields concise.
-${pushPullBlock}
-${reasons}
-
-Rules:
-- "validation": A single cohesive response in MoodyBot voice. Use vivid metaphor or contrast.
-- "because": One sentence explaining the emotional logic you recognized (not facts).
-- "push_pull": ${mode === "mixed" ? "One short line that delivers the counterbalance movement." : "Empty string."}
-- "followup": ${include_followup ? "One short, specific question that moves the conversation forward." : "Empty string."}
-- Absolutely no bullet lists, no headers, no counseling clichés, no mirroring.
-- If style is "moodybot" you may end with 🥃 only if it fits. Otherwise, no emoji.
-- Output strict JSON only.
-`;
+      // Simplified validation request - let MoodyBot be MoodyBot
 
       console.log(`[${requestId}] Calling OpenRouter API for validation`);
+      
+      const openRouterPayload = {
+        model: "grok-4",            // Use simple model name
+        stream: false,              // Prevent streaming issues
+        max_tokens: 256,            // Keep it small while debugging
+        temperature: 0.7,
+        messages: [
+          { role: "system", content: "You are MoodyBot. Return a short, human validation. No emojis." },
+          { role: "user", content: context_text || "" }
+        ]
+      };
+      
+      console.log(`[${requestId}] OpenRouter payload:`, JSON.stringify(openRouterPayload, null, 2));
       
       const openRouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           "Authorization": `Bearer ${apiKey}`,
-          "HTTP-Referer": "https://app.moodybot.ai",
-          "X-Title": "MoodyBot"
+          "Content-Type": "application/json",
+          "HTTP-Referer": process.env.PUBLIC_APP_URL || "https://app.moodybot.ai",
+          "X-Title": "MoodyBot Validation",
         },
-        body: JSON.stringify({
-          model: "x-ai/grok-4",
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            { role: "user", content: validationPrompt }
-          ],
-          temperature: 0.7,
-          max_tokens: 400
-        }),
+        body: JSON.stringify(openRouterPayload),
       });
 
       if (!openRouterRes.ok) {
@@ -1074,43 +1014,44 @@ Rules:
         });
       }
 
-      const json = await openRouterRes.json();
-      const aiReply = json.choices?.[0]?.message?.content || "";
-      
-      if (!aiReply) {
-        console.error(`[${requestId}] Empty model response:`, json);
-        return res.status(502).json({
-          error: "Empty model response"
+      const raw = await openRouterRes.text();
+      let data: any;
+      try { 
+        data = JSON.parse(raw); 
+      } catch {
+        console.error(`[${requestId}] Non-JSON response from OpenRouter:`, raw.slice(0, 500));
+        return res.status(502).json({ 
+          error: `Non-JSON upstream: ${raw.slice(0, 200)}` 
         });
       }
-      const usage = json.usage || { total_tokens: 0 };
 
-      console.log(`[${requestId}] Generated validation response`);
-
-      // Defensive parse with fallback
-      let parsed;
-      try { 
-        parsed = JSON.parse(aiReply); 
-      } catch {
-        // try to salvage by extracting first {...} block
-        const m = aiReply.match(/\{[\s\S]*\}/);
-        parsed = m ? JSON.parse(m[0]) : { validation: aiReply, because: "", push_pull: "", followup: "" };
+      if (!openRouterRes.ok) {
+        const msg = data?.error?.message || raw.slice(0, 500);
+        console.error(`[${requestId}] OpenRouter error:`, msg);
+        return res.status(502).json({ 
+          error: `Upstream ${openRouterRes.status}: ${msg}` 
+        });
       }
 
-      // Enforce length cap on validation
-      if (parsed?.validation) {
-        const words = String(parsed.validation).split(/\s+/);
-        const cap = LENGTH_LIMITS[length] || 45;
-        if (words.length > cap) parsed.validation = words.slice(0, cap).join(" ");
-      }
+      const content =
+        data?.choices?.[0]?.message?.content ??
+        data?.choices?.[0]?.text ?? // some providers use 'text'
+        "";
 
-      // Return simplified JSON structure with just the text
-      const responseText = parsed?.validation || "I understand what you're going through.";
-      
+      if (!content.trim()) {
+        console.error(`[${requestId}] Empty model response. Full upstream:`, JSON.stringify(data, null, 2));
+        return res.status(502).json({ 
+          error: `Empty model response. Full upstream: ${JSON.stringify(data).slice(0, 500)}` 
+        });
+      }
+      const usage = data.usage || { total_tokens: 0 };
+
+      console.log(`[${requestId}] Generated validation response:`, content);
+
       console.log(`[${requestId}] Sending validation response to client`);
       res.set({ "Cache-Control": "no-store", "X-MB-Route": "validation" });
       res.json({ 
-        text: responseText,
+        text: content.trim(),
         remaining: updatedLimitCheck.remaining,
         limit: updatedLimitCheck.limit
       });
