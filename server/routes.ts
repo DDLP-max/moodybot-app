@@ -21,6 +21,8 @@ import {
   buildUserPrompt,
   enforceLength,
   pickBestCandidate,
+  parseJsonSafe,
+  getGracefulFallback,
   type Candidate
 } from "./lib/models";
 import path from "path";
@@ -999,7 +1001,8 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
       console.log(`[${requestId}] Calling OpenRouter API for validation with candidates`);
       
       const n = 3; // candidate count
-      const max_tokens = length === 'short' ? 90 : length === 'medium' ? 140 : 220;
+      const max_tokens = length === 'short' ? 200 : length === 'medium' ? 260 : 320;
+      const temperature = intensityToTemp(intensity || 2);
 
       const messages = [
         { role: "system", content: SYSTEM_VALIDATION_PROMPT },
@@ -1020,14 +1023,20 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
         messages,
         n,
         max_tokens,
-        temperature: intensityToTemp(intensity || 2),      // 0.6 feather → 0.95 heavy
+        temperature,      // 0.6 feather → 0.95 heavy
         top_p: 0.92,
         frequency_penalty: 0.15,
         presence_penalty: 0.10,
         response_format: { type: "json_object" }
       };
       
-      console.log(`[${requestId}] OpenRouter payload:`, JSON.stringify(openRouterPayload, null, 2));
+      console.log(`[${requestId}] Request metrics:`, {
+        max_tokens,
+        n,
+        system_tokens: SYSTEM_VALIDATION_PROMPT.length / 4, // rough estimate
+        user_tokens: messages[1].content.length / 4,
+        total_estimated_tokens: (SYSTEM_VALIDATION_PROMPT.length + messages[1].content.length) / 4
+      });
       
       const openRouterRes = await fetch(OPENROUTER_API_URL, {
         method: "POST",
@@ -1068,42 +1077,91 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
         });
       }
 
-      // Parse candidates from response
-      const candidates: Candidate[] = [];
+      // Bulletproof candidate parsing with JSON repair
+      const valid: Array<{score: number, text: string, obj: any, finish: string}> = [];
+      const finishReasonCounts: Record<string, number> = {};
+      let okCount = 0, failCount = 0;
       
       for (const choice of data?.choices || []) {
-        const content = choice?.message?.content ?? choice?.text ?? "";
-        if (content.trim()) {
-          try {
-            const candidate = JSON.parse(content);
-            if (candidate.validation) {
-              // Enforce length constraints
-              const maxLines = length === "1-liner" ? 1 : length === "2-3 lines" ? 3 : 6;
-              candidate.validation = enforceLength(candidate.validation, maxLines);
-              
-              // Ensure exactly one space before 🥃
-              candidate.validation = candidate.validation.replace(/\s*🥃$/, '').trimEnd() + ' 🥃';
-              
-              candidates.push(candidate);
-            }
-          } catch (parseError) {
-            console.warn(`[${requestId}] Failed to parse candidate:`, content.slice(0, 100));
-          }
+        const text = (choice?.message?.content ?? choice?.text ?? '').trim();
+        const finish = choice?.finish_reason ?? 'unknown';
+        
+        // Count finish reasons for logging
+        finishReasonCounts[finish] = (finishReasonCounts[finish] || 0) + 1;
+        
+        if (!text) continue;
+        
+        // Log warning if model was cut off early
+        if (finish === 'length') {
+          console.warn(`[${requestId}] Early cutoff (length); text_len=${text.length}`);
+        }
+        
+        // Truncate oversized responses before parsing
+        const truncatedText = text.length > 2000 ? text.slice(0, 2000) + "..." : text;
+        
+        const obj = parseJsonSafe(truncatedText);
+        if (obj && obj.validation) {
+          // Enforce length constraints
+          const maxLines = length === "1-liner" ? 1 : length === "2-3 lines" ? 3 : 6;
+          obj.validation = enforceLength(obj.validation, maxLines);
+          
+          // Ensure exactly one space before 🥃
+          obj.validation = obj.validation.replace(/\s*🥃$/, '').trimEnd() + ' 🥃';
+          
+          // Calculate score
+          const score = (text.length >= 70 && text.length <= 240 ? 2 : 0)
+                      + (/[!?—]/.test(text) ? 1 : 0)
+                      + (/\b(you|that|this)\b/i.test(text) ? 1 : 0)
+                      + (text.includes('🥃') ? 0.5 : 0);
+          
+          valid.push({ score, text, obj, finish });
+          okCount++;
+        } else {
+          console.warn(`[${requestId}] JSON parse failed; attempting fallback`, { finish });
+          failCount++;
         }
       }
+      
+      console.log(`[${requestId}] Parse results: {ok_count: ${okCount}, fail_count: ${failCount}}`);
+      console.log(`[${requestId}] Finish reason counts:`, finishReasonCounts);
 
-      if (candidates.length === 0) {
+      // Use graceful fallback if no valid candidates
+      if (valid.length === 0) {
         console.error(`[${requestId}] No valid candidates found. Full upstream:`, JSON.stringify(data, null, 2));
-        return res.status(502).json({ 
-          error: `No valid candidates found. Full upstream: ${JSON.stringify(data).slice(0, 500)}` 
+        
+        const fallbackResponse = getGracefulFallback("no_valid_candidates");
+        
+        console.log(`[${requestId}] Using graceful fallback response`, { reason: "no_valid_candidates" });
+        res.set({ 
+          "Cache-Control": "no-store", 
+          "X-MB-Route": "validation",
+          "X-OpenRouter-Model": MODEL_VALIDATION
+        });
+        return res.json({ 
+          text: fallbackResponse.validation,
+          because: fallbackResponse.because,
+          followup: "",
+          remaining: updatedLimitCheck.remaining,
+          limit: updatedLimitCheck.limit
         });
       }
 
-      // Pick the best candidate
-      const bestCandidate = pickBestCandidate(candidates);
-      console.log(`[${requestId}] Selected best candidate from ${candidates.length} options:`, bestCandidate);
+      // Pick the best candidate from valid ones
+      const best = valid.sort((a, b) => b.score - a.score)[0];
+      console.log(`[${requestId}] Selected best candidate from ${valid.length} options:`, {
+        score: best.score,
+        finish_reason: best.finish,
+        candidate_count: `${valid.length}/${data?.choices?.length || 0}`
+      });
 
       const usage = data.usage || { total_tokens: 0 };
+      console.log(`[${requestId}] Response metrics:`, {
+        finish_reason_counts: finishReasonCounts,
+        candidate_count: valid.length,
+        used_tokens: usage.total_tokens || 0,
+        completion_tokens: usage.completion_tokens || 0,
+        prompt_tokens: usage.prompt_tokens || 0
+      });
 
       console.log(`[${requestId}] Sending validation response to client`);
       res.set({ 
@@ -1112,9 +1170,9 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
         "X-OpenRouter-Model": MODEL_VALIDATION
       });
       res.json({ 
-        text: bestCandidate.validation,
-        because: bestCandidate.because,
-        followup: bestCandidate.followup || "",
+        text: best.obj.validation,
+        because: best.obj.because,
+        followup: best.obj.followup || "",
         remaining: updatedLimitCheck.remaining,
         limit: updatedLimitCheck.limit
       });

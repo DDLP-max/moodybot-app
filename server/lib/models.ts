@@ -12,42 +12,29 @@ export function intensityToTemp(intensity: number): number {
   return intensityMap[Math.max(0, Math.min(3, intensity))] || 0.7;
 }
 
-// Stronger system prompt for MoodyBot validation
+// Trimmed system prompt for MoodyBot validation (reduced token bloat)
 export const SYSTEM_VALIDATION_PROMPT = `
 You are MoodyBot: a dive-bar oracle meets ruthless copy chief.
-Objective: Produce a *validation* that affirms the user's feeling/behavior without mirroring or fixing. Sound human, confident, and slightly dangerous—in a good way.
+Produce a validation that affirms the user's feeling/behavior without mirroring or fixing. Sound human, confident, and slightly dangerous.
 
 Rules:
-- Speak directly to *them*. No "as an AI". No therapy disclaimers.
-- Pick a clear angle (effort, courage, competence, taste, boundaries, resilience) from provided tags—don't list the tags, embody them.
+- Speak directly to them. No "as an AI". No therapy disclaimers.
+- Pick a clear angle from provided tags—don't list them, embody them.
 - Keep it concrete. Name the win or weight you see.
-- One image or metaphor max. No purple soup.
-- If follow-up is requested: ask *one* natural question that invites a next beat.
-- Always return **valid compact JSON** with keys:
-  { "validation": string, "because": string, "followup"?: string }
-- End the *validation* line with a single space then 🥃 (exactly one, no extra emojis).
-- Tone dials:
-  - intensity: feather (0.6), casual (0.75), firm (0.85), heavy (0.95)
-  - mode: positive | negative | mixed affects angle, not hostility.
+- One image or metaphor max.
+- If follow-up requested: ask one natural question.
+- Return valid JSON: { "validation": string, "because": string, "followup"?: string }
+- End validation with exactly one space then 🥃.
 
 Never echo their text verbatim. Never apologize. Be memorable.
 
-Examples (do not repeat literally):
+Examples:
 
-Input:
-{ "context":"I gave a guy his first $150k a year ago. Today he's over $150k ARR.", "mode":"positive","intensity":"casual","tags":["effort","competence"] }
+Input: { "context":"I gave a guy his first $150k a year ago. Today he's over $150k ARR.", "mode":"positive","tags":["effort","competence"] }
+Output: { "validation":"You didn't just spot talent—you bet on it and proved your read was right. That's a builder's eye cashing real-world dividends. 🥃", "because":"You framed the outcome as earned, not lucky, and owned your role in it." }
 
-Output:
-{ "validation":"You didn't just spot talent—you bet on it and proved your read was right. That's a builder's eye cashing real-world dividends. 🥃",
-  "because":"You framed the outcome as earned, not lucky, and owned your role in it." }
-
-Input:
-{ "context":"I left the house in mismatched shoes and now I'm dying at the airport.","mode":"mixed","intensity":"feather","tags":["resilience","taste"],"want_followup":true }
-
-Output:
-{ "validation":"You turned a slip into style—own it. Confidence is louder than symmetry. 🥃",
-  "because":"You're judging yourself harder than anyone else is; swagger beats matching.",
-  "followup":"If a friend did this, would you roast them—or hype them up?" }
+Input: { "context":"I left the house in mismatched shoes and now I'm dying at the airport.","mode":"mixed","tags":["resilience"],"want_followup":true }
+Output: { "validation":"You turned a slip into style—own it. Confidence is louder than symmetry. 🥃", "because":"You're judging yourself harder than anyone else is; swagger beats matching.", "followup":"If a friend did this, would you roast them—or hype them up?" }
 `;
 
 // User prompt builder with proper conditioning
@@ -79,6 +66,45 @@ export function truncate(text: string, maxLength: number): string {
   return text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
 }
 
+// JSON repair function for length cutoff cases
+export function tryRepairJson(raw: string): string {
+  // strip junk before first '{' and after last '}' (or '['/']' for arrays)
+  const start = Math.min(
+    ...['{', '['].map(ch => raw.indexOf(ch)).filter(i => i >= 0)
+  );
+  const end = Math.max(raw.lastIndexOf('}'), raw.lastIndexOf(']'));
+  if (start >= 0 && end > start) raw = raw.slice(start, end + 1);
+
+  // remove trailing commas before } or ]
+  raw = raw.replace(/,(\s*[}\]])/g, '$1');
+
+  // balance braces/brackets if cut off
+  const need = (s: string, open: string, close: string) => {
+    let bal = 0;
+    for (const ch of s) {
+      if (ch === open) bal++;
+      else if (ch === close) bal = Math.max(0, bal - 1);
+    }
+    return bal;
+  };
+  const missingCurly = need(raw, '{', '}');
+  const missingSquare = need(raw, '[', ']');
+  return raw + '}'.repeat(missingCurly) + ']'.repeat(missingSquare);
+}
+
+// Safe JSON parsing with repair fallback
+export function parseJsonSafe(text: string) {
+  try { 
+    return JSON.parse(text); 
+  } catch {
+    try { 
+      return JSON.parse(tryRepairJson(text)); 
+    } catch { 
+      return null; 
+    }
+  }
+}
+
 // Candidate selection and scoring
 export type Candidate = { validation: string; because: string; followup?: string; tags?: string[] };
 
@@ -93,4 +119,24 @@ export function scoreCandidate(c: Candidate): number {
   if (/you|that|this/.test(c.validation.toLowerCase())) s += 1;       // direct address
   if (c.validation.includes("🥃")) s += 0.5;                           // brand touch
   return s;
+}
+
+// Graceful fallback for when all candidates fail
+export function getGracefulFallback(reason: string = "no_valid_candidates"): Candidate {
+  const fallbacks = {
+    no_valid_candidates: {
+      validation: "Not flawless JSON, but here's the Moody take: you moved the needle. 🥃",
+      because: "Fallback triggered: model hit length cutoff but still gave content."
+    },
+    json_parse_failed: {
+      validation: "Even when the system hiccups, you still showed up—that's the real win. 🥃",
+      because: "Fallback triggered: JSON parsing failed but your message got through."
+    },
+    all_candidates_failed: {
+      validation: "Sometimes the best response is just acknowledging you tried. You did. 🥃",
+      because: "Fallback triggered: all candidates failed validation."
+    }
+  };
+  
+  return fallbacks[reason as keyof typeof fallbacks] || fallbacks.no_valid_candidates;
 }
