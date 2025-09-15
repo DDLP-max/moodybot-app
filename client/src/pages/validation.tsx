@@ -14,7 +14,7 @@ import { Copy, RefreshCw, Heart, Shield, Zap, MessageSquare } from "lucide-react
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
-import { StandardHeader } from "@/components/StandardHeader";
+import StandardHeader from "@/components/StandardHeader";
 import AppFooter from "@/components/AppFooter";
 
 const RELATIONSHIPS = [
@@ -106,7 +106,7 @@ export default function ValidationMode() {
       
       // Refresh question limit after successful request
       if (data.remaining !== undefined) {
-        refreshQuestionLimit();
+        refreshQuestionLimit(1); // Default user ID for now
       }
     } catch (error) {
       console.error('Error generating validation:', error);
@@ -133,7 +133,7 @@ export default function ValidationMode() {
   return (
     <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #0D1B2A 0%, #1C1C1C 100%)' }}>
       {/* Standard Header */}
-      <StandardHeader modeName="Validation Mode" />
+      <StandardHeader modeLabel="Validation Mode" />
 
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         {/* Question Limit Display */}

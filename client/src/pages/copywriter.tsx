@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Copy, Sparkles, Target, Zap, MessageSquare, MousePointer } from "lucide-react";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
-import { StandardHeader } from "@/components/StandardHeader";
+import StandardHeader from "@/components/StandardHeader";
 import AppFooter from "@/components/AppFooter";
 
 interface CopyOutput {
@@ -93,7 +93,7 @@ export default function CopywriterPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Standard Header */}
-      <StandardHeader modeName="Copywriter Mode" />
+      <StandardHeader modeLabel="Copywriter Mode" />
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Hero Section */}
