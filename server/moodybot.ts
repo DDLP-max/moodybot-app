@@ -18,6 +18,7 @@ import {
   DYNAMIC_TEMPERATURE,
   DYNAMIC_MAX_TOKENS
 } from "./config";
+import { MODEL_DYNAMIC } from "./lib/models";
 
 // Load system prompt from file
 const moodyPrompt = fs.readFileSync(path.resolve("server/system_prompt.txt"), "utf-8");
@@ -71,7 +72,7 @@ Keep responses natural, direct, and focused on the user's message.`;
 
  try {
 
-  console.log("Using model:", OPENROUTER_MODEL_DYNAMIC, "for natural conversation");
+  console.log("Using model:", MODEL_DYNAMIC, "for natural conversation");
   console.log("🔑 Sending request with API key:", apiKey.substring(0, 20) + "...");
 
   const res = await fetch(OPENROUTER_API_URL, {
@@ -83,7 +84,7 @@ Keep responses natural, direct, and focused on the user's message.`;
       "X-Title": OPENROUTER_X_TITLE              // optional, nice to have
     },
     body: JSON.stringify({
-      model: OPENROUTER_MODEL_DYNAMIC,
+      model: MODEL_DYNAMIC,
       messages,
       temperature: DYNAMIC_TEMPERATURE,
       max_tokens: DYNAMIC_MAX_TOKENS

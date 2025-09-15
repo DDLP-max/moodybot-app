@@ -13,6 +13,7 @@ import {
   DEFAULT_TEMPERATURE,
   DEFAULT_MAX_TOKENS
 } from "./config";
+import { MODEL_VALIDATION, MODEL_DYNAMIC, intensityToTemp } from "./lib/models";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -671,7 +672,7 @@ Generate the ${mode} in MoodyBot voice. Obey structure and word counts. No meta 
           "X-Title": "MoodyBot"
         },
         body: JSON.stringify({
-          model: "x-ai/grok-4",
+          model: MODEL_DYNAMIC,
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: creativeWriterPrompt }
@@ -744,7 +745,7 @@ Complete the ${mode} to reach approximately ${word_count_target} words total.`;
               "X-Title": "MoodyBot"
             },
             body: JSON.stringify({
-              model: "x-ai/grok-4",
+              model: MODEL_DYNAMIC,
               messages: [
                 { role: "system", content: systemPrompt },
                 { role: "user", content: completionPrompt }
@@ -853,7 +854,7 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
           "X-Title": "MoodyBot"
         },
         body: JSON.stringify({
-          model: "x-ai/grok-4",
+          model: MODEL_DYNAMIC,
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: resumePrompt }
@@ -990,13 +991,16 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
       console.log(`[${requestId}] Calling OpenRouter API for validation`);
       
       const openRouterPayload = {
-        model: OPENROUTER_MODEL_VALIDATION,
-        stream: false,              // Prevent streaming issues
-        max_tokens: DEFAULT_MAX_TOKENS,
-        temperature: DEFAULT_TEMPERATURE,
+        model: MODEL_VALIDATION,              // ✅ no more hard-coded 'grok-4'
+        stream: false,
+        max_tokens: 160,
+        temperature: intensityToTemp(intensity || 2),
+        top_p: 0.9,
+        frequency_penalty: 0.2,
+        presence_penalty: 0.1,
         messages: [
-          { role: "system", content: "You are MoodyBot. Return a short, human validation. No emojis." },
-          { role: "user", content: context_text || "" }
+          { role: "system", content: "You are MoodyBot. Return a short, human validation (1–3 lines). Do not mirror the user's words; validate the person behind the words. No emojis, no hashtags, no bullet points. Be warm, specific, and grounded." },
+          { role: "user", content: String(context_text || "").slice(0, 1000) }
         ]
       };
       
@@ -1057,7 +1061,11 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
       console.log(`[${requestId}] Generated validation response:`, content);
 
       console.log(`[${requestId}] Sending validation response to client`);
-      res.set({ "Cache-Control": "no-store", "X-MB-Route": "validation" });
+      res.set({ 
+        "Cache-Control": "no-store", 
+        "X-MB-Route": "validation",
+        "X-OpenRouter-Model": MODEL_VALIDATION
+      });
       res.json({ 
         text: content.trim(),
         remaining: updatedLimitCheck.remaining,
@@ -1172,7 +1180,7 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
           "X-Title": "MoodyBot"                         // optional, nice to have
         },
         body: JSON.stringify({
-          model: "x-ai/grok-4",  // Use Grok-4 as requested
+          model: MODEL_DYNAMIC,  // Use Grok-4 as requested
           messages: [
             { role: "system", content: systemPrompt },
             developerMessage,
