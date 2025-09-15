@@ -16,6 +16,7 @@ import { motion } from "framer-motion";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
 import StandardHeader from "@/components/StandardHeader";
 import AppFooter from "@/components/AppFooter";
+import { formatValidationResponse } from "@/lib/formatValidation";
 
 const RELATIONSHIPS = [
   { value: "stranger", label: "Stranger" },
@@ -105,17 +106,37 @@ export default function ValidationMode() {
         body: JSON.stringify(payload)
       });
 
-      if (!res.ok) throw new Error('Failed to generate validation');
+      const json = await res.json().catch(() => ({}));
       
-      const data = await res.json();
-      setResponse(data.output);
+      if (!res.ok || !json?.text) {
+        throw new Error(json?.error || `HTTP ${res.status}`);
+      }
+
+      // Format the successful response
+      const formattedOutput = {
+        validation: formatValidationResponse(json.text),
+        because: "You shared something meaningful with me.",
+        push_pull: "",
+        followup: ""
+      };
+      setResponse(formattedOutput);
       
       // Refresh question limit after successful request
-      if (data.remaining !== undefined) {
+      if (json.remaining !== undefined) {
         refreshQuestionLimit(1); // Default user ID for now
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating validation:', error);
+      
+      // Show a graceful fallback + 🥃 so UX never looks "broken"
+      const fallback = "You didn't mess up — you're human. One awkward beat doesn't define you; it proves you care enough to notice. Keep moving.";
+      const formattedOutput = {
+        validation: formatValidationResponse(fallback),
+        because: `(debug) ${error?.message ?? "Validation failed"}`,
+        push_pull: "",
+        followup: ""
+      };
+      setResponse(formattedOutput);
     } finally {
       setIsLoading(false);
     }
@@ -123,6 +144,7 @@ export default function ValidationMode() {
 
   const handleCopy = () => {
     if (!response) return;
+    // Use the already formatted response fields
     const text = [response.validation, response.because, response.push_pull, response.followup]
       .filter(Boolean)
       .join('\n\n');

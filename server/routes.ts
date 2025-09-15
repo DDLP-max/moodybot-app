@@ -1115,44 +1115,50 @@ Rules:
         if (words.length > cap) parsed.validation = words.slice(0, cap).join(" ");
       }
 
-      const responseData = {
-        output: parsed || {
-          validation: "I understand what you're going through.",
-          because: "You shared something meaningful with me.",
-          push_pull: "",
-          followup: ""
-        },
-        usage: {
-          tokens: usage.total_tokens || 0
-        },
-        remaining: updatedLimitCheck.remaining,
-        limit: updatedLimitCheck.limit
-      };
+      // Return simplified JSON structure with just the text
+      const responseText = parsed?.validation || "I understand what you're going through.";
       
       console.log(`[${requestId}] Sending validation response to client`);
       res.set({ "Cache-Control": "no-store", "X-MB-Route": "validation" });
-      res.json(responseData);
+      res.json({ 
+        text: responseText,
+        remaining: updatedLimitCheck.remaining,
+        limit: updatedLimitCheck.limit
+      });
     } catch (error: any) {
       console.error(`[${requestId}] Validation API error:`, error);
       res.set({ "X-MB-Route": "validation" });
       
       if (error.message?.includes('fetch')) {
         res.status(502).json({
-          code: "NETWORK_ERROR",
-          message: "Network error connecting to AI service"
+          error: "Network error connecting to AI service"
         });
       } else if (error.message?.includes('timeout')) {
         res.status(504).json({
-          code: "TIMEOUT",
-          message: "Request timed out. Please try again."
+          error: "Request timed out. Please try again."
         });
       } else {
         res.status(500).json({
-          code: "INTERNAL_ERROR",
-          message: "An unexpected error occurred"
+          error: error?.message || "An unexpected error occurred"
         });
       }
     }
+  });
+
+  // Validation API method guards - ensure only JSON responses
+  app.get("/api/validation", (req, res) => {
+    res.set({ "X-MB-Route": "validation" });
+    res.status(405).json({ error: "Method Not Allowed" });
+  });
+  
+  app.head("/api/validation", (req, res) => {
+    res.set({ "X-MB-Route": "validation" });
+    res.status(405).json({ error: "Method Not Allowed" });
+  });
+  
+  app.options("/api/validation", (req, res) => {
+    res.set({ "X-MB-Route": "validation" });
+    res.json({ ok: true });
   });
 
   // Copywriter API endpoint
