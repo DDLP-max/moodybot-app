@@ -25,6 +25,8 @@ import {
   getGracefulFallback,
   type Candidate
 } from "./lib/models";
+import { moodyFallback, mapLengthToFallback, mapIntensityToFallback } from "./lib/moodyFallback";
+import { tryRepairJson } from "./lib/jsonRepair";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -1096,8 +1098,11 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
           console.warn(`[${requestId}] Early cutoff (length); text_len=${text.length}`);
         }
         
+        // Extract JSON-only content using regex guard
+        const jsonOnly = text.match(/\{[\s\S]*\}$/)?.[0] ?? text;
+        
         // Truncate oversized responses before parsing
-        const truncatedText = text.length > 2000 ? text.slice(0, 2000) + "..." : text;
+        const truncatedText = jsonOnly.length > 2000 ? jsonOnly.slice(0, 2000) + "..." : jsonOnly;
         
         const obj = parseJsonSafe(truncatedText);
         if (obj && obj.validation) {
@@ -1125,13 +1130,53 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
       console.log(`[${requestId}] Parse results: {ok_count: ${okCount}, fail_count: ${failCount}}`);
       console.log(`[${requestId}] Finish reason counts:`, finishReasonCounts);
 
-      // Use graceful fallback if no valid candidates
+      // Try repair on all candidates before giving up
       if (valid.length === 0) {
-        console.error(`[${requestId}] No valid candidates found. Full upstream:`, JSON.stringify(data, null, 2));
+        console.log(`[${requestId}] No valid candidates found, attempting JSON repair...`);
         
-        const fallbackResponse = getGracefulFallback("no_valid_candidates");
+        for (const choice of data?.choices || []) {
+          const text = (choice?.message?.content ?? choice?.text ?? '').trim();
+          if (!text) continue;
+          
+          // Extract JSON-only content first
+          const jsonOnly = text.match(/\{[\s\S]*\}$/)?.[0] ?? text;
+          const repaired = tryRepairJson(jsonOnly);
+          const obj = parseJsonSafe(repaired);
+          if (obj && obj.validation) {
+            // Enforce length constraints
+            const maxLines = length === "1-liner" ? 1 : length === "2-3 lines" ? 3 : 6;
+            obj.validation = enforceLength(obj.validation, maxLines);
+            
+            // Ensure exactly one space before 🥃
+            obj.validation = obj.validation.replace(/\s*🥃$/, '').trimEnd() + ' 🥃';
+            
+            valid.push({ 
+              score: 1, // Lower score for repaired content
+              text: repaired, 
+              obj, 
+              finish: choice?.finish_reason || 'unknown' 
+            });
+            console.log(`[${requestId}] Successfully repaired candidate`);
+            break; // Use first successful repair
+          }
+        }
+      }
+
+      // Use moody fallback if still no valid candidates
+      if (valid.length === 0) {
+        console.error(`[${requestId}] No valid candidates found after repair. Full upstream:`, JSON.stringify(data, null, 2));
         
-        console.log(`[${requestId}] Using graceful fallback response`, { reason: "no_valid_candidates" });
+        const fallbackResponse = moodyFallback({
+          mode: mode as "positive" | "negative" | "mixed",
+          length: mapLengthToFallback(length || "short"),
+          intensity: mapIntensityToFallback(intensity || 2),
+          style: style === "moodybot" ? "moodybot" : "plain",
+          reasonTags: reason_tags,
+          includeFollowup: include_followup,
+          userMsg: context_text
+        });
+        
+        console.log(`[${requestId}] Using moody fallback response`, { reason: "no_valid_candidates" });
         res.set({ 
           "Cache-Control": "no-store", 
           "X-MB-Route": "validation",
@@ -1140,9 +1185,14 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
         return res.json({ 
           text: fallbackResponse.validation,
           because: fallbackResponse.because,
-          followup: "",
+          followup: fallbackResponse.followup || "",
           remaining: updatedLimitCheck.remaining,
-          limit: updatedLimitCheck.limit
+          limit: updatedLimitCheck.limit,
+          meta: {
+            finish_reason: "fallback",
+            candidate_count: 0,
+            was_repaired: false
+          }
         });
       }
 
@@ -1174,7 +1224,12 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
         because: best.obj.because,
         followup: best.obj.followup || "",
         remaining: updatedLimitCheck.remaining,
-        limit: updatedLimitCheck.limit
+        limit: updatedLimitCheck.limit,
+        meta: {
+          finish_reason: best.finish,
+          candidate_count: valid.length,
+          was_repaired: best.score === 1
+        }
       });
     } catch (error: any) {
       console.error(`[${requestId}] Validation API error:`, error);

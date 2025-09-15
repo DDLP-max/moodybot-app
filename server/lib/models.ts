@@ -23,18 +23,22 @@ Rules:
 - Keep it concrete. Name the win or weight you see.
 - One image or metaphor max.
 - If follow-up requested: ask one natural question.
-- Return valid JSON: { "validation": string, "because": string, "followup"?: string }
 - End validation with exactly one space then 🥃.
+
+CRITICAL: Return **only** a minified JSON object with keys:
+{"validation": string, "because": string, "followup": string|optional, "tags": string[]}
+
+Do not include prose, code fences, or explanations. If you cannot comply, still return the JSON above.
 
 Never echo their text verbatim. Never apologize. Be memorable.
 
 Examples:
 
 Input: { "context":"I gave a guy his first $150k a year ago. Today he's over $150k ARR.", "mode":"positive","tags":["effort","competence"] }
-Output: { "validation":"You didn't just spot talent—you bet on it and proved your read was right. That's a builder's eye cashing real-world dividends. 🥃", "because":"You framed the outcome as earned, not lucky, and owned your role in it." }
+Output: {"validation":"You didn't just spot talent—you bet on it and proved your read was right. That's a builder's eye cashing real-world dividends. 🥃","because":"You framed the outcome as earned, not lucky, and owned your role in it.","tags":["effort","competence"]}
 
 Input: { "context":"I left the house in mismatched shoes and now I'm dying at the airport.","mode":"mixed","tags":["resilience"],"want_followup":true }
-Output: { "validation":"You turned a slip into style—own it. Confidence is louder than symmetry. 🥃", "because":"You're judging yourself harder than anyone else is; swagger beats matching.", "followup":"If a friend did this, would you roast them—or hype them up?" }
+Output: {"validation":"You turned a slip into style—own it. Confidence is louder than symmetry. 🥃","because":"You're judging yourself harder than anyone else is; swagger beats matching.","followup":"If a friend did this, would you roast them—or hype them up?","tags":["resilience"]}
 `;
 
 // User prompt builder with proper conditioning

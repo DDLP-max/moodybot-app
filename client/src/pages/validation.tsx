@@ -52,6 +52,11 @@ interface ValidationResponse {
   because: string;
   push_pull?: string;
   followup?: string;
+  meta?: {
+    finish_reason: string;
+    candidate_count: number;
+    was_repaired: boolean;
+  };
 }
 
 export default function ValidationMode() {
@@ -69,6 +74,7 @@ export default function ValidationMode() {
   const [response, setResponse] = useState<ValidationResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastRequest, setLastRequest] = useState<any>(null);
 
   const handleReasonTagToggle = (tag: string) => {
     setReasonTags(prev => 
@@ -84,7 +90,7 @@ export default function ValidationMode() {
      .replace(/\s+/g, " ")
      .trim();
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (regenerateWithBiggerBudget?: boolean) => {
     if (!context.trim()) return;
     
     setIsLoading(true);
@@ -100,8 +106,17 @@ export default function ValidationMode() {
         reason_tags: reasonTags,
         order,
         include_followup: includeFollowup,
-        context_text: sanitize(context)
+        context_text: sanitize(context),
+        // Add regeneration parameters if needed
+        ...(regenerateWithBiggerBudget && lastRequest ? {
+          max_tokens: (lastRequest.max_tokens || 260) + 120,
+          n: 1,
+          temperature: Math.max(0.6, (lastRequest.temperature || 0.75) - 0.1)
+        } : {})
       };
+
+      // Store the request for potential regeneration
+      setLastRequest(payload);
 
       const res = await fetch('/api/validation', {
         method: 'POST',
@@ -120,7 +135,8 @@ export default function ValidationMode() {
         validation: json.text || "",  // Already includes 🥃 from server
         because: json.because || "You shared something meaningful with me.",
         push_pull: "",
-        followup: json.followup || ""
+        followup: json.followup || "",
+        meta: json.meta
       };
       setResponse(formattedOutput);
       
@@ -154,7 +170,11 @@ export default function ValidationMode() {
   };
 
   const handleRegenerate = () => {
-    handleGenerate();
+    handleGenerate(false);
+  };
+
+  const handleRegenerateWithBiggerBudget = () => {
+    handleGenerate(true);
   };
 
   const isWorkplace = relationship === "coworker" || relationship === "client";
@@ -385,7 +405,7 @@ export default function ValidationMode() {
 
             {/* Generate Button */}
             <Button
-              onClick={handleGenerate}
+              onClick={() => handleGenerate()}
               disabled={!context.trim() || isLoading}
               className="w-full bg-gradient-to-r from-teal-500 to-violet-500 hover:from-teal-600 hover:to-violet-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
               size="lg"
@@ -426,7 +446,7 @@ export default function ValidationMode() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      onClick={handleRegenerate}
+                      onClick={() => handleRegenerate()}
                       className="border-gray-600 text-gray-300 hover:bg-gray-700"
                     >
                       <RefreshCw className="h-4 w-4 mr-2" />
@@ -473,10 +493,13 @@ export default function ValidationMode() {
                     <p className="text-white text-lg">{response.validation}</p>
                   </div>
 
-                  <div className="p-4 rounded-lg bg-gray-800/50 border border-gray-600">
-                    <h4 className="font-semibold text-sm text-gray-300 mb-2 italic">Because</h4>
-                    <p className="text-white italic">{response.because}</p>
-                  </div>
+                  {/* Only show "because" if it's not an engine reason */}
+                  {response.because && !/fallback triggered|length cutoff|json/i.test(response.because) && (
+                    <div className="p-4 rounded-lg bg-gray-800/50 border border-gray-600">
+                      <h4 className="font-semibold text-sm text-gray-300 mb-2 italic">Because</h4>
+                      <p className="text-white italic">{response.because}</p>
+                    </div>
+                  )}
 
                   {response.push_pull && (
                     <div className={`p-4 rounded-lg border-l-4 ${
@@ -493,6 +516,19 @@ export default function ValidationMode() {
                     <div className="p-4 rounded-full bg-purple-600 text-white text-center">
                       <h4 className="font-semibold text-sm mb-2">Follow-up Question</h4>
                       <p className="text-sm">{response.followup}</p>
+                    </div>
+                  )}
+
+                  {/* Regenerate with bigger budget option for length cutoffs */}
+                  {response.meta?.finish_reason === "length" && (
+                    <div className="pt-4 border-t border-gray-600">
+                      <button 
+                        className="text-xs opacity-70 hover:opacity-100 underline text-gray-300 hover:text-white transition-opacity"
+                        onClick={handleRegenerateWithBiggerBudget}
+                        disabled={isLoading}
+                      >
+                        Regenerate with bigger budget
+                      </button>
                     </div>
                   )}
                 </div>
