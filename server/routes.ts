@@ -13,7 +13,16 @@ import {
   DEFAULT_TEMPERATURE,
   DEFAULT_MAX_TOKENS
 } from "./config";
-import { MODEL_VALIDATION, MODEL_DYNAMIC, intensityToTemp } from "./lib/models";
+import { 
+  MODEL_VALIDATION, 
+  MODEL_DYNAMIC, 
+  intensityToTemp,
+  SYSTEM_VALIDATION_PROMPT,
+  buildUserPrompt,
+  enforceLength,
+  pickBestCandidate,
+  type Candidate
+} from "./lib/models";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -986,22 +995,36 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
       }
       console.log(`[${requestId}] API Key present: ${apiKey.substring(0, 10)}...`);
 
-      // Simplified validation request - let MoodyBot be MoodyBot
+      // Rich validation with multiple candidates and selection
+      console.log(`[${requestId}] Calling OpenRouter API for validation with candidates`);
+      
+      const n = 3; // candidate count
+      const max_tokens = length === 'short' ? 90 : length === 'medium' ? 140 : 220;
 
-      console.log(`[${requestId}] Calling OpenRouter API for validation`);
+      const messages = [
+        { role: "system", content: SYSTEM_VALIDATION_PROMPT },
+        { role: "user", content: buildUserPrompt({ 
+          text: context_text, 
+          relationship, 
+          mode, 
+          intensity, 
+          style, 
+          length, 
+          tags: reason_tags, 
+          followup: include_followup 
+        }) },
+      ];
       
       const openRouterPayload = {
-        model: MODEL_VALIDATION,              // ✅ no more hard-coded 'grok-4'
-        stream: false,
-        max_tokens: 160,
-        temperature: intensityToTemp(intensity || 2),
-        top_p: 0.9,
-        frequency_penalty: 0.2,
-        presence_penalty: 0.1,
-        messages: [
-          { role: "system", content: "You are MoodyBot. Return a short, human validation (1–3 lines). Do not mirror the user's words; validate the person behind the words. No emojis, no hashtags, no bullet points. Be warm, specific, and grounded." },
-          { role: "user", content: String(context_text || "").slice(0, 1000) }
-        ]
+        model: MODEL_VALIDATION,
+        messages,
+        n,
+        max_tokens,
+        temperature: intensityToTemp(intensity || 2),      // 0.6 feather → 0.95 heavy
+        top_p: 0.92,
+        frequency_penalty: 0.15,
+        presence_penalty: 0.10,
+        response_format: { type: "json_object" }
       };
       
       console.log(`[${requestId}] OpenRouter payload:`, JSON.stringify(openRouterPayload, null, 2));
@@ -1045,20 +1068,42 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
         });
       }
 
-      const content =
-        data?.choices?.[0]?.message?.content ??
-        data?.choices?.[0]?.text ?? // some providers use 'text'
-        "";
+      // Parse candidates from response
+      const candidates: Candidate[] = [];
+      
+      for (const choice of data?.choices || []) {
+        const content = choice?.message?.content ?? choice?.text ?? "";
+        if (content.trim()) {
+          try {
+            const candidate = JSON.parse(content);
+            if (candidate.validation) {
+              // Enforce length constraints
+              const maxLines = length === "1-liner" ? 1 : length === "2-3 lines" ? 3 : 6;
+              candidate.validation = enforceLength(candidate.validation, maxLines);
+              
+              // Ensure exactly one space before 🥃
+              candidate.validation = candidate.validation.replace(/\s*🥃$/, '').trimEnd() + ' 🥃';
+              
+              candidates.push(candidate);
+            }
+          } catch (parseError) {
+            console.warn(`[${requestId}] Failed to parse candidate:`, content.slice(0, 100));
+          }
+        }
+      }
 
-      if (!content.trim()) {
-        console.error(`[${requestId}] Empty model response. Full upstream:`, JSON.stringify(data, null, 2));
+      if (candidates.length === 0) {
+        console.error(`[${requestId}] No valid candidates found. Full upstream:`, JSON.stringify(data, null, 2));
         return res.status(502).json({ 
-          error: `Empty model response. Full upstream: ${JSON.stringify(data).slice(0, 500)}` 
+          error: `No valid candidates found. Full upstream: ${JSON.stringify(data).slice(0, 500)}` 
         });
       }
-      const usage = data.usage || { total_tokens: 0 };
 
-      console.log(`[${requestId}] Generated validation response:`, content);
+      // Pick the best candidate
+      const bestCandidate = pickBestCandidate(candidates);
+      console.log(`[${requestId}] Selected best candidate from ${candidates.length} options:`, bestCandidate);
+
+      const usage = data.usage || { total_tokens: 0 };
 
       console.log(`[${requestId}] Sending validation response to client`);
       res.set({ 
@@ -1067,7 +1112,9 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
         "X-OpenRouter-Model": MODEL_VALIDATION
       });
       res.json({ 
-        text: content.trim(),
+        text: bestCandidate.validation,
+        because: bestCandidate.because,
+        followup: bestCandidate.followup || "",
         remaining: updatedLimitCheck.remaining,
         limit: updatedLimitCheck.limit
       });

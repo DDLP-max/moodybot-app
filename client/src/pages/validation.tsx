@@ -115,12 +115,12 @@ export default function ValidationMode() {
         throw new Error(json?.error || `HTTP ${res.status}`);
       }
 
-      // Format the successful response - only add whiskey on success
+      // Use the richer response from the new API
       const formattedOutput = {
-        validation: addWhiskey(json.text),
-        because: "You shared something meaningful with me.",
+        validation: json.text || "",  // Already includes 🥃 from server
+        because: json.because || "You shared something meaningful with me.",
         push_pull: "",
-        followup: ""
+        followup: json.followup || ""
       };
       setResponse(formattedOutput);
       
