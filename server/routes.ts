@@ -1069,31 +1069,20 @@ Rules:
         const errorText = await openRouterRes.text();
         console.error(`[${requestId}] OpenRouter API error (${openRouterRes.status}):`, errorText);
         
-        if (openRouterRes.status === 429) {
-          return res.status(429).json({
-            code: "RATE_LIMIT_EXCEEDED",
-            message: "AI service is rate limited. Try again in ~30s."
-          });
-        } else if (openRouterRes.status === 401 || openRouterRes.status === 403) {
-          return res.status(502).json({
-            code: "AI_SERVICE_ERROR",
-            message: "AI service authentication failed"
-          });
-        } else if (openRouterRes.status >= 500) {
-          return res.status(502).json({
-            code: "AI_SERVICE_ERROR",
-            message: "AI service is temporarily unavailable"
-          });
-        } else {
-          return res.status(502).json({
-            code: "AI_SERVICE_ERROR",
-            message: "AI service returned an error"
-          });
-        }
+        return res.status(502).json({
+          error: `Upstream ${openRouterRes.status}: ${errorText.slice(0, 200)}`
+        });
       }
 
       const json = await openRouterRes.json();
-      const aiReply = json.choices?.[0]?.message?.content || "Failed to generate validation";
+      const aiReply = json.choices?.[0]?.message?.content || "";
+      
+      if (!aiReply) {
+        console.error(`[${requestId}] Empty model response:`, json);
+        return res.status(502).json({
+          error: "Empty model response"
+        });
+      }
       const usage = json.usage || { total_tokens: 0 };
 
       console.log(`[${requestId}] Generated validation response`);

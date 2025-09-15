@@ -16,7 +16,7 @@ import { motion } from "framer-motion";
 import { useQuestionLimit } from "@/hooks/use-question-limit";
 import StandardHeader from "@/components/StandardHeader";
 import AppFooter from "@/components/AppFooter";
-import { formatValidationResponse } from "@/lib/formatValidation";
+import { addWhiskey } from "@/lib/formatValidation";
 
 const RELATIONSHIPS = [
   { value: "stranger", label: "Stranger" },
@@ -68,6 +68,7 @@ export default function ValidationMode() {
   const [order, setOrder] = useState<"pos_neg" | "neg_pos">("pos_neg");
   const [response, setResponse] = useState<ValidationResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleReasonTagToggle = (tag: string) => {
     setReasonTags(prev => 
@@ -87,6 +88,8 @@ export default function ValidationMode() {
     if (!context.trim()) return;
     
     setIsLoading(true);
+    setError(null);
+    
     try {
       const payload = {
         mode,
@@ -112,9 +115,9 @@ export default function ValidationMode() {
         throw new Error(json?.error || `HTTP ${res.status}`);
       }
 
-      // Format the successful response
+      // Format the successful response - only add whiskey on success
       const formattedOutput = {
-        validation: formatValidationResponse(json.text),
+        validation: addWhiskey(json.text),
         because: "You shared something meaningful with me.",
         push_pull: "",
         followup: ""
@@ -128,15 +131,14 @@ export default function ValidationMode() {
     } catch (error: any) {
       console.error('Error generating validation:', error);
       
-      // Show a graceful fallback + 🥃 so UX never looks "broken"
-      const fallback = "You didn't mess up — you're human. One awkward beat doesn't define you; it proves you care enough to notice. Keep moving.";
-      const formattedOutput = {
-        validation: formatValidationResponse(fallback),
-        because: `(debug) ${error?.message ?? "Validation failed"}`,
+      // Show error without whiskey suffix
+      setResponse({
+        validation: "",
+        because: "",
         push_pull: "",
         followup: ""
-      };
-      setResponse(formattedOutput);
+      });
+      setError(error?.message ?? "Validation failed");
     } finally {
       setIsLoading(false);
     }
@@ -451,7 +453,16 @@ export default function ValidationMode() {
                   <Badge variant="secondary" className="bg-gray-700 text-gray-300">{length}</Badge>
                 </div>
 
+                {/* Error Display */}
+                {error && (
+                  <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <h4 className="font-semibold text-sm text-red-400 mb-2">Error</h4>
+                    <p className="text-red-300">{error}</p>
+                  </div>
+                )}
+
                 {/* Validation Response */}
+                {response && (
                 <div className="space-y-4">
                   <div className={`p-4 rounded-lg border-l-4 ${
                     mode === 'positive' ? 'border-l-emerald-500 bg-emerald-500/10' :
@@ -485,6 +496,7 @@ export default function ValidationMode() {
                     </div>
                   )}
                 </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
