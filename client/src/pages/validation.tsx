@@ -134,7 +134,8 @@ export default function ValidationMode() {
       const res = await fetch('/api/validation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        cache: 'no-store' // Cache control as fetch option, not in JSON body
       });
 
       const json = await res.json().catch(() => ({}));

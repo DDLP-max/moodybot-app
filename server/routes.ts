@@ -677,6 +677,17 @@ Generate the ${mode} in MoodyBot voice. Obey structure and word counts. No meta 
 
       console.log(`[${requestId}] Calling OpenRouter API with ${max_words} max words`);
       
+      // Sanitize payload for OpenRouter
+      const creativePayload = {
+        model: MODEL_DYNAMIC,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: creativeWriterPrompt }
+        ],
+        temperature: 0.7,
+        max_tokens: Math.min(max_words * 1.5, 8000) // Better token estimation: ~1.5 tokens per word
+      };
+
       const openRouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -685,15 +696,8 @@ Generate the ${mode} in MoodyBot voice. Obey structure and word counts. No meta 
           "HTTP-Referer": "https://app.moodybot.ai",
           "X-Title": "MoodyBot"
         },
-        body: JSON.stringify({
-          model: MODEL_DYNAMIC,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: creativeWriterPrompt }
-          ],
-          temperature: 0.7,
-          max_tokens: Math.min(max_words * 1.5, 8000) // Better token estimation: ~1.5 tokens per word
-        }),
+        body: JSON.stringify(creativePayload),
+        cache: 'no-store'
       });
 
       if (!openRouterRes.ok) {
@@ -859,6 +863,16 @@ Context: "${context}"
 
 Complete the ${mode} to reach approximately ${target_words} words total (you need to add about ${remainingWords} more words).`;
 
+      const resumePayload = {
+        model: MODEL_DYNAMIC,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: resumePrompt }
+        ],
+        temperature: 0.7,
+        max_tokens: Math.min(remainingWords * 1.5, 2000)
+      };
+
       const openRouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -867,15 +881,8 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
           "HTTP-Referer": "https://app.moodybot.ai",
           "X-Title": "MoodyBot"
         },
-        body: JSON.stringify({
-          model: MODEL_DYNAMIC,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: resumePrompt }
-          ],
-          temperature: 0.7,
-          max_tokens: Math.min(remainingWords * 1.5, 2000)
-        }),
+        body: JSON.stringify(resumePayload),
+        cache: 'no-store'
       });
 
       if (!openRouterRes.ok) {
@@ -1030,7 +1037,27 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
         }) },
       ];
       
-      const openRouterPayload = {
+      // Sanitize payload to only include allowed OpenRouter keys
+      const ALLOWED_KEYS = new Set([
+        'model',
+        'messages',
+        'temperature',
+        'max_tokens',
+        'top_p',
+        'frequency_penalty',
+        'presence_penalty',
+        'stop',
+        'stream',
+        'response_format',
+        'user',
+        'n'
+      ]);
+
+      const pickAllowed = <T extends Record<string, any>>(obj: T) => {
+        return Object.fromEntries(Object.entries(obj).filter(([k]) => ALLOWED_KEYS.has(k)));
+      };
+
+      const openRouterPayload = pickAllowed({
         model: MODEL_VALIDATION,
         messages,
         n,
@@ -1039,9 +1066,9 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
         top_p: 0.9,
         frequency_penalty: 0.15,
         presence_penalty: 0.10,
-        response_format: { type: "json_object" },
-        provider: { cache: false } // Disable caching to avoid identical responses
-      };
+        response_format: { type: "json_object" }
+        // Removed provider: { cache: false } - not allowed by OpenRouter
+      });
       
       console.log(`[${requestId}] Request metrics:`, {
         max_tokens,
@@ -1060,6 +1087,7 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
           "X-Title": OPENROUTER_X_TITLE,
         },
         body: JSON.stringify(openRouterPayload),
+        cache: 'no-store' // Cache control as fetch option, not in JSON body
       });
 
       if (!openRouterRes.ok) {
@@ -1447,6 +1475,17 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
         })
       };
 
+      const copywriterPayload = {
+        model: MODEL_DYNAMIC,  // Use Grok-4 as requested
+        messages: [
+          { role: "system", content: systemPrompt },
+          developerMessage,
+          { role: "user", content: `Generate marketing copy for: ${description}. IMPORTANT: Provide ALL requested asset types (headlines, hooks, CTAs, short captions, and long captions) in the JSON response. Do not skip any sections.` }
+        ],
+        temperature: 0.5, // Lower temperature for more consistent copy
+        max_tokens: 4000
+      };
+
       const openRouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -1455,16 +1494,8 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
           "HTTP-Referer": "https://app.moodybot.ai",   // recommended by OpenRouter
           "X-Title": "MoodyBot"                         // optional, nice to have
         },
-        body: JSON.stringify({
-          model: MODEL_DYNAMIC,  // Use Grok-4 as requested
-          messages: [
-            { role: "system", content: systemPrompt },
-            developerMessage,
-            { role: "user", content: `Generate marketing copy for: ${description}. IMPORTANT: Provide ALL requested asset types (headlines, hooks, CTAs, short captions, and long captions) in the JSON response. Do not skip any sections.` }
-          ],
-          temperature: 0.5, // Lower temperature for more consistent copy
-          max_tokens: 4000
-        }),
+        body: JSON.stringify(copywriterPayload),
+        cache: 'no-store'
       });
 
       if (!openRouterRes.ok) {
