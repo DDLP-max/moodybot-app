@@ -5,6 +5,14 @@ import { generateChatResponse } from "./moodybot";
 import { insertChatSessionSchema, insertChatMessageSchema, insertUserSchema } from "@shared/schema";
 import type { ChatCompletionMessageParam } from "openai/resources/chat";
 import { systemPromptManager } from "./systemPromptManager";
+import { 
+  OPENROUTER_MODEL_VALIDATION, 
+  OPENROUTER_API_URL, 
+  OPENROUTER_HTTP_REFERER, 
+  OPENROUTER_X_TITLE,
+  DEFAULT_TEMPERATURE,
+  DEFAULT_MAX_TOKENS
+} from "./config";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
@@ -982,10 +990,10 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
       console.log(`[${requestId}] Calling OpenRouter API for validation`);
       
       const openRouterPayload = {
-        model: "grok-4",            // Use simple model name
+        model: OPENROUTER_MODEL_VALIDATION,
         stream: false,              // Prevent streaming issues
-        max_tokens: 256,            // Keep it small while debugging
-        temperature: 0.7,
+        max_tokens: DEFAULT_MAX_TOKENS,
+        temperature: DEFAULT_TEMPERATURE,
         messages: [
           { role: "system", content: "You are MoodyBot. Return a short, human validation. No emojis." },
           { role: "user", content: context_text || "" }
@@ -994,13 +1002,13 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
       
       console.log(`[${requestId}] OpenRouter payload:`, JSON.stringify(openRouterPayload, null, 2));
       
-      const openRouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      const openRouterRes = await fetch(OPENROUTER_API_URL, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${apiKey}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": process.env.PUBLIC_APP_URL || "https://app.moodybot.ai",
-          "X-Title": "MoodyBot Validation",
+          "HTTP-Referer": process.env.PUBLIC_APP_URL || OPENROUTER_HTTP_REFERER,
+          "X-Title": OPENROUTER_X_TITLE,
         },
         body: JSON.stringify(openRouterPayload),
       });

@@ -10,6 +10,14 @@ import fs from "fs";
 import { postProcessMoodyResponse } from "../utils/moodybotPostProcess";
 import { appendToTextLog } from "./logger";
 import type { ChatCompletionMessageParam } from "openai/resources/chat";
+import { 
+  OPENROUTER_MODEL_DYNAMIC, 
+  OPENROUTER_API_URL, 
+  OPENROUTER_HTTP_REFERER, 
+  OPENROUTER_X_TITLE,
+  DYNAMIC_TEMPERATURE,
+  DYNAMIC_MAX_TOKENS
+} from "./config";
 
 // Load system prompt from file
 const moodyPrompt = fs.readFileSync(path.resolve("server/system_prompt.txt"), "utf-8");
@@ -42,10 +50,7 @@ export async function generateChatResponse(
   const selectedMode = mode === "savage" ? selectModeFromMessage(userMessage) : mode;
   const isAutoSelected = mode === "savage";
 
-  const cinematicTemperature = 0.85;
-  const cinematicMaxTokens = 1200;
-
-  const model = "x-ai/grok-4"; // Use Grok-4 as requested
+  // Use centralized config for consistency
 
   let enhancedPrompt = moodyPrompt;
   // Removed cinematic mode - keeping responses direct and natural
@@ -66,22 +71,22 @@ Keep responses natural, direct, and focused on the user's message.`;
 
  try {
 
-  console.log("Using model:", model, "for natural conversation");
+  console.log("Using model:", OPENROUTER_MODEL_DYNAMIC, "for natural conversation");
   console.log("🔑 Sending request with API key:", apiKey.substring(0, 20) + "...");
 
-  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+  const res = await fetch(OPENROUTER_API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${apiKey}`,
-      "HTTP-Referer": "https://app.moodybot.ai",   // recommended by OpenRouter
-      "X-Title": "MoodyBot"                         // optional, nice to have
+      "HTTP-Referer": OPENROUTER_HTTP_REFERER,   // recommended by OpenRouter
+      "X-Title": OPENROUTER_X_TITLE              // optional, nice to have
     },
     body: JSON.stringify({
-      model,
+      model: OPENROUTER_MODEL_DYNAMIC,
       messages,
-      temperature: cinematicTemperature,
-      max_tokens: cinematicMaxTokens
+      temperature: DYNAMIC_TEMPERATURE,
+      max_tokens: DYNAMIC_MAX_TOKENS
     }),
   });
 
