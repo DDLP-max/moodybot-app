@@ -926,13 +926,16 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
     
     try {
       // Parse and validate the request body using Zod schema
+      console.log(`[${requestId}] Raw request body:`, JSON.stringify(req.body, null, 2));
       const parseResult = ValidationReq.safeParse(req.body);
       if (!parseResult.success) {
         console.error(`[${requestId}] ValidationReq parse error:`, parseResult.error.flatten());
+        console.error(`[${requestId}] Zod error details:`, parseResult.error.format());
         return res.status(400).json({ 
           code: "INVALID_PAYLOAD",
           message: "Invalid request payload",
-          details: parseResult.error.flatten()
+          details: parseResult.error.flatten(),
+          zod_errors: parseResult.error.format()
         });
       }
       

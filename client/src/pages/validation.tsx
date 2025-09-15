@@ -100,11 +100,21 @@ export default function ValidationMode() {
       // Map UI controls to proper API contract
       const payload = {
         message: sanitize(context),
-        relationship: relationship as "stranger" | "acquaintance" | "friend" | "partner" | "family" | "coworker" | "mentor" | "self",
-        mode: mode as "positive" | "negative" | "mixed",
-        style: style === "moodybot" ? "MoodyBot" : style === "warm" ? "Gentle" : style === "blunt" ? "Direct" : style === "clinical" ? "Clinical" : style === "playful" ? "Playful" : "MoodyBot",
-        intensity: intensity[0] === 0 ? "feather" : intensity[0] === 1 ? "casual" : intensity[0] === 2 ? "firm" : "heavy",
-        length: length === "one_liner" ? "1-line" : length === "short" ? "2-3-lines" : "short-paragraph",
+        relationship: relationship, // Already matches API enum
+        mode: mode, // Already matches API enum
+        style: style === "moodybot" ? "MoodyBot" : 
+               style === "warm" ? "Gentle" : 
+               style === "blunt" ? "Direct" : 
+               style === "clinical" ? "Clinical" : 
+               style === "playful" ? "Playful" : 
+               "MoodyBot", // Default fallback
+        intensity: intensity[0] === 0 ? "feather" : 
+                   intensity[0] === 1 ? "casual" : 
+                   intensity[0] === 2 ? "firm" : 
+                   "heavy",
+        length: length === "one_liner" ? "1-line" : 
+                length === "short" ? "2-3-lines" : 
+                "short-paragraph",
         include_followup: includeFollowup,
         followup_style: "question" as const,
         tags: reasonTags,

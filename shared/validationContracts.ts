@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const ValidationReq = z.object({
   message: z.string().min(1),
-  relationship: z.enum(["stranger","acquaintance","friend","partner","family","coworker","mentor","self"]),
+  relationship: z.enum(["stranger","acquaintance","friend","partner","family","coworker","client","mentor","self"]),
   mode: z.enum(["positive","negative","mixed"]),
   style: z.enum(["MoodyBot","Gentle","Direct","Clinical","Playful","Poetic"]),
   intensity: z.enum(["feather","casual","firm","heavy"]),
