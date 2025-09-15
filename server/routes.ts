@@ -1115,9 +1115,10 @@ Complete the ${mode} to reach approximately ${target_words} words total (you nee
           
           // Calculate score
           const score = (text.length >= 70 && text.length <= 240 ? 2 : 0)
-                      + (/[!?—]/.test(text) ? 1 : 0)
+                      + (/[!?]/.test(text) ? 1 : 0) // no em-dash boost
                       + (/\b(you|that|this)\b/i.test(text) ? 1 : 0)
-                      + (text.includes('🥃') ? 0.5 : 0);
+                      + (text.includes('🥃') ? 0.5 : 0)
+                      - Math.max(0, (text.match(/—/g) || []).length - 1); // penalize overuse of em dashes
           
           valid.push({ score, text, obj, finish });
           okCount++;

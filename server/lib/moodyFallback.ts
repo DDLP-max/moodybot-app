@@ -18,8 +18,8 @@ export function moodyFallback(payload: {
   
   const core = {
     positive: [
-      "You didn't get lucky—you got serious and it shows.",
-      "That wasn't noise. That was signal—repeatable, earned."
+      "You didn't get lucky. You got serious and it shows.",
+      "That wasn't noise. That was signal. Repeatable, earned."
     ],
     negative: [
       "Slow down. Pride is loud; proof is quiet.",
@@ -32,7 +32,7 @@ export function moodyFallback(payload: {
   }[payload.mode];
 
   const follow = payload.includeFollowup
-    ? "What would 'repeatable' look like this week—one action you can execute twice?" 
+    ? "What would 'repeatable' look like this week? One action you can execute twice." 
     : "";
 
   // length shaping
