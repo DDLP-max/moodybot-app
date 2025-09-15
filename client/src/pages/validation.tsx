@@ -59,7 +59,7 @@ export default function ValidationMode() {
   const [context, setContext] = useState("");
   const [relationship, setRelationship] = useState("friend");
   const [mode, setMode] = useState<"positive" | "negative" | "mixed">("positive");
-  const [style, setStyle] = useState("warm");
+  const [style, setStyle] = useState("moodybot");
   const [intensity, setIntensity] = useState([1]);
   const [length, setLength] = useState("short");
   const [reasonTags, setReasonTags] = useState<string[]>([]);
@@ -76,6 +76,12 @@ export default function ValidationMode() {
     );
   };
 
+  // Sanitizer to clean input text
+  const sanitize = (s: string) =>
+    s.replace(/[\u2022\-\*•▪►]/g, " ")   // bullets → space
+     .replace(/\s+/g, " ")
+     .trim();
+
   const handleGenerate = async () => {
     if (!context.trim()) return;
     
@@ -90,7 +96,7 @@ export default function ValidationMode() {
         reason_tags: reasonTags,
         order,
         include_followup: includeFollowup,
-        context_text: context
+        context_text: sanitize(context)
       };
 
       const res = await fetch('/api/validation', {
