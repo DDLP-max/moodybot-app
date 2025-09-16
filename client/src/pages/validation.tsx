@@ -17,6 +17,7 @@ import { useQuestionLimit } from "@/hooks/use-question-limit";
 import StandardHeader from "@/components/StandardHeader";
 import AppFooter from "@/components/AppFooter";
 import { addWhiskey } from "@/lib/formatValidation";
+// import { uiToApi, type ValidationPayload } from "../../../lib/validationSchema";
 
 const RELATIONSHIPS = [
   { value: "stranger", label: "Stranger" },
@@ -100,14 +101,14 @@ export default function ValidationMode() {
       // Map UI controls to proper API contract
       const payload = {
         message: sanitize(context),
-        relationship: relationship, // Already matches API enum
-        mode: mode, // Already matches API enum
+        relationship: relationship,
+        mode: mode,
         style: style === "moodybot" ? "MoodyBot" : 
                style === "warm" ? "Gentle" : 
                style === "blunt" ? "Direct" : 
                style === "clinical" ? "Clinical" : 
                style === "playful" ? "Playful" : 
-               "MoodyBot", // Default fallback
+               "MoodyBot",
         intensity: intensity[0] === 0 ? "feather" : 
                    intensity[0] === 1 ? "casual" : 
                    intensity[0] === 2 ? "firm" : 
@@ -120,12 +121,6 @@ export default function ValidationMode() {
         tags: reasonTags,
         system_flavor: "validation" as const,
         version: "v1" as const,
-        // Add regeneration parameters if needed
-        ...(regenerateWithBiggerBudget && lastRequest ? {
-          max_tokens: (lastRequest.max_tokens || 260) + 120,
-          n: 1,
-          temperature: Math.max(0.6, (lastRequest.temperature || 0.75) - 0.1)
-        } : {})
       };
 
       // Debug logging to verify form state is wired correctly
@@ -155,17 +150,26 @@ export default function ValidationMode() {
         }
       };
 
-      const res = await fetch('/api/validation', {
+      const res = await fetch('http://localhost:10000/api/validation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
         cache: 'no-store' // Cache control as fetch option, not in JSON body
       });
 
-      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const text = await res.text();         // always read the body once
+        let json: any = null;
+        try { json = JSON.parse(text); } catch {}
+        throw new Error(
+          `HTTP ${res.status} :: ${json?.error ?? "Unknown"} :: ${JSON.stringify(json ?? text)}`
+        );
+      }
+
+      const json = await res.json();
       
-      if (!res.ok || !json?.text) {
-        throw new Error(json?.error || `HTTP ${res.status}`);
+      if (!json?.text) {
+        throw new Error(json?.error || `No response text received`);
       }
 
       // Use the richer response from the new API
