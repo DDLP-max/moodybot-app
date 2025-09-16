@@ -5,7 +5,7 @@ const testPayload = {
   message: "She led teams for years, credits faith and family, wants to open a studio with her sister.",
   relationship: "friend",
   mode: "positive",
-  style: "MoodyBot",
+  style: "moodybot",
   intensity: "casual",
   length: "2-3-lines",
   include_followup: true,

@@ -103,12 +103,7 @@ export default function ValidationMode() {
         message: sanitize(context),
         relationship: relationship,
         mode: mode,
-        style: style === "moodybot" ? "MoodyBot" : 
-               style === "warm" ? "Gentle" : 
-               style === "blunt" ? "Direct" : 
-               style === "clinical" ? "Clinical" : 
-               style === "playful" ? "Playful" : 
-               "MoodyBot",
+        style: style, // Server expects lowercase values: warm, blunt, playful, clinical, moodybot
         intensity: intensity[0] === 0 ? "feather" : 
                    intensity[0] === 1 ? "casual" : 
                    intensity[0] === 2 ? "firm" : 
@@ -150,7 +145,7 @@ export default function ValidationMode() {
         }
       };
 
-      const res = await fetch('http://localhost:10000/api/validation', {
+      const res = await fetch('http://localhost:10001/api/validation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
