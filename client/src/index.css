@@ -164,7 +164,68 @@
   z-index: 1000 !important;
 }
 
+/* Mobile layout and viewport fixes */
+.main-container {
+  min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height for mobile */
+  padding-top: env(safe-area-inset-top, 20px);
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+  padding-left: env(safe-area-inset-left, 16px);
+  padding-right: env(safe-area-inset-right, 16px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure proper spacing for mobile */
+.mode-cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 16px;
+  margin-bottom: 60px; /* Extra space for mobile navigation */
+}
+
+/* Fix header positioning */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding-top: env(safe-area-inset-top, 0);
+  background: linear-gradient(135deg, #0D1B2A 0%, #1C1C1C 100%);
+}
+
+/* Responsive mode cards */
+.mode-card {
+  min-height: 120px; /* Ensure cards have proper height */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 20px;
+}
+
 /* Mobile safe area and avatar clipping fixes */
+@media (max-width: 768px) {
+  .mode-cards-container {
+    padding: 16px 12px 80px 12px; /* Extra bottom padding */
+  }
+  
+  .main-container {
+    padding: 0;
+    min-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  }
+
+  .hero-avatar {
+    margin-top: 0 !important;
+    transform: none !important;
+  }
+  
+  /* Ensure avatar container doesn't clip */
+  .hero-avatar-container {
+    overflow: visible !important;
+    margin: 0.5rem 0 !important;
+  }
+}
+
 @media (max-width: 420px) {
   .hero-avatar {
     margin-top: 0 !important;
