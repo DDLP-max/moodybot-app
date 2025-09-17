@@ -97,6 +97,58 @@ export default function ValidationMode() {
     setIsLoading(true);
     setError(null);
     
+    // 🚀 TEMPORARY MOCK RESPONSE - Remove when API key is set up
+    setTimeout(() => {
+      const mockResponses = {
+        positive: {
+          moodybot: "You carved something steady out of the chaos. Faith and family keep you grounded while you aim higher. 🥃",
+          warm: "Your consistency, anchored by faith and family, is the engine that keeps turning dreams into milestones. 🥃",
+          blunt: "You didn't get lucky—you got serious and it shows. That wasn't noise—it was signal you can repeat. 🥃",
+          clinical: "Analysis: Leadership patterns indicate sustained effort over time. Family support systems provide stability. Recommendation: Continue current trajectory. 🥃",
+          playful: "Look at you, building empires with faith and family as your foundation! That's not luck—that's strategy. 🥃",
+          poetic: "In the quiet spaces between doubt and certainty, you found your rhythm. Faith whispers, family anchors, and dreams take flight. 🥃"
+        },
+        negative: {
+          moodybot: "Slow down. Pride is loud; proof is quiet. Show me the process, not the outcome. 🥃",
+          warm: "I see the excitement, but let's focus on what you can control. What's the next small step? 🥃",
+          blunt: "Cool story. Proof beats posture, every time. Take the lap when it's repeatable, not when it's loud. 🥃",
+          clinical: "Current trajectory shows high variance. Recommend focusing on measurable, repeatable processes before claiming success. 🥃",
+          playful: "Whoa there, speed demon! Let's make sure this isn't just a one-hit wonder. What's the system? 🥃",
+          poetic: "The echo of celebration fades quickly. Build something that whispers your name long after the applause ends. 🥃"
+        },
+        mixed: {
+          moodybot: "Credit where due: you moved the needle. Now make it repeatable. What's the one lever you can pull twice? 🥃",
+          warm: "Good move; now tighten the loop. How will you replicate this success? 🥃",
+          blunt: "Win logged—now prove it wasn't a one-off. What's the copy-and-paste version? 🥃",
+          clinical: "Initial results promising. Next phase: systematize approach for consistent replication. Timeline? 🥃",
+          playful: "Nice work! Now let's turn this into a habit, not just a happy accident. What's the formula? 🥃",
+          poetic: "The first note rings true—now compose the symphony. What melody will you repeat? 🥃"
+        }
+      };
+
+      const response = mockResponses[mode]?.[style] || mockResponses.positive.moodybot;
+      
+      setResponse({
+        validation: response,
+        because: `Mock response for ${mode} mode with ${style} style`,
+        followup: includeFollowup ? "What's the next step you can take this week?" : undefined,
+        meta: { 
+          finish_reason: "complete",
+          mock: true,
+          mode,
+          style,
+          intensity: intensity[0] === 0 ? "feather" : 
+                     intensity[0] === 1 ? "casual" : 
+                     intensity[0] === 2 ? "firm" : 
+                     "heavy",
+          length
+        }
+      });
+      setIsLoading(false);
+    }, 1000);
+    
+    return; // Remove this line when using real server
+
     try {
       // Map UI controls to proper API contract
       const payload = {
@@ -145,7 +197,7 @@ export default function ValidationMode() {
         }
       };
 
-      const res = await fetch('http://localhost:10001/api/validation', {
+      const res = await fetch('http://localhost:10000/api/validation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -233,7 +285,7 @@ export default function ValidationMode() {
   return (
     <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #0D1B2A 0%, #1C1C1C 100%)' }}>
       {/* Standard Header */}
-      <StandardHeader modeLabel="Validation Mode" />
+      <StandardHeader modeLabel="VALIDATION MODE" />
 
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         {/* Question Limit Display */}

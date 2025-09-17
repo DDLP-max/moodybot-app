@@ -333,7 +333,7 @@ export default function SimplifiedChat() {
           <div className="flex items-center space-x-2">
             <Eye className="text-primary text-xl" />
             <span className="font-black text-lg gradient-text">MoodyBot</span>
-            <span className="text-sm text-muted-foreground">• Dynamic Mode</span>
+            <span className="text-sm text-muted-foreground">• DYNAMIC MODE</span>
           </div>
         </div>
         
@@ -531,7 +531,7 @@ export default function SimplifiedChat() {
         {/* Dynamic Mode Instructions */}
         <div className="mt-2 text-center">
           <p className="text-xs text-muted-foreground">
-            🧠 Dynamic Mode: MoodyBot automatically selects the best persona based on your emotional state and message content
+            🧠 DYNAMIC MODE: MoodyBot automatically selects the best persona based on your emotional state and message content
           </p>
         </div>
       </div>

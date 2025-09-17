@@ -309,7 +309,7 @@ export default function DynamicPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <StandardHeader modeLabel="Dynamic Mode" />
+      <StandardHeader modeLabel="DYNAMIC MODE" />
 
       <ModeShell max="4xl">
         {/* Top banner INSIDE the container */}

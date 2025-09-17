@@ -625,7 +625,7 @@ export default function CreativeWriterPage() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(127,29,29,0.03),transparent_50%)] pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(146,64,14,0.03),transparent_50%)] pointer-events-none" />
       {/* Standard Header */}
-      <StandardHeader modeLabel="Creative Writer Mode" />
+      <StandardHeader modeLabel="CREATIVE WRITER MODE" />
 
       <div className="container mx-auto px-4 py-8 max-w-6xl relative z-10">
         {/* Hero Section */}

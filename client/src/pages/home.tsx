@@ -90,7 +90,7 @@ export default function Home() {
               <div className="flex flex-col items-center">
                 <a href="/dynamic" className="block rounded-xl p-3 text-center font-bold tracking-wide
                   bg-gradient-to-r from-purple-500 to-indigo-500 text-white w-full py-4 shadow hover:opacity-90 transition">
-                  <Eye className="w-4 h-4 mr-2 inline-block text-current" /> Dynamic Mode
+                  <Eye className="w-4 h-4 mr-2 inline-block text-current" /> DYNAMIC MODE
                 </a>
                 <p className="text-sm text-gray-300 mt-2 text-center">
                   AI-powered persona selection. MoodyBot automatically adapts to your emotional state and message content.
@@ -101,7 +101,7 @@ export default function Home() {
               <div className="flex flex-col items-center">
                 <a href="/copywriter" className="block rounded-xl p-3 text-center font-bold tracking-wide
                   bg-gradient-to-r from-green-400 to-teal-500 text-white w-full py-4 shadow hover:opacity-90 transition">
-                  <Type className="w-4 h-4 mr-2 inline-block text-current" /> Copywriter Mode
+                  <Type className="w-4 h-4 mr-2 inline-block text-current" /> COPYWRITER MODE
                 </a>
                 <p className="text-sm text-gray-300 mt-2 text-center">
                   From Ogilvy to Outlaw: MoodyBot's Copy Engine. Create compelling titles, hooks, CTAs, and captions with brutal honesty.
@@ -112,7 +112,7 @@ export default function Home() {
               <div className="flex flex-col items-center">
                 <a href="/creative-writer" className="block rounded-xl p-3 text-center font-bold tracking-wide
                   bg-gradient-to-r from-orange-400 to-red-500 text-white w-full py-4 shadow hover:opacity-90 transition">
-                  <PenTool className="w-4 h-4 mr-2 inline-block text-current" /> Creative Writer Mode
+                  <PenTool className="w-4 h-4 mr-2 inline-block text-current" /> CREATIVE WRITER MODE
                 </a>
                 <p className="text-sm text-gray-300 mt-2 text-center">
                 Stories, essays, and blurbs with a sharp MoodyBot edge.
@@ -123,7 +123,7 @@ export default function Home() {
               <div className="flex flex-col items-center">
                 <a href="/validation" className="block rounded-xl p-3 text-center font-bold tracking-wide
                   bg-gradient-to-r from-teal-400 to-purple-400 text-white w-full py-4 shadow hover:opacity-90 transition">
-                  <Scale className="w-4 h-4 mr-2 inline-block text-current" /> Validation Mode
+                  <Scale className="w-4 h-4 mr-2 inline-block text-current" /> VALIDATION MODE
                 </a>
                 <p className="text-sm text-gray-300 mt-2 text-center">
                   Positive, negative, or mixed push-pull. Make people feel seen, set boundaries, or do both with precision.
