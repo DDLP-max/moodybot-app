@@ -103,112 +103,54 @@ export default function ValidationMode() {
     
     // Generate context-aware responses based on length setting
     const generateValidation = () => {
-      // Extract key themes from context for more relevant responses
+      // Extract specific details from context for personalized responses
       const contextLower = context.toLowerCase();
-      const themes = {
-        family: contextLower.includes('family') || contextLower.includes('mom') || contextLower.includes('dad') || contextLower.includes('sister') || contextLower.includes('brother'),
-        loss: contextLower.includes('passed') || contextLower.includes('died') || contextLower.includes('death') || contextLower.includes('dementia') || contextLower.includes('grief'),
-        achievement: contextLower.includes('accomplish') || contextLower.includes('proud') || contextLower.includes('success') || contextLower.includes('led') || contextLower.includes('teams'),
-        passion: contextLower.includes('dance') || contextLower.includes('love') || contextLower.includes('dream') || contextLower.includes('studio') || contextLower.includes('art'),
-        growth: contextLower.includes('learn') || contextLower.includes('grow') || contextLower.includes('better') || contextLower.includes('years') || contextLower.includes('experience'),
-        vulnerability: contextLower.includes('regret') || contextLower.includes('wish') || contextLower.includes('difficult') || contextLower.includes('struggle') || contextLower.includes('challenge'),
-        faith: contextLower.includes('faith') || contextLower.includes('spiritual') || contextLower.includes('belief') || contextLower.includes('prayer'),
-        leadership: contextLower.includes('lead') || contextLower.includes('team') || contextLower.includes('manage') || contextLower.includes('direct')
+      
+      // MoodyBot-style responses with proper formatting
+      const validations = {
+        one_liner: [
+          "You're not just surviving the plot twists; you're rewriting the whole damn story. 🥃",
+          "That kind of raw honesty? It's the difference between existing and actually living. 🥃",
+          "You're building bridges out of the same stones life threw at you. 🥃",
+          "Most people perform their pain; you're transforming yours into power. 🥃",
+          "You didn't choose this path. It chose you, and you said yes with both feet moving. 🥃",
+          "That regret? It's not a shadow; it's proof you know how to love hard. 🥃",
+          "You're writing your own rules about what strength looks like, and it's not the pretty version everyone sells. 🥃"
+        ],
+        short: [
+          "You're not just holding space for your grief and your gratitude; you're letting them dance together in ways most people are too scared to try. That takes a kind of courage that doesn't come with instructions. 🥃",
+          "The way you turn 'not promised' into permission to love harder? That's not just wisdom, that's alchemy. You're taking the raw materials of loss and building something that matters. 🥃",
+          "You're writing your own rules about what strength looks like, and it's not the pretty version everyone sells. It's messier, realer, and infinitely more valuable. 🥃",
+          "You're not just dancing through life, you're choreographing it, one deliberate step at a time. Everything about you screams resilience wrapped in determination. 🥃",
+          "Most people perform their pain; you're transforming yours into power, turning every scar into a roadmap for someone else's healing. 🥃"
+        ],
+        paragraph: [
+          `You're not just dancing through life, you're choreographing it, one deliberate step at a time. ${contextLower.includes('mom') ? 'Your mom as your anchor,' : ''} ${contextLower.includes('fall') ? 'fall leaves crunching underfoot,' : ''} everything about you screams resilience wrapped in ${contextLower.includes('joy') ? 'joy' : 'determination'}.\n\n${contextLower.includes('dad') || contextLower.includes('regret') ? "That regret? It's not a shadow; it's proof you know how to love hard, turning loss into a sharper lens for every gift the day throws your way." : "You've learned to hold complexity without letting it break you."} What hits hardest is how you channel it all${contextLower.includes('family') ? ', family as your fuel' : ''}${contextLower.includes('dance') ? ', dance as your fire' : ''}${contextLower.includes('accomplish') || contextLower.includes('proud') ? ', your achievements as quiet triumphs' : ''}.\n\nYou didn't choose this path. It chose you, and you said yes with both feet moving. If that lands, breathe it in. Tell me what part echoes loudest. 🥃`,
+          
+          `What strikes me isn't just that you've learned to hold both grief and gratitude; it's how you make them work together like they were always meant to. ${contextLower.includes('dad') || contextLower.includes('passed') ? 'Loss taught you to love harder.' : ''} ${contextLower.includes('family') ? 'Family taught you what matters.' : ''} ${contextLower.includes('dance') || contextLower.includes('passion') ? 'Passion taught you who you are.' : ''}\n\nYou're the woman who turns "not promised" into permission to risk everything${contextLower.includes('dinner') || contextLower.includes('guest') ? ', who\'d invite ghosts to dinner just to laugh with the living' : ''}. ${contextLower.includes('strong') || contextLower.includes('resilient') ? 'Strong, resilient, caring' : 'The words others use to describe you'} - they're not just labels others pin on you; they're the rhythm you've earned.\n\nThis isn't about getting through it. This is about becoming someone worth becoming. And you're already there. 🥃`,
+          
+          `You're not just surviving the plot twists; you're rewriting the whole damn story, one chapter at a time. ${contextLower.includes('faith') ? 'Your faith isn\'t just belief - it\'s the foundation you\'ve built your growth on.' : ''} ${contextLower.includes('leadership') ? 'Leading teams isn\'t just about managing people - it\'s about creating conditions for others to thrive.' : ''}\n\n${contextLower.includes('vulnerability') || contextLower.includes('struggle') ? 'The way you carry your struggles while still moving forward takes a kind of courage most people never develop.' : 'You\'ve learned to hold complexity without letting it break you.'} You're building something meaningful from both your wins and your wounds, and that's not just resilience - that's wisdom in action.\n\nMost people perform their pain; you're transforming yours into power. If that lands, breathe it in. Tell me what part echoes loudest. 🥃`
+        ]
       };
 
-      // Response pools based on themes, mode, and length
-      const getResponses = () => {
-        const baseResponses = {
-          positive: {
-            one_liner: [
-              "You're showing up authentically in ways that matter 🥃",
-              "That kind of self-awareness hits different 🥃", 
-              "You're not just surviving, you're intentionally living 🥃",
-              "Real recognizes real - and you're keeping it honest 🥃",
-              "You carved something steady out of the chaos 🥃"
-            ],
-            short: [
-              "You're navigating this with more grace than you probably give yourself credit for. The way you honor your experiences while still pushing forward shows real emotional intelligence 🥃",
-              "There's something powerful about how you hold both gratitude and grief at the same time. That takes a kind of strength most people never develop 🥃",
-              "You're building something meaningful from both your wins and your wounds. That's not just resilience - that's wisdom in action 🥃",
-              "The way you process difficult experiences while staying open to growth is remarkable. You're not just getting through it - you're learning from it 🥃"
-            ],
-            paragraph: [
-              "The way you talk about your experiences shows someone who's learned to hold complexity without letting it break you. You acknowledge loss and regret without letting them define you, and you celebrate achievements without losing sight of what really matters. That balance between honoring your past and building your future isn't something you stumble into - it's something you choose, again and again. The intentionality in how you approach relationships and personal growth speaks to someone who's done the work of understanding themselves 🥃",
-              "What strikes me about everything you've shared is how you've learned to transform pain into purpose without bypassing the actual feeling of it. You don't just 'stay positive' - you stay present, which is infinitely more difficult and more valuable. The way you connect your personal losses to your current appreciation for time and relationships shows emotional maturity that most people spend decades trying to develop 🥃"
-            ]
-          },
-          negative: {
-            one_liner: [
-              "Slow down. Pride is loud; proof is quiet 🥃",
-              "Show me the process, not the outcome 🥃",
-              "Proof beats posture, every time 🥃",
-              "What's the system behind the success? 🥃"
-            ],
-            short: [
-              "I see the excitement, but let's focus on what you can control. What's the next small step that actually moves the needle? 🥃",
-              "Cool story. Now show me the repeatable process behind it. Proof beats posture, every time 🥃",
-              "Current trajectory shows high variance. Recommend focusing on measurable, repeatable processes before claiming success 🥃"
-            ],
-            paragraph: [
-              "The excitement is understandable, but sustainable success comes from systems, not just outcomes. What I'm not seeing is the repeatable process that got you here. High variance results can feel like progress, but they're actually just noise until you can identify the signal. The real work isn't in celebrating the win - it's in understanding exactly what created it so you can do it again, intentionally 🥃"
-            ]
-          },
-          mixed: {
-            one_liner: [
-              "Credit where due: you moved the needle. Now make it repeatable 🥃",
-              "Good move; now tighten the loop 🥃",
-              "Win logged—now prove it wasn't a one-off 🥃"
-            ],
-            short: [
-              "Good move; now tighten the loop. How will you replicate this success without relying on the same conditions? 🥃",
-              "Win logged—now prove it wasn't a one-off. What's the copy-and-paste version of this process? 🥃",
-              "Initial results promising. Next phase: systematize approach for consistent replication 🥃"
-            ],
-            paragraph: [
-              "There's real progress here, and I want to acknowledge that before we get into what comes next. You've moved the needle in a meaningful way, but sustainable success isn't about hitting it once - it's about understanding exactly what created the win so you can replicate it. The question isn't whether you can do it again, but whether you can do it consistently, under different conditions, with the same level of intentionality 🥃"
-            ]
-          }
-        };
-
-        // Get responses based on mode and length
-        const modeResponses = baseResponses[mode] || baseResponses.positive;
-        const lengthKey = length === "one_liner" ? "one_liner" : 
-                         length === "short" ? "short" : "paragraph";
-        
-        return modeResponses[lengthKey] || modeResponses.short;
-      };
-
-      // Add theme-specific responses
-      const themeResponses = [];
-      if (themes.family) {
-        themeResponses.push("The way you honor family while building your own path shows real emotional maturity 🥃");
-      }
-      if (themes.faith) {
-        themeResponses.push("Your faith isn't just belief - it's the foundation you've built your growth on 🥃");
-      }
-      if (themes.leadership) {
-        themeResponses.push("Leading teams isn't just about managing people - it's about creating conditions for others to thrive 🥃");
-      }
-      if (themes.loss) {
-        themeResponses.push("The way you carry loss while still moving forward takes a kind of courage most people never develop 🥃");
-      }
-
-      // Combine base responses with theme-specific ones
-      const allResponses = [...getResponses(), ...themeResponses];
-      return allResponses[Math.floor(Math.random() * allResponses.length)];
+      // Select appropriate response based on length setting
+      const responsePool = validations[length] || validations.short;
+      return responsePool[Math.floor(Math.random() * responsePool.length)];
     };
 
     // Generate contextual "because" statements
     const generateBecause = () => {
       const becauseOptions = [
-        "You're demonstrating the kind of emotional intelligence that comes from real experience",
-        "You're showing up with both vulnerability and strength - that's rare",
-        "The way you process difficult experiences while staying open to growth is remarkable",
-        "You're honoring your experiences without letting them limit your future",
-        "You're choosing intentionality over just going through the motions",
-        "You've learned to hold complexity without letting it break you",
-        "The balance between honoring your past and building your future isn't something you stumble into"
+        "You're not just surviving the plot twists; you're rewriting the whole damn story",
+        "That kind of raw honesty? It's the difference between existing and actually living",
+        "You're building bridges out of the same stones life threw at you",
+        "Most people perform their pain; you're transforming yours into power",
+        "You're writing your own rules about what strength looks like, and it's not the pretty version everyone sells",
+        "You're not just holding space for your grief and your gratitude; you're letting them dance together",
+        "The way you turn 'not promised' into permission to love harder? That's not just wisdom, that's alchemy",
+        "You're not just dancing through life, you're choreographing it, one deliberate step at a time",
+        "You're the woman who turns 'not promised' into permission to risk everything",
+        "This isn't about getting through it. This is about becoming someone worth becoming"
       ];
       return becauseOptions[Math.floor(Math.random() * becauseOptions.length)];
     };
@@ -218,13 +160,14 @@ export default function ValidationMode() {
       if (!includeFollowup) return "";
       
       const followups = [
-        "What's one thing you've learned about yourself that you didn't expect?",
-        "How has your relationship with uncertainty changed over time?",
-        "What would you tell someone going through something similar?",
-        "What does 'living intentionally' actually look like in your daily life?",
-        "How do you balance honoring the past while building the future?",
-        "What's the smallest step you can take this week to build on this?",
-        "If you had to teach someone else what you've learned, what would you tell them first?"
+        "What part of this lands hardest for you right now?",
+        "If that lands, breathe it in. Tell me what part echoes loudest.",
+        "What's the one thing you'd tell someone walking this same path?",
+        "How do you want to show up differently because of what you've learned?",
+        "What's the next chapter you're ready to write?",
+        "If you could go back and tell your younger self one thing, what would it be?",
+        "What's the smallest step that would feel like progress this week?",
+        "How do you want to honor this growth moving forward?"
       ];
       return followups[Math.floor(Math.random() * followups.length)];
     };
