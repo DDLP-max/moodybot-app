@@ -107,20 +107,18 @@ export default function DynamicPage() {
         throw new Error("No active session");
       }
 
-      // Analyze user input for dynamic persona selection
+      // Analyze user input for UI persona indicator (server also auto-selects)
       const personaAnalysis = dynamicPersonaEngine.analyzeUserInput(messageText, currentSession.userId.toString());
       setCurrentPersonaAnalysis(personaAnalysis);
-
-      // Determine the mode to send to the backend
-      const selectedMode = personaAnalysis.selectedPersonas.primary.name.toLowerCase();
 
       const response = await fetch("/api/chat/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionId: currentSession.sessionId,
+          userId: currentSession.userId,
           message: messageText,
-          mode: selectedMode,
+          mode: "dynamic",
         }),
       });
 
@@ -130,10 +128,10 @@ export default function DynamicPage() {
       }
 
       const data = await response.json();
-      
-      // Update question limit with the response data
-      if (data.remaining !== undefined && data.limit !== undefined) {
-        // Quota handled by useFreeResponses hook
+
+      // Free-trial exhausted — surface the subscription message instead of a blank reply
+      if (data.limitReached) {
+        throw new Error(data.subscriptionMessage || "Free trial limit reached. Subscribe to continue.");
       }
       
       // Return the AI response
@@ -143,7 +141,7 @@ export default function DynamicPage() {
         return data.aiReply;
       } else {
         console.error("No AI response found in data:", data);
-        return "MoodyBot is thinking...";
+        throw new Error("MoodyBot returned an empty response. Please try again.");
       }
     },
     onSuccess: async (aiReply) => {
@@ -175,7 +173,10 @@ export default function DynamicPage() {
     },
     onError: (error) => {
       console.error("Error sending message:", error);
-      const errorMessage = `Sorry, I encountered an error: ${error.message}`;
+      const raw = error instanceof Error ? error.message : String(error);
+      const errorMessage = raw.includes("Subscribe to MoodyBot") || raw.includes("free trial")
+        ? raw
+        : `Sorry, I encountered an error: ${raw}`;
       
       setMessages(prev => {
         // Check if the last message is already an error message to avoid duplicates

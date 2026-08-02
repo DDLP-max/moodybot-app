@@ -4,8 +4,9 @@
  */
 
 // OpenRouter model configurations
-export const OPENROUTER_MODEL_DYNAMIC = "x-ai/grok-4";
-export const OPENROUTER_MODEL_VALIDATION = "x-ai/grok-4";
+// Match Replit Telegram bot model
+export const OPENROUTER_MODEL_DYNAMIC = "x-ai/grok-4.3";
+export const OPENROUTER_MODEL_VALIDATION = "x-ai/grok-4.3";
 
 // API configuration
 export const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";

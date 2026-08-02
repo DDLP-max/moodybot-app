@@ -31,10 +31,20 @@ export class SystemPromptManager {
   public loadSystemPrompt(): void {
     try {
       const promptDir = path.resolve("server/system_prompt");
+      const combinedPromptPath = path.resolve("server/system_prompt.txt");
       const sections: SystemPromptSection[] = [];
 
-      // Check if the directory exists, if not, fall back to the old system_prompt.txt
-      if (fs.existsSync(promptDir) && fs.statSync(promptDir).isDirectory()) {
+      // Prefer the combined export when present — Dynamic Mode and other modes share one source of truth
+      if (fs.existsSync(combinedPromptPath)) {
+        this.systemPrompt = fs.readFileSync(combinedPromptPath, "utf-8");
+        this.sections = [{
+          id: "system_prompt_txt",
+          title: "Combined System Prompt",
+          content: this.systemPrompt,
+          priority: 0
+        }];
+        console.log(`✅ Loaded system prompt from system_prompt.txt (${this.systemPrompt.length} chars)`);
+      } else if (fs.existsSync(promptDir) && fs.statSync(promptDir).isDirectory()) {
         // Load from markdown files
         const files = fs.readdirSync(promptDir)
           .filter(file => file.endsWith('.md'))
@@ -60,14 +70,7 @@ export class SystemPromptManager {
         this.sections = sections;
         console.log(`✅ Loaded system prompt from ${sections.length} markdown files`);
       } else {
-        // Fallback to old system_prompt.txt
-        const oldPromptPath = path.resolve("server/system_prompt.txt");
-        if (fs.existsSync(oldPromptPath)) {
-          this.systemPrompt = fs.readFileSync(oldPromptPath, "utf-8");
-          console.log("✅ Loaded system prompt from system_prompt.txt (fallback)");
-        } else {
-          throw new Error("No system prompt files found");
-        }
+        throw new Error("No system prompt files found");
       }
 
       this.lastModified = Date.now();

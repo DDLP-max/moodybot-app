@@ -3,8 +3,9 @@
  * Supports environment variable overrides for deployment flexibility
  */
 
-export const MODEL_DYNAMIC = process.env.OPENROUTER_MODEL_DYNAMIC || "x-ai/grok-4";
-export const MODEL_VALIDATION = process.env.OPENROUTER_MODEL_VALIDATION || "x-ai/grok-4";
+// Default matches Replit Telegram bot (override via env if needed)
+export const MODEL_DYNAMIC = process.env.OPENROUTER_MODEL_DYNAMIC || "x-ai/grok-4.3";
+export const MODEL_VALIDATION = process.env.OPENROUTER_MODEL_VALIDATION || "x-ai/grok-4.3";
 
 // Helper function to convert intensity to temperature
 export function intensityToTemp(intensity: number): number {

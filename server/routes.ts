@@ -463,7 +463,7 @@ The real answers? The insights that change your life? Those cost something. Not 
       if (!currentSessionId) {
         const session = await storage.createChatSession({
           userId: currentUserId,
-          mode: mode || "savage",
+          mode: mode || "dynamic",
           title: message.substring(0, 50) + (message.length > 50 ? "..." : "")
         });
         currentSessionId = session.id;
@@ -476,10 +476,10 @@ The real answers? The insights that change your life? Those cost something. Not 
         content: message
       });
 
-      // Get AI response
+      // Get AI response — default to dynamic so auto persona selection runs
       const { aiReply, selectedMode, isAutoSelected } = await generateChatResponse(
         message,
-        mode || "savage", // Use mode from request or default to savage
+        mode || "dynamic",
         currentUserId,
         currentSessionId,
         [], // No conversation history for now

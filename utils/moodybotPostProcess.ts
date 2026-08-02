@@ -22,9 +22,11 @@ export function replaceMoodyDescriptors(text: string): string {
 }
 
 export function polishSentences(text: string): string {
+  // Preserve newlines — system prompt paragraph/line-break rules depend on them
   return text
     .replace(/\.{2,}/g, ".")
-    .replace(/\s+/g, " ")
+    .replace(/[^\S\n]+/g, " ")
+    .replace(/ *\n */g, "\n")
     .replace(/\s([?.!])/g, "$1")
     .trim();
 }

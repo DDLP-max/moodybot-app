@@ -19,9 +19,27 @@ import {
   DYNAMIC_MAX_TOKENS
 } from "./config";
 import { MODEL_DYNAMIC } from "./lib/models";
+import { getStructurePrompt } from "./structurePrompts";
 
-// Load system prompt from file
-const moodyPrompt = fs.readFileSync(path.resolve("server/system_prompt.txt"), "utf-8");
+const PROMPT_PATH = path.resolve("server/system_prompt.txt");
+let cachedPrompt = "";
+let cachedPromptMtime = 0;
+
+/** Always use the latest system_prompt.txt (reloads when the file changes). */
+function loadMoodyPrompt(): string {
+  try {
+    const mtime = fs.statSync(PROMPT_PATH).mtimeMs;
+    if (!cachedPrompt || mtime !== cachedPromptMtime) {
+      cachedPrompt = fs.readFileSync(PROMPT_PATH, "utf-8");
+      cachedPromptMtime = mtime;
+      console.log(`✅ Loaded system_prompt.txt (${cachedPrompt.length} chars)`);
+    }
+    return cachedPrompt;
+  } catch (err) {
+    console.error("❌ Failed to load system_prompt.txt:", err);
+    return cachedPrompt || "You are MoodyBot. Respond with brutal honesty and emotional depth.";
+  }
+}
 
 export async function generateChatResponse(
   userMessage: string,
@@ -31,15 +49,22 @@ export async function generateChatResponse(
   conversationHistory: ChatCompletionMessageParam[] = [],
   imageData?: string
 ): Promise<{ aiReply: string; selectedMode: string; isAutoSelected: boolean }> {
+  // Dynamic Mode (and legacy "savage") auto-select tone from message content
+  const shouldAutoSelect = mode === "dynamic" || mode === "savage" || !mode;
+  const selectedMode = shouldAutoSelect ? selectModeFromMessage(userMessage) : normalizeModeName(mode);
+  const isAutoSelected = shouldAutoSelect;
+  const activeMode = shouldAutoSelect ? "dynamic" : selectedMode;
+
   // Get API key from environment variable - REQUIRED for security
   const apiKey = (process.env.OPENROUTER_API_KEY || "").trim();
+  const looksLikePlaceholder = !apiKey || /^(not\s*set|undefined|null|your[_-]?api[_-]?key|changeme)$/i.test(apiKey);
   
-  if (!apiKey) {
-    console.error("❌ OPENROUTER_API_KEY environment variable is not set");
+  if (looksLikePlaceholder || !apiKey.startsWith("sk-or-")) {
+    console.error("❌ OPENROUTER_API_KEY is missing or invalid (got length:", apiKey.length, ")");
     return {
-      aiReply: "MoodyBot is not properly configured. Please set the OPENROUTER_API_KEY environment variable.",
-      selectedMode: mode,
-      isAutoSelected: mode === "savage"
+      aiReply: "MoodyBot is not properly configured. Set a valid OPENROUTER_API_KEY (sk-or-...) in your environment.",
+      selectedMode,
+      isAutoSelected
     };
   }
   
@@ -48,31 +73,44 @@ export async function generateChatResponse(
   console.log("🔑 API key format check:", apiKey.startsWith("sk-or-v1-") ? "✅ Valid format" : "❌ Invalid format");
   console.log("🔑 API key first/last 4 chars:", apiKey.substring(0, 4) + "..." + apiKey.substring(apiKey.length - 4));
 
-  const selectedMode = mode === "savage" ? selectModeFromMessage(userMessage) : mode;
-  const isAutoSelected = mode === "savage";
+  const moodyPrompt = loadMoodyPrompt();
 
-  // Use centralized config for consistency
+  // Identity preamble + full prompt (same source as Replit system_prompt.txt)
+  const enhancedPrompt = `You are MoodyBot — raw, sharp, emotionally intelligent, zero fluff.
 
-  let enhancedPrompt = moodyPrompt;
-  // Removed cinematic mode - keeping responses direct and natural
-  enhancedPrompt += `
+${moodyPrompt}
 
-IMPORTANT: Do NOT add scene-setting text, cinematic descriptions, or italics formatting. 
-Respond directly and conversationally without any "*scene description*" or similar formatting.
-Keep responses natural, direct, and focused on the user's message.`;
+IMPORTANT: Do NOT add scene-setting text, cinematic descriptions, or italics formatting like "*scene description*".
+Respond directly as MoodyBot in natural prose (not JSON), focused on the user's message.`;
 
-  const messages: ChatCompletionMessageParam[] = [
+  // Replit pattern: inject STRUCTURE_PROMPTS for the selected tone before the main system prompt
+  const structurePrompt = getStructurePrompt(selectedMode);
+  const modeDirective = [
+    `mode = "${activeMode}"`,
+    shouldAutoSelect ? `emotional_calibration = "${selectedMode}"` : null,
+    shouldAutoSelect
+      ? `Instructions: Dynamic Mode — calibrate tone toward ${selectedMode}. Full MoodyBot personality, emotional arc, poetic closure.`
+      : `Instructions: Respond in ${selectedMode} mode while keeping MoodyBot voice.`,
+    `Output: Plain conversational text only. No JSON. No code fences.`
+  ].filter(Boolean).join("\n");
+
+  const messages: ChatCompletionMessageParam[] = [];
+  if (structurePrompt) {
+    messages.push({ role: "system", content: structurePrompt });
+  }
+  messages.push(
     { role: "system", content: enhancedPrompt },
+    { role: "system", content: modeDirective },
     ...conversationHistory.filter(msg => 
       typeof msg.content === 'string' || 
       (Array.isArray(msg.content) && msg.content.every(item => typeof item === 'object' && 'type' in item))
     ),
     { role: "user", content: userMessage }
-  ];
+  );
 
  try {
 
-  console.log("Using model:", MODEL_DYNAMIC, "for natural conversation");
+  console.log("Using model:", MODEL_DYNAMIC, "for natural conversation", { activeMode, selectedMode, isAutoSelected });
   console.log("🔑 Sending request with API key:", apiKey.substring(0, 20) + "...");
 
   const res = await fetch(OPENROUTER_API_URL, {
@@ -160,25 +198,30 @@ Keep responses natural, direct, and focused on the user's message.`;
     };
   }
 
-  if (error.response?.status === 429) {
+  // Auth / config errors should surface clearly (fetch throws plain Errors, not axios-style)
+  if (
+    error.message?.includes("API key") ||
+    error.message?.includes("invalid or expired") ||
+    error.response?.status === 401
+  ) {
     return {
-      aiReply: "MoodyBot is getting too many requests. Please try again in a moment.",
+      aiReply: "MoodyBot's API key is invalid or expired. Please check OPENROUTER_API_KEY and try again.",
       selectedMode,
       isAutoSelected
     };
   }
 
-  if (error.response?.status === 401) {
-    return {
-      aiReply: "MoodyBot's API key is invalid or expired. Please contact support to fix this issue.",
-      selectedMode,
-      isAutoSelected
-    };
-  }
-
-  if (error.response?.status === 400) {
+  if (error.response?.status === 400 || error.message?.includes("Invalid request")) {
     return {
       aiReply: "MoodyBot received an invalid request. Please try rephrasing your message.",
+      selectedMode,
+      isAutoSelected
+    };
+  }
+
+  if (error.response?.status === 429 || error.message?.includes("Rate limit")) {
+    return {
+      aiReply: "MoodyBot is getting too many requests. Please try again in a moment.",
       selectedMode,
       isAutoSelected
     };
@@ -190,11 +233,23 @@ Keep responses natural, direct, and focused on the user's message.`;
   console.error("Full error object:", JSON.stringify(error, null, 2));
 
   return {
-    aiReply: "MoodyBot is in a bad mood. Try again later.",
+    aiReply: `MoodyBot hit an error: ${error.message || "unknown failure"}. Try again in a moment.`,
     selectedMode,
     isAutoSelected
   };
 }
+}
+
+/** Normalize client persona labels ("Bob Ross", "Dale/YOLO") into server mode keys */
+function normalizeModeName(mode: string): string {
+  const key = mode.trim().toLowerCase().replace(/\s+/g, "-").replace(/\//g, "-");
+  const aliases: Record<string, string> = {
+    "dale-yolo": "dale-yolo",
+    "bob-ross": "bob-ross",
+    "validate": "validate",
+    "validation": "validate",
+  };
+  return aliases[key] || key;
 }
 
 // Intelligent mode selection based on message content
