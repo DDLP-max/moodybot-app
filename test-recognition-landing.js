@@ -62,7 +62,8 @@ function testPostProcessDynamicPath() {
     "Why do feminists hate women praising men?",
     { mode: "dynamic", appendRandomCta: false }
   );
-  assert.strictEqual(result.landingEngineVersion, "recognition-landing-v1");
+  assert.strictEqual(result.landingEngineVersion, "signature-line-v2");
+  assert.strictEqual(result.landing, "signature_line");
   assert.ok(!/seen it named/i.test(result.text), result.text);
   assert.ok(!/looks different now that you've seen it named/i.test(result.text));
   // Random CTA must not be appended for Dynamic
@@ -71,7 +72,7 @@ function testPostProcessDynamicPath() {
 }
 
 function testLandingEngineVersionConstant() {
-  assert.strictEqual(LANDING_ENGINE_VERSION, "recognition-landing-v1");
+  assert.strictEqual(LANDING_ENGINE_VERSION, "signature-line-v2");
 }
 
 testValidateLandingRejectsExactFailure();

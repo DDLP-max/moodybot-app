@@ -1,11 +1,18 @@
 /**
- * Recognition Landing — authoritative closer gate for Dynamic Mode.
+ * Recognition Landing + Signature Line gate for Dynamic Mode.
  *
  * landing_engine_version must appear in every Dynamic response log.
- * If absent in Render/host logs, production is not running this code.
  */
 
-export const LANDING_ENGINE_VERSION = "recognition-landing-v1";
+import {
+  SIGNATURE_ENGINE_VERSION,
+  ensureSignatureLine,
+  generateSignatureLine,
+  lastLineIsSignature,
+  validateSignatureLine,
+} from "./signatureLine";
+
+export const LANDING_ENGINE_VERSION = SIGNATURE_ENGINE_VERSION;
 
 const BROKEN_CLOSER_PATTERNS: RegExp[] = [
   /^what about\b.+\blooks different\b/i,
@@ -78,7 +85,6 @@ function stripTrailingBrokenSentence(text: string): string {
   let out = (text || "").trim();
   if (!out) return out;
 
-  // Drop signature / CTA lines first so we can inspect the real closer
   const lines = out.split("\n");
   while (lines.length) {
     const last = (lines[lines.length - 1] || "").trim();
@@ -98,7 +104,6 @@ function stripTrailingBrokenSentence(text: string): string {
   }
   out = lines.join("\n").trim();
 
-  // Paragraph closer
   const paras = out.split(/\n\s*\n/);
   if (paras.length >= 2) {
     const closer = (paras[paras.length - 1] || "").trim();
@@ -107,7 +112,6 @@ function stripTrailingBrokenSentence(text: string): string {
     }
   }
 
-  // Same-paragraph trailing sentence
   if (out.endsWith("?") || isBrokenCloser(lastSentence(out))) {
     const sentences = out.split(/(?<=[.!?])\s+/);
     if (sentences.length >= 2) {
@@ -118,7 +122,6 @@ function stripTrailingBrokenSentence(text: string): string {
     }
   }
 
-  // Nuclear: any remaining "seen it named" sentence anywhere near the end
   if (/seen it named/i.test(out) || /what about .+ looks different/i.test(out)) {
     out = out
       .split(/(?<=[.!?])\s+/)
@@ -131,40 +134,9 @@ function stripTrailingBrokenSentence(text: string): string {
   return out;
 }
 
-function craftStatementLanding(userMessage: string): string | null {
-  const um = (userMessage || "").toLowerCase();
-  if (/(feminist|feminism|praising men|loyalty)/.test(um)) {
-    return "Once gratitude becomes defection, the conversation has already changed.";
-  }
-  if (/(dirty talk|porn|1995|sexual language)/.test(um)) {
-    return "The interesting shift isn't that the language got dirtier — it's that the script library got larger.";
-  }
-  if (/(doorman|flowers|wine)/.test(um)) {
-    return "The move is clear. The next line is hers.";
-  }
-  if (/(cancel|late at night|low priority|only calls)/.test(um)) {
-    return "Convenience dressed as connection is still just convenience.";
-  }
-  return null;
-}
-
-function bodyAlreadyLands(body: string): boolean {
-  const text = (body || "").trim();
-  if (!text) return false;
-  const last = text.split(/\n\s*\n/).pop()?.trim() || "";
-  if (last.endsWith("?")) return false;
-  const sentences = last
-    .split(/(?<=[.!])\s+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  if (!sentences.length) return false;
-  const final = sentences[sentences.length - 1];
-  return final.split(/\s+/).length >= 6 && /[.!]$/.test(final);
-}
-
 /**
- * Apply landing after model draft. May strip a bad closer without replacement.
- * Never invents "What about [topic] looks different..." questions.
+ * Apply Signature Line after model draft.
+ * Order: Signature Line → (callback handled in prompts) → silence fallback.
  */
 export function applyRecognitionLanding(
   text: string,
@@ -173,32 +145,40 @@ export function applyRecognitionLanding(
   const before = (text || "").trim();
   let out = stripTrailingBrokenSentence(before);
   let modified = out !== before;
-  let landing = "silence";
 
   const um = (userMessage || "").toLowerCase();
-  const politics =
-    /(feminist|feminism|politics|political|culture|porn|dirty talk|praising|loyalty|why do|why does)/.test(
-      um
-    );
+  const practical =
+    /what should i do|what do i say|how should i handle|what now/.test(um);
+  const grief = /\b(died|funeral|grief|can't stop crying)\b/.test(um);
 
-  if (politics && !bodyAlreadyLands(out)) {
-    const stmt = craftStatementLanding(userMessage);
-    if (stmt && !out.includes(stmt)) {
-      out = `${out.replace(/\s+$/, "")}\n\n${stmt}`;
-      modified = true;
-      landing = "recognition_statement";
-    } else {
-      landing = bodyAlreadyLands(out) ? "silence" : "recognition_statement";
-    }
-  } else if (bodyAlreadyLands(out)) {
-    landing = "silence";
+  if (grief) {
+    return { text: out, modified, landing: "silence" };
+  }
+  if (practical) {
+    return { text: out, modified, landing: "action" };
   }
 
-  // Final hard reject — invariant
+  if (lastLineIsSignature(out, userMessage)) {
+    return { text: out, modified, landing: "signature_line" };
+  }
+
+  // Generate AFTER body exists — react to the draft
+  generateSignatureLine({}, out, userMessage);
+  const ensured = ensureSignatureLine(out, userMessage, {});
+  out = ensured.text;
+  modified = modified || ensured.modified;
+
   if (isBrokenCloser(lastSentence(out)) || /seen it named/i.test(out)) {
     out = stripTrailingBrokenSentence(out);
     modified = true;
   }
+
+  const landing =
+    ensured.signature && validateSignatureLine(ensured.signature, { allowExceptionalLength: true }).ok
+      ? "signature_line"
+      : lastLineIsSignature(out)
+        ? "signature_line"
+        : "silence";
 
   return { text: out, modified, landing };
 }
@@ -222,16 +202,15 @@ export function responseTextAfterSurfaceSemanticallyEquals(
   const b = normalize(afterSurface);
   if (a === b) return true;
 
-  // Allow trailing punctuation / case-only diffs already normalized;
-  // forbid appended sentence content
   const countSentences = (s: string) =>
     s.split(/(?<=[.!?])\s+/).filter((x) => x.trim().length > 0).length;
   if (countSentences(b) > countSentences(a)) return false;
-  // Surface may shorten whitespace but not introduce the banned staple
   if (/seen it named|what about .+ looks different/i.test(afterSurface)) {
     return false;
   }
-  // Core body of afterLanding should remain a prefix-ish of afterSurface
   const aCore = a.replace(/[.!?]+$/g, "").trim();
-  return b.includes(aCore.slice(0, Math.min(80, aCore.length))) || a.includes(b.slice(0, Math.min(80, b.length)));
+  return (
+    b.includes(aCore.slice(0, Math.min(80, aCore.length))) ||
+    a.includes(b.slice(0, Math.min(80, b.length)))
+  );
 }

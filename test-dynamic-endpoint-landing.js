@@ -19,13 +19,14 @@ const result = postProcessMoodyResponse(MODEL_DRAFT, USER, {
   appendRandomCta: false,
 });
 
-assert.strictEqual(result.landingEngineVersion, "recognition-landing-v1");
+assert.strictEqual(result.landingEngineVersion, "signature-line-v2");
 assert.ok(
   !/looks different now that you've seen it named/i.test(result.text),
   result.text
 );
 assert.ok(!/seen it named/i.test(result.text), result.text);
 assert.ok(!/what about feminists/i.test(result.text), result.text);
+assert.strictEqual(result.landing, "signature_line");
 // Forced question ban for this politics prompt unless signature language
 const closer = result.afterLandingLastSentence.replace(/🥃/g, "").trim();
 assert.ok(
