@@ -1,4 +1,13 @@
 // utils/moodybotPostProcess.ts
+import {
+  LANDING_ENGINE_VERSION,
+  applyRecognitionLanding,
+  lastSentence,
+  responseTextAfterSurfaceSemanticallyEquals,
+  validateLanding,
+} from "./recognitionLanding";
+
+export { LANDING_ENGINE_VERSION, validateLanding, lastSentence };
 
 export const moodyReplacements: Record<string, string> = {
   "darling": "volatile angel",
@@ -61,12 +70,80 @@ export function getRandomCta(): string {
   return ctas[Math.floor(Math.random() * ctas.length)];
 }
 
-export function postProcessMoodyResponse(raw: string): string {
+/** Typography-only pass. Must not invent a new closer sentence. */
+export function finalSurfaceRender(text: string): string {
+  let out = (text || "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/\s*[—–]\s*/g, " - ")
+    .replace(/\s+([,.!?;:])/g, "$1")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return out;
+}
+
+export type PostProcessResult = {
+  text: string;
+  landingEngineVersion: string;
+  landing: string;
+  draftLastSentence: string;
+  afterLandingLastSentence: string;
+  afterSurfaceLastSentence: string;
+  landingModified: boolean;
+};
+
+/**
+ * Dynamic Mode pipeline:
+ * polish → recognition landing → surface (typography) → signature.
+ * Random CTA is disabled for Dynamic — it was rewriting closers after landing.
+ */
+export function postProcessMoodyResponse(
+  raw: string,
+  userMessage: string = "",
+  options: { mode?: string; appendRandomCta?: boolean } = {}
+): PostProcessResult {
+  const mode = (options.mode || "dynamic").toLowerCase();
+  const draftLastSentence = lastSentence(raw);
+
   let processed = cleanWeakOpeners(raw);
   processed = polishSentences(processed);
   processed = replaceMoodyDescriptors(processed);
   processed = cleanMoodySignoffs(processed);
+
+  const landed = applyRecognitionLanding(processed, userMessage);
+  processed = landed.text;
+  const afterLandingLastSentence = lastSentence(processed);
+
+  const afterLanding = processed;
+  processed = finalSurfaceRender(processed);
+  const afterSurfaceLastSentence = lastSentence(processed);
+
+  if (
+    process.env.NODE_ENV !== "production" &&
+    !responseTextAfterSurfaceSemanticallyEquals(afterLanding, processed)
+  ) {
+    throw new Error(
+      "SURFACE_INVARIANT: finalSurfaceRender appended or rewrote semantic content"
+    );
+  }
+
   processed = appendSignature(processed);
-  processed += `\n${getRandomCta()}`;
-  return processed;
+
+  // Legacy CTA only when explicitly opted in — never for Dynamic Mode
+  if (options.appendRandomCta === true && mode !== "dynamic") {
+    processed += `\n${getRandomCta()}`;
+  }
+
+  return {
+    text: processed,
+    landingEngineVersion: LANDING_ENGINE_VERSION,
+    landing: landed.landing,
+    draftLastSentence,
+    afterLandingLastSentence,
+    afterSurfaceLastSentence,
+    landingModified: landed.modified,
+  };
 }
