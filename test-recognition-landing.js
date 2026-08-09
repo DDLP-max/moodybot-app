@@ -1,5 +1,6 @@
 import assert from "assert";
 import {
+  CORE_WRITE_DIRECTIVE,
   LANDING_ENGINE_VERSION,
   lastSentence,
   postProcessMoodyResponse,
@@ -83,12 +84,20 @@ function testLandingEngineVersionConstant() {
   assert.strictEqual(LANDING_ENGINE_VERSION, "minimal-write-v1");
 }
 
+function testWriteDirectiveRequiresProofNotRecap() {
+  const lower = CORE_WRITE_DIRECTIVE.toLowerCase();
+  assert.ok(lower.includes("thesis") && lower.includes("proof"));
+  assert.ok(lower.includes("plot summary"));
+  assert.ok(lower.includes("mechanism") || lower.includes("governing pattern"));
+}
+
 testValidateLandingRejectsExactFailure();
 testMinimalWriteNoForcedSignature();
 testNoQuestionOrCtaForced();
 testSignatureRejectedWhenShorterParaphrase();
 testInventoryDraftNotDecorated();
 testLandingEngineVersionConstant();
+testWriteDirectiveRequiresProofNotRecap();
 console.log("All minimal-write landing tests passed.");
 console.log("landing_engine_version=", LANDING_ENGINE_VERSION);
 void lastSentence;
