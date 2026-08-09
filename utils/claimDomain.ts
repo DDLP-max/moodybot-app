@@ -26,7 +26,7 @@ export type LensBundle = {
   primary: string;
   supporting: string;
   voice: string | null;
-  preferred_structure: "SNAP" | "KNIFE" | "STORY";
+  preferred_structure: "SNAP" | "KNIFE" | "REFLECTION";
   mechanism_hint: string;
 };
 
@@ -36,7 +36,8 @@ export const LENS_INTERNAL_QUESTIONS: Record<string, string> = {
   CIA: "What do we actually know?",
   "Hank Moody": "What's the human truth nobody wants to admit?",
   "Pattern Recognition": "What pattern repeats here?",
-  "Emotional Intelligence": "What feeling or boundary is driving this?",
+  "Emotional Intelligence":
+    "What feeling or boundary is driving this without a sweeping group claim?",
   "Quiet Presence": "What weight needs witnessing, not solving?",
   "Field Operator": "What's the next concrete move?",
   Builder: "What's broken and how do we fix it?",
@@ -44,6 +45,154 @@ export const LENS_INTERNAL_QUESTIONS: Record<string, string> = {
 
 export function lensInternalQuestion(lens: string): string {
   return LENS_INTERNAL_QUESTIONS[lens] || "";
+}
+
+export type ResponseBudget = "low" | "medium" | "high";
+export type TopicMode = "expand" | "compress" | "neutral";
+export type WriteShape = "SNAP" | "KNIFE" | "REFLECTION";
+
+const EXPAND_TOPIC_RE =
+  /\b(in (your|their|my) (20s|30s|40s|50s|60s|70s)|as (you|they|we) get older|get(ting)? older|growing older|aging|mortality|legacy|forgiveness|parenthood|parenting|purpose|meaning of (life|it)|who you are when|end of the chase|looking back|years down the road|invest (your )?youth|what (really )?matters|what changes (when|as|in)|don'?t realize will impact|people in their|something that people|grief|funeral|loss of|passed away|identity|midlife|who am i|failure(s)? (teach|taught|shape)|lasting love|love after|what love (becomes|means))\b/i;
+
+const COMPRESS_TOPIC_RE =
+  /\b(hot take|unpopular opinion|meme|ratio|timeline|cat lady|culture war|woke|feminist|feminism|patriarchy|misogyn|pick[- ]me|loneliness epidemic|singledom|best (burger|fries|pizza|phone|place)|overrated|underrated|easily the best|mcdonald)\b/i;
+
+export function normalizeStructure(structure: string): WriteShape {
+  const s = (structure || "KNIFE").toUpperCase();
+  if (s === "STORY") return "REFLECTION";
+  if (s === "SNAP" || s === "KNIFE" || s === "REFLECTION") return s;
+  return "KNIFE";
+}
+
+export function classifyTopicMode(
+  userMessage: string,
+  domain: ClaimDomain | string = "general"
+): TopicMode {
+  const text = (userMessage || "").trim();
+  if (domain === "grief" || /\b(grief|died|death|funeral|suicide|trauma|abuse)\b/i.test(text)) {
+    return "expand";
+  }
+  if (EXPAND_TOPIC_RE.test(text)) return "expand";
+  if (
+    domain === "taste_preference" ||
+    domain === "preference_claim" ||
+    domain === "consumer_preference" ||
+    domain === "social_power" ||
+    domain === "business"
+  ) {
+    return "compress";
+  }
+  if (COMPRESS_TOPIC_RE.test(text)) return "compress";
+  return "neutral";
+}
+
+/** Depth dimension — topic mode matters more than raw length. */
+export function classifyResponseBudget(
+  userMessage: string,
+  domain: ClaimDomain | string = "general",
+  topicMode?: TopicMode
+): ResponseBudget {
+  const text = (userMessage || "").trim();
+  if (!text) return "medium";
+  const mode = topicMode || classifyTopicMode(userMessage, domain);
+  const wc = text.split(/\s+/).filter(Boolean).length;
+  const sentences = (text.match(/[.!?]+/g) || []).length || (wc ? 1 : 0);
+  const paras = text.split(/\n/).filter((p) => p.trim()).length;
+  const claimCues = (
+    text.match(
+      /\b(because|even though|that's why|the biggest|there's no|the sooner|not because|instead|however|although|women |men |people |it's a projection|the mistake|the moment you|assuming)\b/gi
+    ) || []
+  ).length;
+  const longish =
+    wc >= 160 ||
+    (wc >= 100 && sentences >= 5) ||
+    (wc >= 100 && claimCues >= 4) ||
+    (paras >= 3 && wc >= 80);
+
+  if (mode === "expand") return "high";
+  if (mode === "compress") {
+    if (domain === "taste_preference" && wc <= 55) return "low";
+    if ((domain === "preference_claim" || domain === "consumer_preference") && wc <= 40) {
+      return "low";
+    }
+    if (wc <= 35 && sentences <= 2) return "low";
+    if (longish) return "high";
+    return "medium";
+  }
+  if (longish) return "high";
+  if (wc <= 35 && sentences <= 2) return "low";
+  return "medium";
+}
+
+export function applyBudgetToStructure(
+  preferred: string,
+  budget: ResponseBudget,
+  userMessage = "",
+  domain: ClaimDomain | string = "general",
+  topicMode?: TopicMode
+): WriteShape {
+  const pref = normalizeStructure(preferred);
+  const mode = topicMode || classifyTopicMode(userMessage, domain);
+
+  if (budget === "low") {
+    if (domain === "practical" || domain === "technical") {
+      return pref === "REFLECTION" ? "KNIFE" : pref;
+    }
+    return "SNAP";
+  }
+  if (budget === "medium") return "KNIFE";
+
+  if (mode === "expand") return "REFLECTION";
+  if (
+    /\b(tell me (the )?story|walk me through|what happened|sit (with|down)|talk (to me )?about life)\b/i.test(
+      userMessage
+    )
+  ) {
+    return "REFLECTION";
+  }
+  if (pref === "SNAP") return "KNIFE";
+  if (pref === "REFLECTION" && mode === "compress") return "KNIFE";
+  return mode === "compress" ? "KNIFE" : pref === "SNAP" ? "KNIFE" : pref;
+}
+
+export function responseBudgetGuidance(
+  budget: ResponseBudget,
+  structure = "",
+  topicMode: TopicMode | string = "neutral"
+): string {
+  const shape = normalizeStructure(structure);
+  if (budget === "low" || shape === "SNAP") {
+    return [
+      "RESPONSE BUDGET — Depth: low × Shape: SNAP.",
+      "PURPOSE: Surprise the reader.",
+      "Stop at the spear. Soft ~15–70 words (consequence, not the design).",
+      'PASS: "That\'s like saying prison is just a room."',
+    ].join("\n");
+  }
+  if (shape === "REFLECTION") {
+    return [
+      "RESPONSE BUDGET — Depth: high × Shape: REFLECTION.",
+      "PURPOSE: Leave the reader seeing their own life differently.",
+      "Unique rule: EARN EVERY PARAGRAPH.",
+      "Beats: Observation → Deepening → Consequence → Acceptance.",
+      "Rotate the same diamond. Do not stack metaphors.",
+      "Soft ~250–450 words may follow — length is a consequence.",
+      "Gold still edits. Do not collapse to a tweet.",
+    ].join("\n");
+  }
+  if (budget === "high") {
+    return [
+      "RESPONSE BUDGET — Depth: high × Shape: Extended KNIFE.",
+      "PURPOSE: Develop one mechanism until it feels inevitable.",
+      `Topic mode: ${topicMode || "argument"}. Soft ~100–260 words (consequence).`,
+      "Do NOT flip into lyrical REFLECTION on politics/hot-takes.",
+    ].join("\n");
+  }
+  return [
+    "RESPONSE BUDGET — Depth: medium × Shape: KNIFE.",
+    "PURPOSE: Reframe the reader.",
+    "Stop after the proof. Soft ~50–140 words (consequence).",
+  ].join("\n");
 }
 
 export function classifyClaimDomain(userMessage: string): ClaimDomain {
@@ -58,20 +207,25 @@ export function classifyClaimDomain(userMessage: string): ClaimDomain {
     return "practical";
   }
 
-  const taste = [
-    "mcdonald", "burger", "fries", "pizza", "coffee", "beer", "wine",
-    "restaurant", "taste", "delicious", "food", "sushi", "steak",
-    "dessert", "recipe", "hungry", "eat", "dining", "best place for",
-    "best burger", "best fries", "favorite food", "espresso", "kitchen",
-    "chef", "cuisine", "menu",
-  ];
-  if (taste.some((t) => text.includes(t))) return "taste_preference";
+  // Word-boundary for short tokens — "eat" must not match "threatened"
+  if (
+    /\b(mcdonald|burger|fries|pizza|coffee|beer|wine|restaurant|taste|delicious|food|sushi|steak|dessert|recipe|hungry|eat|dining|espresso|kitchen|chef|cuisine|menu)\b/.test(
+      text
+    ) ||
+    ["best place for", "best burger", "best fries", "favorite food"].some((p) =>
+      text.includes(p)
+    )
+  ) {
+    return "taste_preference";
+  }
 
-  const travel = [
-    "airport", "travel", "flight", "hotel", "passport", "abroad",
-    "backpacking", "tourist", "layover", "hostel", "road trip",
-  ];
-  if (travel.some((t) => text.includes(t))) return "travel";
+  if (
+    /\b(airport|travel|flight|hotel|passport|abroad|backpacking|tourist|layover|hostel|road trip)\b/.test(
+      text
+    )
+  ) {
+    return "travel";
+  }
 
   if (
     /\b(court|evidence|affidavit|testimony|prosecutor|cross[- ]examin|my boss|became distant|suddenly (distant|cold|quiet)|mixed signals from)\b/.test(
@@ -94,11 +248,24 @@ export function classifyClaimDomain(userMessage: string): ClaimDomain {
   ];
   if (consumer.some((t) => text.includes(t))) return "consumer_preference";
 
+  // Projection / threat-as-own-fear → EI before culture-war drawer
+  if (
+    /\b(projection of|projecting|biggest fear|threatening .+ with|threat of .+ (alone|single|lonely))\b/.test(
+      text
+    ) ||
+    (text.includes("threat") &&
+      ["fear", "fears", "afraid", "loneliness", "alone"].some((w) => text.includes(w)))
+  ) {
+    return "emotional";
+  }
+
   const social = [
     "feminist", "feminism", "patriarchy", "pick me", "misogyn",
     "society", "ideology", "woke", "privilege", "oppression",
     "men are", "women are", "gender", "politics", "democrat",
-    "republican", "culture war",
+    "republican", "culture war", "cat lady", "loneliness epidemic",
+    "these men", "men refuse", "women don't", "women aren't",
+    "single men", "singledom",
   ];
   if (social.some((t) => text.includes(t))) return "social_power";
 
@@ -234,7 +401,7 @@ export function selectInterpretiveLens(domain: ClaimDomain): LensBundle {
       primary: "Quiet Presence",
       supporting: "Narrative Weight",
       voice: "Atmospheric Reflection",
-      preferred_structure: "SNAP",
+      preferred_structure: "REFLECTION",
       mechanism_hint: "witness",
     },
     emotional: {
@@ -302,6 +469,7 @@ export function lensVoiceGuidance(lens: string): string {
     return [
       "LENS AUTHENTICITY — Pattern Recognition (way of seeing, not a theme):",
       qLine.trim(),
+      "Prefer the transferable human pattern over winning a demographic argument.",
       "Notices recurring social structures only when present. Common failure: same mechanism every time.",
     ].join("\n");
   }
@@ -309,9 +477,11 @@ export function lensVoiceGuidance(lens: string): string {
     return [
       "LENS AUTHENTICITY — Emotional Intelligence (way of seeing, not a theme):",
       qLine.trim(),
-      "Notices the hidden emotional dynamic — not dating advice, therapy, or validation.",
+      "Begin with people, not groups. Prefer transferable human pattern over demographic universals.",
+      "Guardrail: explain the mechanism without a sweeping claim about men/women as blocs.",
+      'FAIL: "Women built lives with friends… Men built theirs around the woman…"',
+      'PASS: "People only use threats they believe would work on themselves."',
       'PASS: "Everything else is your history trying to sell you a harder story."',
-      "Common failure: therapy-speak.",
     ].join("\n");
   }
   return qLine ? `Ask first: "${q}"` : "";
@@ -329,10 +499,11 @@ export function domainMechanismGuidance(
     "FOUR LAYERS (mandatory — keep independent):",
     "1) Identity / Interpretive lens — way of seeing (what you notice first), not a style theme",
     "2) Intelligence / Capability — what mental tool? (broad buckets)",
-    "3) Writing — SNAP / KNIFE / STORY",
-    "4) Editing — Gold compression only (never picks the lens)",
+    "3) Writing — Depth × Shape (SNAP / KNIFE / REFLECTION)",
+    "4) Editing — Gold compression within budget (density, not universal brevity)",
     "One question: Bourdain=lived notice; Munger=incentive; CIA=what do we know; Hank=human truth; Pattern=what repeats; EI=feeling/boundary.",
     "Gold never decides what Moody thinks. Gold only decides how he says it.",
+    "Knife mode and Reflection mode are both authentic — route explicitly.",
     "Never name the lens in the reply text.",
   ].join("\n");
 

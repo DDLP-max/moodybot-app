@@ -35,7 +35,32 @@ export type GoldShapeReport = {
   whiskey_tail_present: boolean;
   spear_line: string;
   mechanism_mismatch: boolean;
+  response_budget: string;
 };
+
+function normalizeStructureName(structure: string): string {
+  const s = (structure || "KNIFE").toUpperCase();
+  if (s === "STORY") return "REFLECTION";
+  if (s === "SNAP" || s === "KNIFE" || s === "REFLECTION") return s;
+  return "KNIFE";
+}
+
+function budgetSoftCaps(budget: string): {
+  SNAP: number;
+  KNIFE: number;
+  REFLECTION: number;
+  knife_sentences: number;
+  reflection_sentences: number;
+} {
+  const b = (budget || "medium").toLowerCase();
+  if (b === "high") {
+    return { SNAP: 90, KNIFE: 260, REFLECTION: 480, knife_sentences: 10, reflection_sentences: 18 };
+  }
+  if (b === "low") {
+    return { SNAP: 70, KNIFE: 110, REFLECTION: 200, knife_sentences: 5, reflection_sentences: 8 };
+  }
+  return { SNAP: 70, KNIFE: 140, REFLECTION: 320, knife_sentences: 7, reflection_sentences: 12 };
+}
 
 /** Favorite-drawer social mechanism on a non-social prompt — diagnose only. */
 export function detectMechanismMismatch(userMessage: string, draft: string): boolean {
@@ -113,14 +138,26 @@ function isConferenceTalkSentence(sentence: string): boolean {
   return false;
 }
 
-export function selectStructure(userMessage: string, draft: string): string {
+export function selectStructure(userMessage: string, draft: string, preferred?: string): string {
   const wc = words(draft).length;
   const ss = sentences(draft);
   const paras = (draft || "").split("\n").filter((p) => p.trim());
-  const narrative = /\b(for (example|instance)|seasons?|years?|proof|daenerys|she |he |they )\b/i.test(draft);
+  const pref = preferred ? normalizeStructureName(preferred) : "";
+  const contemplative =
+    /\b(for (example|instance)|seasons?|years?|proof|daenerys|she |he |they |sneaks up|whisper|chase ends)\b/i.test(
+      draft
+    );
+  if (pref === "REFLECTION") return "REFLECTION";
   if (wc <= 45 && ss.length <= 2) return "SNAP";
-  if (paras.length >= 3 || (narrative && (wc >= 70 || ss.length >= 4))) return "STORY";
-  if (/\b(tell me (the )?story|walk me through|what happened)\b/i.test(userMessage)) return "STORY";
+  if (
+    paras.length >= 3 ||
+    (contemplative && (wc >= 120 || ss.length >= 5)) ||
+    /\b(tell me (the )?story|walk me through|get older|in (your|their) \d|purpose|legacy|mortality)\b/i.test(
+      userMessage
+    )
+  ) {
+    return "REFLECTION";
+  }
   return "KNIFE";
 }
 
@@ -151,11 +188,20 @@ function detectSpear(ss: string[]): { ok: boolean; line: string; index: number }
   return ss.length ? { ok: true, line: ss[ss.length - 1], index: ss.length - 1 } : { ok: false, line: "", index: -1 };
 }
 
-export function evaluateGoldShape(userMessage: string, draft: string, structure: string): string[] {
+export function evaluateGoldShape(
+  userMessage: string,
+  draft: string,
+  structure: string,
+  responseBudget = "medium"
+): string[] {
   const failures: string[] = [];
   const body = stripWhiskey(draft);
   const ss = sentences(body);
   const wc = words(body).length;
+  structure = normalizeStructureName(structure);
+  const caps = budgetSoftCaps(responseBudget);
+  const high = (responseBudget || "").toLowerCase() === "high";
+  const reflection = structure === "REFLECTION";
   if (!ss.length) return ["empty"];
 
   let restated = 0;
@@ -168,7 +214,10 @@ export function evaluateGoldShape(userMessage: string, draft: string, structure:
 
   const essayHits = (body.match(ESSAY_NOUNS) || []).length;
   if (essayHits >= 3) failures.push("essay_diction");
-  if (essayHits >= 2 && (structure === "SNAP" || structure === "KNIFE")) failures.push("multi_mechanism_essay");
+  const essayThreshold = high || reflection ? 3 : 2;
+  if (essayHits >= essayThreshold && (structure === "SNAP" || structure === "KNIFE")) {
+    failures.push("multi_mechanism_essay");
+  }
 
   let dupPairs = 0;
   for (let i = 0; i < ss.length - 1; i++) {
@@ -178,9 +227,14 @@ export function evaluateGoldShape(userMessage: string, draft: string, structure:
 
   const spear = detectSpear(ss);
   if (!spear.ok) failures.push("no_spear");
-  else if (spear.index >= 0 && spear.index < ss.length - 1 && structure !== "STORY") {
+  else if (spear.index >= 0 && spear.index < ss.length - 1) {
     const after = ss.slice(spear.index + 1);
-    if (spear.index <= 1) {
+    if (reflection || high) {
+      const trailing = after.length > 3 ? after.slice(-2) : [];
+      if (trailing.length && trailing.every((a) => overlapRatio(a, spear.line) >= 0.55)) {
+        failures.push("post_payoff_drift");
+      }
+    } else if (spear.index <= 1) {
       const restaty = after.filter((a) => overlapRatio(a, spear.line) >= 0.6).length;
       if (restaty >= 2) failures.push("post_payoff_drift");
     } else if (after.length >= 2) {
@@ -190,7 +244,7 @@ export function evaluateGoldShape(userMessage: string, draft: string, structure:
   }
 
   const likeCount = (body.match(LIKE_A) || []).length;
-  if (likeCount >= 2) failures.push("stacked_metaphor");
+  if (likeCount >= (high || reflection ? 3 : 2)) failures.push("stacked_metaphor");
   if (CTA_TAIL.test(body)) failures.push("cta_or_costume_tail");
   if (isConferenceTalkSentence(ss[ss.length - 1])) {
     failures.push("abstract_closer");
@@ -198,13 +252,25 @@ export function evaluateGoldShape(userMessage: string, draft: string, structure:
   if (detectMechanismMismatch(userMessage, body)) {
     failures.push("mechanism_mismatch");
   }
-  if (structure === "SNAP" && wc > 70) failures.push("snap_overlong");
-  if (structure === "KNIFE" && wc > 140) failures.push("knife_overlong");
-  if (structure === "KNIFE" && ss.length > 7) failures.push("knife_too_many_sentences");
+  if (structure === "SNAP" && wc > caps.SNAP) failures.push("snap_overlong");
+  if (structure === "KNIFE" && wc > caps.KNIFE) failures.push("knife_overlong");
+  if (structure === "KNIFE" && ss.length > caps.knife_sentences) {
+    failures.push("knife_too_many_sentences");
+  }
+  if (structure === "REFLECTION" && wc > caps.REFLECTION) failures.push("reflection_overlong");
+  if (structure === "REFLECTION" && ss.length > caps.reflection_sentences) {
+    failures.push("reflection_too_many_sentences");
+  }
   return failures;
 }
 
-function compressOnce(userMessage: string, draft: string, structure: string, failures: string[]): string {
+function compressOnce(
+  userMessage: string,
+  draft: string,
+  structure: string,
+  failures: string[],
+  responseBudget = "medium"
+): string {
   let ss = sentences(stripWhiskey(draft));
   if (!ss.length) return draft;
 
@@ -243,9 +309,14 @@ function compressOnce(userMessage: string, draft: string, structure: string, fai
     });
   }
 
+  structure = normalizeStructureName(structure);
+  const high = (responseBudget || "").toLowerCase() === "high";
+  const reflection = structure === "REFLECTION";
   if (
     failures.includes("post_payoff_drift") &&
-    (structure === "SNAP" || structure === "KNIFE")
+    (structure === "SNAP" || structure === "KNIFE") &&
+    !high &&
+    !reflection
   ) {
     const spear = detectSpear(ss);
     if (spear.ok && spear.index >= 0) {
@@ -277,9 +348,13 @@ function compressOnce(userMessage: string, draft: string, structure: string, fai
 export function applyGoldShapePass(
   userMessage: string,
   draft: string,
-  structure?: string
+  structure?: string,
+  responseBudget = "medium"
 ): { text: string; report: GoldShapeReport } {
-  const selected = structure || selectStructure(userMessage, draft);
+  const budget = (responseBudget || "medium").toLowerCase();
+  let selected = normalizeStructureName(structure || selectStructure(userMessage, draft, structure));
+  if (structure) selected = normalizeStructureName(structure);
+  if (budget === "high" && selected === "SNAP") selected = "KNIFE";
   let body = stripWhiskey(draft);
   const report: GoldShapeReport = {
     selected_structure: selected,
@@ -293,9 +368,10 @@ export function applyGoldShapePass(
     whiskey_tail_present: false,
     spear_line: "",
     mechanism_mismatch: false,
+    response_budget: budget,
   };
 
-  const failures = evaluateGoldShape(userMessage, body, selected);
+  const failures = evaluateGoldShape(userMessage, body, selected, budget);
   report.quality_failures = failures;
   report.mechanism_mismatch = failures.includes("mechanism_mismatch");
   // mechanism_mismatch is diagnostic only — do not invent a better insight here.
@@ -309,15 +385,17 @@ export function applyGoldShapePass(
     "knife_overlong",
     "snap_overlong",
     "knife_too_many_sentences",
+    "reflection_overlong",
+    "reflection_too_many_sentences",
     "essay_diction",
     "abstract_closer",
   ]);
   if (failures.some((f) => triggers.has(f))) {
-    const compressed = compressOnce(userMessage, body, selected, failures);
+    const compressed = compressOnce(userMessage, body, selected, failures, budget);
     if (stripWhiskey(compressed)) {
       report.quality_rewrite_triggered = true;
       body = stripWhiskey(compressed);
-      report.quality_failures = evaluateGoldShape(userMessage, body, selected);
+      report.quality_failures = evaluateGoldShape(userMessage, body, selected, budget);
       report.mechanism_mismatch = report.quality_failures.includes("mechanism_mismatch");
     }
   }
@@ -344,5 +422,6 @@ export function goldShapeDiagnostics(report: GoldShapeReport): Record<string, st
     spear_line: (report.spear_line || "").slice(0, 240),
     whiskey_tail_present: String(report.whiskey_tail_present),
     mechanism_mismatch: String(report.mechanism_mismatch),
+    response_budget: report.response_budget || "medium",
   };
 }

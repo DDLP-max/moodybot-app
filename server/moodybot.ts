@@ -14,9 +14,13 @@ import {
   postProcessMoodyResponse,
 } from "../utils/moodybotPostProcess";
 import {
+  applyBudgetToStructure,
   classifyClaimDomain,
+  classifyResponseBudget,
+  classifyTopicMode,
   domainMechanismGuidance,
   lensInternalQuestion,
+  responseBudgetGuidance,
   selectInterpretiveLens,
 } from "../utils/claimDomain";
 import { appendToTextLog } from "./logger";
@@ -124,6 +128,15 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
   const structurePrompt = shouldAutoSelect ? undefined : getStructurePrompt(selectedMode);
   const claimDomain = classifyClaimDomain(userMessage);
   const lensBundle = selectInterpretiveLens(claimDomain);
+  const topicMode = classifyTopicMode(userMessage, claimDomain);
+  const responseBudget = classifyResponseBudget(userMessage, claimDomain, topicMode);
+  const preferredStructure = applyBudgetToStructure(
+    lensBundle.preferred_structure,
+    responseBudget,
+    userMessage,
+    claimDomain,
+    topicMode
+  );
   const mechanismFit = domainMechanismGuidance(
     claimDomain,
     lensBundle.lens,
@@ -134,7 +147,9 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
     `claim_domain = "${claimDomain}"`,
     `interpretive_lens = "${lensBundle.lens}"`,
     `primary_capability = "${lensBundle.primary}"`,
-    `preferred_structure = "${lensBundle.preferred_structure}"`,
+    `topic_mode = "${topicMode}"`,
+    `response_budget = "${responseBudget}"`,
+    `preferred_structure = "${preferredStructure}"`,
     `mechanism_hint = "${lensBundle.mechanism_hint}"`,
     lensInternalQuestion(lensBundle.lens)
       ? `lens_question = "${lensInternalQuestion(lensBundle.lens)}"`
@@ -142,8 +157,9 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
     `lens_persistence = "routing_only"`,
     shouldAutoSelect ? `emotional_calibration = "${selectedMode}"` : null,
     shouldAutoSelect
-      ? `Instructions: Dynamic Mode — four layers: Identity (way of seeing) → Intelligence (broad capability) → Writing (SNAP/KNIFE/STORY) → Editing (Gold only). Ask the lens question first. Food → Bourdain observation not psych labels. Gold never picks the lens. Identify ONE governing pattern, prove only that thesis. THINK abstractly; SPEAK concretely. Do not expose lens names. Stop when it lands. Tone may lean ${selectedMode} naturally; no poetic closer.`
-      : `Instructions: Respond in ${selectedMode} mode. Interpretive lens → capability → mechanism → ordinary language → prove that thesis only. Stop when it lands.`,
+      ? `Instructions: Dynamic Mode — Identity → Intelligence → Depth×Shape (SNAP/KNIFE/REFLECTION) → Gold within budget. Existential/aging/grief → REFLECTION (~250–450). Food/hot takes → SNAP. Ask the lens question first. Gold never picks the lens. ONE thesis; develop enough for the depth. Do not expose lens names. Stop when it lands. Tone may lean ${selectedMode} naturally; no poetic closer.`
+      : `Instructions: Respond in ${selectedMode} mode. Interpretive lens → capability → mechanism → Depth×Shape → ordinary language → prove that thesis only. Stop when it lands.`,
+    responseBudgetGuidance(responseBudget, preferredStructure, topicMode),
     mechanismFit,
     `Output: Plain conversational text only. No JSON. No code fences. No mandatory Signature Line, callback, or CTA. No consultant/engine jargon in prose. Never name the lens.`
   ].filter(Boolean).join("\n");
