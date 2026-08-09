@@ -103,6 +103,9 @@ function testWriteDirectiveRequiresProofNotRecap() {
   assert.ok(lower.includes("incentive structure"));
   assert.ok(lower.includes("narrative contract"));
   assert.ok(lower.includes("making a move"));
+  assert.ok(lower.includes("trust the reader"));
+  assert.ok(lower.includes("prove it once"));
+  assert.ok(lower.includes("new understanding"));
 }
 
 function testFinalizerDoesNotRewriteAbstractDiction() {
