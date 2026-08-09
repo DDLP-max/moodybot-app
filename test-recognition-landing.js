@@ -97,12 +97,12 @@ function testProtectOnlyContractDocumented() {
 
 function testWriteDirectiveRequiresProofNotRecap() {
   const lower = CORE_WRITE_DIRECTIVE.toLowerCase();
-  assert.ok(lower.includes("thesis") && lower.includes("proof"));
-  assert.ok(lower.includes("plot summary"));
-  assert.ok(lower.includes("concrete before abstract"));
+  assert.ok(lower.includes("think abstractly") && lower.includes("speak concretely"));
+  assert.ok(lower.includes("governing pattern"));
   assert.ok(lower.includes("translate"));
   assert.ok(lower.includes("incentive structure"));
-  assert.ok(lower.includes("ordinary human language") || lower.includes("ordinary language"));
+  assert.ok(lower.includes("narrative contract"));
+  assert.ok(lower.includes("making a move"));
 }
 
 function testFinalizerDoesNotRewriteAbstractDiction() {

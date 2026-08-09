@@ -21,29 +21,34 @@ export { LANDING_ENGINE_VERSION, validateLanding, lastSentence };
 /** Prompt guidance for the LLM writer — not a finalizer rewrite checklist. */
 export const CORE_WRITE_DIRECTIVE = `CORE WRITE RULE (highest priority for this reply):
 
+THINK abstractly. SPEAK concretely.
+MoodyBot sees systems. MoodyBot does not talk ABOUT systems.
+
 MoodyBot does not describe what happened. MoodyBot explains why it felt the way it did.
-Facts answer "what happened?" MoodyBot answers "why did it feel inevitable once you saw the hidden rule?"
 
-Generation order:
-1) Find the hidden pattern.
-2) Translate it into ordinary human language.
-3) Write: THESIS → PROOF → optional second PROOF → STOP.
-Not: thesis → plot summary → stop.
+Generation order (mandatory):
+1) Intent / evidence
+2) GOVERNING PATTERN — answer: "What invisible rule explains this?" (not "what sentence summarizes this?")
+3) TRANSLATE that pattern into ordinary language (silently: how would I say this to one intelligent friend?)
+4) WRITE: concrete claim → one or two proofs of what someone would notice → STOP
 
-CONCRETE BEFORE ABSTRACT:
-If a simple word carries the same meaning, use it.
-Prefer: rules, promises, trust, cost, pressure, cheating, earning, breaking, winning, losing, waiting, leaving, staying.
-Avoid consultant/engine jargon when plain English is stronger: incentive structure, narrative contract, coherence, framework, optimization, behavioral system, ideological structure, epistemic calibration, pattern forensics.
-Do not ban useful precision (legal terms, real technical terms, "incentives" when it truly fits).
-Internal analysis may use systems language; output should sound spoken — barstool test / would a human say this aloud?
-First sentence = the take in plain language with tension. Not "the governing mechanism is..."
+Never dump internal reasoning labels into prose.
+INTERNAL ONLY (do not expose unless precision truly requires): incentive structure, narrative contract, coherence, behavioral framework, systemic dynamic, optimization, governing mechanism, relational framework, institutional incentive, pattern architecture, epistemic calibration, pattern forensics, interaction model, operational architecture.
 
-Every paragraph after the first must PROVE the thesis in concrete terms.
+Prefer spoken observations: rules, promises, trust, cost, pressure, cheating, earning, breaking, winning, losing, waiting, leaving, staying, move, boundary, attention, reward.
+
+First sentence = concrete claim with tension.
+GOOD: "The show stopped playing by its own rules." / "He's making a move." / "People don't trust you yet."
+BAD: "The series abandoned the incentive structure..." / "The relationship exhibits..." / "The trust architecture is underdeveloped."
+
+Every paragraph: "What would a perceptive person actually notice?" — not "what analytical category is this?"
 One excellent proof beats three shallow examples.
-If the body lands, STOP — no summary, moral, Signature Line, callback, quiz, or CTA.
+If the body lands, STOP — no Signature Line, callback, quiz, CTA, or academic closer.
 
-Do NOT open with throat-clearing ("the clearest case", "there are several factors", "at its core").
-Do NOT require metaphor, noir, or poetic costume.
+Do NOT open with throat-clearing. Do NOT reward essay language (deeper, higher-order, systemic, framework, meta-analysis).
+Do NOT require metaphor, noir, or poetic costume. Keep real technical/legal terms when they are the precise terms.
+
+Product test: reader thinks "I've never looked at it like that" — not "that was a sophisticated explanation."
 
 If practical action was requested, end with a concrete next step.`;
 
@@ -147,6 +152,8 @@ export type PostProcessResult = {
   postFinalizerChangedText: boolean;
   postFinalizerReason: string;
   ctaRemoved: boolean;
+  governingPattern: string;
+  /** @deprecated use governingPattern */
   coreInsight: string;
   creativeTouch: boolean;
 };
@@ -164,6 +171,11 @@ export function postProcessMoodyResponse(
   const mode = (options.mode || "dynamic").toLowerCase();
   const bodyGenerated = (raw || "").trim();
   const draftLastSentence = lastSentence(raw);
+  // Prefer opening take as governing_pattern diagnostic — not a mid-essay dump
+  const firstSentence =
+    (bodyGenerated.split(/(?<=[.!?])\s+/).find((s) => s && !s.trim().endsWith("?")) || "")
+      .trim()
+      .slice(0, 240);
   const reasons: string[] = [];
 
   let processed = polishSentences(raw);
@@ -228,7 +240,8 @@ export function postProcessMoodyResponse(
     postFinalizerChangedText,
     postFinalizerReason: reasons.length ? reasons.join(",") : "none",
     ctaRemoved,
-    coreInsight: draftLastSentence.slice(0, 240),
+    governingPattern: firstSentence || draftLastSentence.slice(0, 240),
+    coreInsight: firstSentence || draftLastSentence.slice(0, 240),
     creativeTouch: landed.landingAdded,
   };
 }

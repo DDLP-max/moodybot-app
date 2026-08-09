@@ -120,9 +120,9 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
     `mode = "${activeMode}"`,
     shouldAutoSelect ? `emotional_calibration = "${selectedMode}"` : null,
     shouldAutoSelect
-      ? `Instructions: Dynamic Mode — find the hidden pattern, translate it into ordinary human language, then write. Lead with a spoken take. Concrete before abstract. Use only enough evidence to prove it. Stop when it lands. Tone may lean ${selectedMode} naturally; do not perform a poetic closer.`
-      : `Instructions: Respond in ${selectedMode} mode. Insight first, concrete before abstract. Stop when the answer lands.`,
-    `Output: Plain conversational text only. No JSON. No code fences. No mandatory Signature Line, callback, or CTA. No consultant jargon when plain English is stronger.`
+      ? `Instructions: Dynamic Mode — identify the governing pattern (invisible rule), translate it into ordinary language, then write what a perceptive person would notice. THINK abstractly; SPEAK concretely. Do not expose analysis labels (incentive structure, narrative contract, coherence). Stop when it lands. Tone may lean ${selectedMode} naturally; no poetic closer.`
+      : `Instructions: Respond in ${selectedMode} mode. Governing pattern → ordinary language → write. Stop when it lands.`,
+    `Output: Plain conversational text only. No JSON. No code fences. No mandatory Signature Line, callback, or CTA. No consultant/engine jargon in prose.`
   ].filter(Boolean).join("\n");
 
   const messages: ChatCompletionMessageParam[] = [];
@@ -221,7 +221,8 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
       generation_function: "generateChatResponse",
       landing_engine_version: LANDING_ENGINE_VERSION,
       landing: processed.landing,
-      core_insight: processed.coreInsight,
+      governing_pattern: processed.governingPattern,
+      core_insight: processed.governingPattern, // deprecated alias
       body_generated: draftLast,
       post_finalizer_changed_text: String(processed.postFinalizerChangedText),
       post_finalizer_reason: processed.postFinalizerReason,
