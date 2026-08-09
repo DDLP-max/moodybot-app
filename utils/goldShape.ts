@@ -25,6 +25,9 @@ const SPEAR_MARKERS =
 
 export type GoldShapeReport = {
   selected_structure: string;
+  routing_structure: string;
+  generation_recommendation: string;
+  structure_override: boolean;
   premise_relocated: boolean;
   dominant_mechanism_count: number;
   draft_word_count: number;
@@ -38,11 +41,19 @@ export type GoldShapeReport = {
   response_budget: string;
 };
 
-function normalizeStructureName(structure: string): string {
-  const s = (structure || "KNIFE").toUpperCase();
+export function normalizeStructureName(structure: string): string {
+  const s = (structure || "KNIFE").toUpperCase().trim().replace(/_/g, " ");
   if (s === "STORY") return "REFLECTION";
+  if (s === "EXTENDED KNIFE" || s === "EXTENDEDKNIFE") return "KNIFE";
   if (s === "SNAP" || s === "KNIFE" || s === "REFLECTION") return s;
   return "KNIFE";
+}
+
+/** high × KNIFE → Extended KNIFE (Depth × Shape product name). */
+export function writingShapeLabel(structure: string, responseBudget = "medium"): string {
+  const s = normalizeStructureName(structure);
+  if (s === "KNIFE" && (responseBudget || "").toLowerCase() === "high") return "Extended KNIFE";
+  return s;
 }
 
 function budgetSoftCaps(budget: string): {
@@ -138,26 +149,23 @@ function isConferenceTalkSentence(sentence: string): boolean {
   return false;
 }
 
+/** Recommendation only — routing owns structure. Paragraph count ≠ REFLECTION. */
 export function selectStructure(userMessage: string, draft: string, preferred?: string): string {
   const wc = words(draft).length;
   const ss = sentences(draft);
-  const paras = (draft || "").split("\n").filter((p) => p.trim());
   const pref = preferred ? normalizeStructureName(preferred) : "";
   const contemplative =
-    /\b(for (example|instance)|seasons?|years?|proof|daenerys|she |he |they |sneaks up|whisper|chase ends)\b/i.test(
+    /\b(for (example|instance)|seasons?|sneaks up|whisper|chase ends|get older|purpose|legacy|mortality)\b/i.test(
       draft
     );
-  if (pref === "REFLECTION") return "REFLECTION";
-  if (wc <= 45 && ss.length <= 2) return "SNAP";
-  if (
-    paras.length >= 3 ||
-    (contemplative && (wc >= 120 || ss.length >= 5)) ||
-    /\b(tell me (the )?story|walk me through|get older|in (your|their) \d|purpose|legacy|mortality)\b/i.test(
+  const wantsReflection =
+    /\b(tell me (the )?story|walk me through|get older|in (your|their) \d|purpose|legacy|mortality|grief|forgive)\b/i.test(
       userMessage
-    )
-  ) {
-    return "REFLECTION";
-  }
+    );
+  if (wantsReflection) return "REFLECTION";
+  if (contemplative && (wc >= 160 || ss.length >= 7)) return "REFLECTION";
+  if (wc <= 45 && ss.length <= 2) return "SNAP";
+  if (pref === "SNAP" || pref === "KNIFE" || pref === "REFLECTION") return pref;
   return "KNIFE";
 }
 
@@ -434,12 +442,19 @@ export function applyGoldShapePass(
   responseBudget = "medium"
 ): { text: string; report: GoldShapeReport } {
   const budget = (responseBudget || "medium").toLowerCase();
-  let selected = normalizeStructureName(structure || selectStructure(userMessage, draft, structure));
-  if (structure) selected = normalizeStructureName(structure);
-  if (budget === "high" && selected === "SNAP") selected = "KNIFE";
+  const preferred = structure ? normalizeStructureName(structure) : "";
+  const recommendation = selectStructure(userMessage, draft, structure);
+  // Structure persistence: routing owns the shape. Recommendation is log-only.
+  const editorStructure = preferred || recommendation;
+  const selectedLabel = writingShapeLabel(editorStructure, budget);
+  const routingLabel = writingShapeLabel(preferred || editorStructure, budget);
+  const recommendationLabel = writingShapeLabel(recommendation, budget);
   let body = stripWhiskey(draft);
   const report: GoldShapeReport = {
-    selected_structure: selected,
+    selected_structure: selectedLabel,
+    routing_structure: routingLabel,
+    generation_recommendation: recommendationLabel,
+    structure_override: false,
     premise_relocated: false,
     dominant_mechanism_count: 1,
     draft_word_count: words(body).length,
@@ -453,7 +468,7 @@ export function applyGoldShapePass(
     response_budget: budget,
   };
 
-  const failures = evaluateGoldShape(userMessage, body, selected, budget);
+  const failures = evaluateGoldShape(userMessage, body, editorStructure, budget);
   report.quality_failures = failures;
   report.mechanism_mismatch = failures.includes("mechanism_mismatch");
   // mechanism_mismatch is diagnostic only — do not invent a better insight here.
@@ -475,11 +490,11 @@ export function applyGoldShapePass(
     "abstract_closer",
   ]);
   if (failures.some((f) => triggers.has(f))) {
-    const compressed = compressOnce(userMessage, body, selected, failures, budget);
+    const compressed = compressOnce(userMessage, body, editorStructure, failures, budget);
     if (stripWhiskey(compressed)) {
       report.quality_rewrite_triggered = true;
       body = stripWhiskey(compressed);
-      report.quality_failures = evaluateGoldShape(userMessage, body, selected, budget);
+      report.quality_failures = evaluateGoldShape(userMessage, body, editorStructure, budget);
       report.mechanism_mismatch = report.quality_failures.includes("mechanism_mismatch");
     }
   }
@@ -496,6 +511,10 @@ export function goldShapeDiagnostics(report: GoldShapeReport): Record<string, st
   return {
     gold_shape_version: GOLD_SHAPE_VERSION,
     selected_structure: report.selected_structure,
+    routing_structure: report.routing_structure || report.selected_structure,
+    generation_recommendation: report.generation_recommendation || "",
+    structure_override: String(report.structure_override),
+    structure_persistence: "routing_only",
     premise_relocated: String(report.premise_relocated),
     dominant_mechanism_count: String(report.dominant_mechanism_count),
     draft_word_count: String(report.draft_word_count),

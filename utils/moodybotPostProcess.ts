@@ -267,7 +267,13 @@ export type PostProcessResult = {
 export function postProcessMoodyResponse(
   raw: string,
   userMessage: string = "",
-  options: { mode?: string; appendRandomCta?: boolean; applyPersonaCostume?: boolean } = {}
+  options: {
+    mode?: string;
+    appendRandomCta?: boolean;
+    applyPersonaCostume?: boolean;
+    preferredStructure?: string;
+    responseBudget?: string;
+  } = {}
 ): PostProcessResult {
   const mode = (options.mode || "dynamic").toLowerCase();
   const bodyGenerated = (raw || "").trim();
@@ -291,11 +297,16 @@ export function postProcessMoodyResponse(
   if (landed.modified) reasons.push("malformed_closer_stripped");
   if (landed.landingAdded) reasons.push("landing_added");
 
-  const responseBudget = classifyResponseBudget(
+  const domain = classifyClaimDomain(userMessage);
+  const responseBudget =
+    options.responseBudget || classifyResponseBudget(userMessage, domain);
+  const preferredStructure = options.preferredStructure || undefined;
+  const gold = applyGoldShapePass(
     userMessage,
-    classifyClaimDomain(userMessage)
+    processed,
+    preferredStructure,
+    responseBudget
   );
-  const gold = applyGoldShapePass(userMessage, processed, undefined, responseBudget);
   processed = gold.text;
   if (gold.report.quality_rewrite_triggered) reasons.push("gold_shape_compress");
 

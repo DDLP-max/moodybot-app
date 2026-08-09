@@ -150,11 +150,13 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
     `topic_mode = "${topicMode}"`,
     `response_budget = "${responseBudget}"`,
     `preferred_structure = "${preferredStructure}"`,
+    `routing_structure = "${preferredStructure === "KNIFE" && responseBudget === "high" ? "Extended KNIFE" : preferredStructure}"`,
     `mechanism_hint = "${lensBundle.mechanism_hint}"`,
     lensInternalQuestion(lensBundle.lens)
       ? `lens_question = "${lensInternalQuestion(lensBundle.lens)}"`
       : null,
     `lens_persistence = "routing_only"`,
+    `structure_persistence = "routing_only"`,
     shouldAutoSelect ? `emotional_calibration = "${selectedMode}"` : null,
     shouldAutoSelect
       ? `Instructions: Dynamic Mode — Identity → Intelligence → Depth×Shape (SNAP/KNIFE/REFLECTION) → Gold within budget. Existential/aging/grief → REFLECTION (~250–450). Food/hot takes → SNAP. Ask the lens question first. Gold never picks the lens. ONE thesis; develop enough for the depth. Do not expose lens names. Stop when it lands. Tone may lean ${selectedMode} naturally; no poetic closer.`
@@ -246,6 +248,8 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
   const processed = postProcessMoodyResponse(aiRaw, userMessage, {
     mode: activeMode,
     appendRandomCta: false,
+    preferredStructure,
+    responseBudget,
   });
   const finalReply = processed.text;
   const finalLast = lastSentence(finalReply);
