@@ -102,6 +102,14 @@ export function classifyClaimDomain(userMessage: string): ClaimDomain {
   ];
   if (social.some((t) => text.includes(t))) return "social_power";
 
+  if (
+    /\b(right person|guessing games|obsessed with you|really into you|shouldn'?t be this easy|waiting for a text|fake people|no guessing|when someone is really into)\b/.test(
+      text
+    )
+  ) {
+    return "emotional";
+  }
+
   const relationship = [
     "girlfriend", "boyfriend", "wife", "husband", "ex ", "dating",
     "relationship", "she said", "he said", "marriage", "cheat",
@@ -301,7 +309,9 @@ export function lensVoiceGuidance(lens: string): string {
     return [
       "LENS AUTHENTICITY — Emotional Intelligence (way of seeing, not a theme):",
       qLine.trim(),
-      "Notices feeling/boundary in plain language. Common failure: therapy-speak.",
+      "Notices the hidden emotional dynamic — not dating advice, therapy, or validation.",
+      'PASS: "Everything else is your history trying to sell you a harder story."',
+      "Common failure: therapy-speak.",
     ].join("\n");
   }
   return qLine ? `Ask first: "${q}"` : "";
