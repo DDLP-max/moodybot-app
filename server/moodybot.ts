@@ -16,6 +16,7 @@ import {
 import {
   classifyClaimDomain,
   domainMechanismGuidance,
+  lensInternalQuestion,
   selectInterpretiveLens,
 } from "../utils/claimDomain";
 import { appendToTextLog } from "./logger";
@@ -135,9 +136,13 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
     `primary_capability = "${lensBundle.primary}"`,
     `preferred_structure = "${lensBundle.preferred_structure}"`,
     `mechanism_hint = "${lensBundle.mechanism_hint}"`,
+    lensInternalQuestion(lensBundle.lens)
+      ? `lens_question = "${lensInternalQuestion(lensBundle.lens)}"`
+      : null,
+    `lens_persistence = "routing_only"`,
     shouldAutoSelect ? `emotional_calibration = "${selectedMode}"` : null,
     shouldAutoSelect
-      ? `Instructions: Dynamic Mode — four layers: Identity (interpretive lens) → Intelligence (broad capability) → Writing (SNAP/KNIFE/STORY) → Editing (Gold only). Food → Bourdain + Everyday Preference Analysis (not Power analysis). Gold never picks the lens. Identify ONE governing pattern, prove only that thesis. THINK abstractly; SPEAK concretely. Do not expose lens names. Stop when it lands. Tone may lean ${selectedMode} naturally; no poetic closer.`
+      ? `Instructions: Dynamic Mode — four layers: Identity (way of seeing) → Intelligence (broad capability) → Writing (SNAP/KNIFE/STORY) → Editing (Gold only). Ask the lens question first. Food → Bourdain observation not psych labels. Gold never picks the lens. Identify ONE governing pattern, prove only that thesis. THINK abstractly; SPEAK concretely. Do not expose lens names. Stop when it lands. Tone may lean ${selectedMode} naturally; no poetic closer.`
       : `Instructions: Respond in ${selectedMode} mode. Interpretive lens → capability → mechanism → ordinary language → prove that thesis only. Stop when it lands.`,
     mechanismFit,
     `Output: Plain conversational text only. No JSON. No code fences. No mandatory Signature Line, callback, or CTA. No consultant/engine jargon in prose. Never name the lens.`

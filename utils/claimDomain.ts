@@ -1,5 +1,6 @@
 /**
  * Perspective selection (interpretive lens) + broad capability routing.
+ * Lenses are ways of seeing (what they notice first), not style themes.
  * Internally: "Whose eyes should Moody borrow?"
  * Gold never picks the lens — Gold only compresses.
  */
@@ -17,6 +18,7 @@ export type ClaimDomain =
   | "cultural_insight"
   | "business"
   | "court"
+  | "emotional"
   | "general";
 
 export type LensBundle = {
@@ -27,6 +29,22 @@ export type LensBundle = {
   preferred_structure: "SNAP" | "KNIFE" | "STORY";
   mechanism_hint: string;
 };
+
+export const LENS_INTERNAL_QUESTIONS: Record<string, string> = {
+  Bourdain: "What would someone who's lived this notice?",
+  Munger: "What's the incentive?",
+  CIA: "What do we actually know?",
+  "Hank Moody": "What's the human truth nobody wants to admit?",
+  "Pattern Recognition": "What pattern repeats here?",
+  "Emotional Intelligence": "What feeling or boundary is driving this?",
+  "Quiet Presence": "What weight needs witnessing, not solving?",
+  "Field Operator": "What's the next concrete move?",
+  Builder: "What's broken and how do we fix it?",
+};
+
+export function lensInternalQuestion(lens: string): string {
+  return LENS_INTERNAL_QUESTIONS[lens] || "";
+}
 
 export function classifyClaimDomain(userMessage: string): ClaimDomain {
   const text = (userMessage || "").toLowerCase();
@@ -55,11 +73,15 @@ export function classifyClaimDomain(userMessage: string): ClaimDomain {
   ];
   if (travel.some((t) => text.includes(t))) return "travel";
 
-  if (/\b(court|evidence|affidavit|testimony|prosecutor|cross[- ]examin)\b/.test(text)) {
+  if (
+    /\b(court|evidence|affidavit|testimony|prosecutor|cross[- ]examin|my boss|became distant|suddenly (distant|cold|quiet)|mixed signals from)\b/.test(
+      text
+    )
+  ) {
     return "court";
   }
   if (
-    /\b(business|invest|roi|startup|market share|portfolio|acquisition|promotion|salary|tradeoff|trade-off|opportunity cost)\b/.test(
+    /\b(business|invest|roi|startup|market share|portfolio|acquisition|promotion|salary|tradeoff|trade-off|opportunity cost|ferrari|impress clients|to impress|closes deals)\b/.test(
       text
     )
   ) {
@@ -84,7 +106,8 @@ export function classifyClaimDomain(userMessage: string): ClaimDomain {
     "girlfriend", "boyfriend", "wife", "husband", "ex ", "dating",
     "relationship", "she said", "he said", "marriage", "cheat",
     "situationship", "texted", "left me", "my friend", "friend only",
-    "only texts", "friendship", "best friend", "affection",
+    "only texts", "friendship", "best friend", "affection", "divorce",
+    "divorced",
   ];
   if (relationship.some((t) => text.includes(t))) return "relationship";
 
@@ -94,6 +117,14 @@ export function classifyClaimDomain(userMessage: string): ClaimDomain {
 
   if (/\b(best|worst|greatest|easily the|overrated|underrated)\b/.test(text)) {
     return "preference_claim";
+  }
+
+  if (
+    /\b(i feel|i'm feeling|feeling |anxious|overwhelmed|my boundary|boundaries|hurt that|scared that|i'm scared|emotionally)\b/.test(
+      text
+    )
+  ) {
+    return "emotional";
   }
 
   return "general";
@@ -151,7 +182,7 @@ export function selectInterpretiveLens(domain: ClaimDomain): LensBundle {
       mechanism_hint: "evidence_vs_inference",
     },
     social_power: {
-      lens: "Noir Detective",
+      lens: "Pattern Recognition",
       primary: "Power / Incentive Analysis",
       supporting: "Pattern Forensics",
       voice: "Hardboiled Observation",
@@ -198,6 +229,14 @@ export function selectInterpretiveLens(domain: ClaimDomain): LensBundle {
       preferred_structure: "SNAP",
       mechanism_hint: "witness",
     },
+    emotional: {
+      lens: "Emotional Intelligence",
+      primary: "Emotional State Recognition",
+      supporting: "Boundary Analysis",
+      voice: "Human Realism",
+      preferred_structure: "KNIFE",
+      mechanism_hint: "feeling_or_boundary",
+    },
     general: {
       lens: "Hank Moody",
       primary: "Emotional State Recognition",
@@ -213,6 +252,61 @@ export function selectInterpretiveLens(domain: ClaimDomain): LensBundle {
 /** @deprecated use selectInterpretiveLens */
 export const selectResponseLens = selectInterpretiveLens;
 
+export function lensVoiceGuidance(lens: string): string {
+  const q = lensInternalQuestion(lens);
+  const qLine = q ? `Internal question (ask before writing): "${q}"\n` : "";
+  if (lens === "Bourdain") {
+    return [
+      "LENS AUTHENTICITY — Bourdain (way of seeing, not a theme):",
+      qLine.trim(),
+      "Notices first: lived experience, craft, authenticity, sensory detail, anti-pretension.",
+      "Shows before explaining. Prefer observation over diagnosis.",
+      'FAIL: "Familiarity bias." PASS: "You already know exactly what you\'re going to get."',
+    ].join("\n");
+  }
+  if (lens === "Munger") {
+    return [
+      "LENS AUTHENTICITY — Munger (way of seeing, not a theme):",
+      qLine.trim(),
+      "Notices first: incentive, opportunity cost, second-order effect. Does not moralize.",
+      'FAIL: "Status signalling often reflects insecurity…"',
+      'PASS: "If a Ferrari closes deals, it\'s an investment. If it only impresses strangers, it\'s an expense."',
+    ].join("\n");
+  }
+  if (lens === "CIA") {
+    return [
+      "LENS AUTHENTICITY — CIA (way of seeing, not a theme):",
+      qLine.trim(),
+      "Notices first: evidence vs inference, contradictions, missing information. Respects uncertainty.",
+      'FAIL: "He\'s planning to fire you."',
+      'PASS: "You have one data point and a story you\'ve attached to it. Separate the two before you make a decision."',
+    ].join("\n");
+  }
+  if (lens === "Hank Moody") {
+    return [
+      "LENS AUTHENTICITY — Hank Moody (way of seeing, not a theme):",
+      qLine.trim(),
+      "Notices first: emotional contradiction, human truth under the mess — not swearing costume.",
+      'PASS: "Sometimes the loneliest part of a relationship is having someone beside you."',
+    ].join("\n");
+  }
+  if (lens === "Pattern Recognition") {
+    return [
+      "LENS AUTHENTICITY — Pattern Recognition (way of seeing, not a theme):",
+      qLine.trim(),
+      "Notices recurring social structures only when present. Common failure: same mechanism every time.",
+    ].join("\n");
+  }
+  if (lens === "Emotional Intelligence") {
+    return [
+      "LENS AUTHENTICITY — Emotional Intelligence (way of seeing, not a theme):",
+      qLine.trim(),
+      "Notices feeling/boundary in plain language. Common failure: therapy-speak.",
+    ].join("\n");
+  }
+  return qLine ? `Ask first: "${q}"` : "";
+}
+
 export function domainMechanismGuidance(
   domain: ClaimDomain,
   lens = "",
@@ -223,67 +317,43 @@ export function domainMechanismGuidance(
   const cap = capability || bundle.primary;
   const common = [
     "FOUR LAYERS (mandatory — keep independent):",
-    "1) Identity / Interpretive lens — what world is Moody standing in?",
+    "1) Identity / Interpretive lens — way of seeing (what you notice first), not a style theme",
     "2) Intelligence / Capability — what mental tool? (broad buckets)",
     "3) Writing — SNAP / KNIFE / STORY",
     "4) Editing — Gold compression only (never picks the lens)",
-    "Internally ask: whose eyes should Moody borrow? Code name: interpretive lens.",
+    "One question: Bourdain=lived notice; Munger=incentive; CIA=what do we know; Hank=human truth; Pattern=what repeats; EI=feeling/boundary.",
     "Gold never decides what Moody thinks. Gold only decides how he says it.",
-    "Do NOT optimize for finding the same social mechanism repeatedly.",
-    "If no social or ideological mechanism is present, do not invent one.",
     "Never name the lens in the reply text.",
   ].join("\n");
 
-  const byDomain: Record<ClaimDomain, string> = {
+  const byDomain: Partial<Record<ClaimDomain, string>> = {
     taste_preference: [
-      "CLAIM DOMAIN: taste / food.",
-      `INTERPRETIVE LENS: ${active} (Identity — not a capability).`,
-      `CAPABILITY: ${cap} (Sensory Realism may support).`,
-      "MECHANISM FAMILY: familiarity vs quality / consistency ≠ excellence.",
-      "STRUCTURE BIAS: SNAP.",
+      `INTERPRETIVE LENS: ${active}. CAPABILITY: ${cap}.`,
+      "BOURDAIN: observation over diagnosis. No psych labels.",
       'PASS: "That\'s like saying prison is just a room."',
-      'FAIL: "The pattern is rule-shopping."',
-    ].join("\n"),
-    travel: [
-      `INTERPRETIVE LENS: ${active}. CAPABILITY: ${cap}.`,
-      "MECHANISM FAMILY: place, texture, honesty.",
-    ].join("\n"),
-    consumer_preference: [
-      `INTERPRETIVE LENS: ${active}. CAPABILITY: ${cap}.`,
-      "MECHANISM FAMILY: status, lock-in, hype. No grievance costume.",
+      'FAIL: "Familiarity bias."',
     ].join("\n"),
     business: [
       `INTERPRETIVE LENS: ${active}. CAPABILITY: ${cap}.`,
-      "MECHANISM FAMILY: opportunity cost, incentives, second-order effects.",
+      "MUNGER: incentives and tradeoffs. Do not moralize.",
     ].join("\n"),
     court: [
       `INTERPRETIVE LENS: ${active}. CAPABILITY: ${cap}.`,
-      "MECHANISM FAMILY: evidence vs inference.",
-    ].join("\n"),
-    preference_claim: [
-      `INTERPRETIVE LENS: ${active}. CAPABILITY: ${cap}.`,
-      "MECHANISM FAMILY: overclaim via familiarity/status.",
+      "CIA: evidence vs inference. Respect uncertainty.",
     ].join("\n"),
     social_power: [
       `INTERPRETIVE LENS: ${active}. CAPABILITY: ${cap}.`,
-      "MECHANISM FAMILY: power/incentives — only when evidenced.",
+      "Pattern only when evidenced — do not force ideology onto unrelated prompts.",
     ].join("\n"),
     relationship: [
       `INTERPRETIVE LENS: ${active}. CAPABILITY: ${cap}.`,
-      "MECHANISM FAMILY: boundary, leverage, avoidance.",
+      "Hank: human truth under the mess — not cynicism costume.",
     ].join("\n"),
-    practical: "CAPABILITY: Practical Next Action. Concrete next step.",
-    technical: "CAPABILITY: Operational Intelligence. Cause → fix.",
-    grief: "CAPABILITY: Quiet Presence. Witness.",
-    cultural_insight: [
+    emotional: [
       `INTERPRETIVE LENS: ${active}. CAPABILITY: ${cap}.`,
-      "Lived culture, not favorite-drawer templates.",
-    ].join("\n"),
-    general: [
-      `INTERPRETIVE LENS: ${active}.`,
-      "Discover mechanism from the prompt. Do not default to Power / Incentive Analysis.",
+      "EI: feeling or boundary in plain language — no therapy-speak.",
     ].join("\n"),
   };
 
-  return `${common}\n${byDomain[domain] || byDomain.general}`;
+  return `${common}\n${lensVoiceGuidance(active)}\n${byDomain[domain] || `INTERPRETIVE LENS: ${active}. CAPABILITY: ${cap}.`}`;
 }
