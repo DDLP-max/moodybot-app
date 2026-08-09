@@ -7,8 +7,9 @@ export const GOLD_SHAPE_VERSION = "gold-shape-v1";
 const WHISKEY = "🥃";
 const WORD_RE = /[A-Za-z']+/g;
 const LIKE_A = /\blike a\b|\bas if\b|\bas though\b/gi;
-const ESSAY_NOUNS =
-  /\b(ideology|universal claim|defection|dialectic|paradigm|systemic mechanism|resentment economy|grievance economy|incentive structure|narrative contract|framework)\b/gi;
+const CONFERENCE_SIGNALS =
+  /\b(ideology|universal claim|defection|dialectic|paradigm|systemic(?:\s+mechanism)?|resentment economy|grievance economy|incentive structure|incentives?|narrative contract|framework|meta-analysis|inconsistency|fixed boundaries|asymmetric incentives|social validation|status signalling|status signaling|resource extraction|boundary violation|wherever .+ reward)\b/gi;
+const ESSAY_NOUNS = CONFERENCE_SIGNALS;
 const CTA_TAIL =
   /(want me to|let me know if|say the word|tag @|mention @|what do you think\??\s*$|agree\??\s*$|stay (dangerous|sharp))/i;
 const SPEAR_MARKERS =
@@ -64,6 +65,33 @@ function overlapRatio(a: string, b: string): number {
   let inter = 0;
   for (const t of sa) if (sb.has(t)) inter++;
   return inter / Math.max(1, Math.min(sa.size, sb.size));
+}
+
+function isConferenceTalkSentence(sentence: string): boolean {
+  const s = (sentence || "").trim();
+  if (!s) return false;
+  const w = words(s);
+  // Short precise mechanism names are spears — keep
+  if (
+    w.length <= 4 &&
+    !/\b(wherever|insofar|whereby|incentives?|inconsistency|framework)\b/i.test(s)
+  ) {
+    return false;
+  }
+  const hits = (s.match(CONFERENCE_SIGNALS) || []).length;
+  if (hits >= 2) return true;
+  if (hits >= 1 && /\b(wherever|insofar|whereby|hence|thus|respectively)\b/i.test(s)) {
+    return true;
+  }
+  if (w.length >= 10) {
+    const concrete = (
+      s.match(
+        /\b(people|person|man|woman|cost|benefit|standard|rule|pay|drop|grab|ignore|line|drink|door|story)\b/gi
+      ) || []
+    ).length;
+    if (hits >= 1 && concrete === 0) return true;
+  }
+  return false;
 }
 
 export function selectStructure(userMessage: string, draft: string): string {
@@ -145,6 +173,9 @@ export function evaluateGoldShape(userMessage: string, draft: string, structure:
   const likeCount = (body.match(LIKE_A) || []).length;
   if (likeCount >= 2) failures.push("stacked_metaphor");
   if (CTA_TAIL.test(body)) failures.push("cta_or_costume_tail");
+  if (isConferenceTalkSentence(ss[ss.length - 1])) {
+    failures.push("abstract_closer");
+  }
   if (structure === "SNAP" && wc > 70) failures.push("snap_overlong");
   if (structure === "KNIFE" && wc > 140) failures.push("knife_overlong");
   if (structure === "KNIFE" && ss.length > 7) failures.push("knife_too_many_sentences");
@@ -207,12 +238,16 @@ function compressOnce(userMessage: string, draft: string, structure: string, fai
   }
 
   let text = ss.join(" ").replace(/\s+/g, " ").trim();
-  if (failures.includes("essay_diction") || failures.includes("multi_mechanism_essay")) {
-    text = text
-      .replace(/\bresentment economy\b/i, "shared grievance story")
-      .replace(/\bideology\b/i, "script")
-      .replace(/\buniversal claim\b/i, "blanket story")
-      .replace(/\bdefection\b/i, "exit");
+  // Editorial cash-out: drop conference-talk closer if spoken proof already landed.
+  // Generation owns Abstract→Spoken translation — no hardcoded paraphrase dictionary.
+  if (failures.includes("abstract_closer")) {
+    const ss2 = sentences(text);
+    if (ss2.length >= 2 && isConferenceTalkSentence(ss2[ss2.length - 1])) {
+      const prior = ss2.slice(0, -1);
+      if (prior.some((p) => !isConferenceTalkSentence(p) && words(p).length >= 6)) {
+        text = prior.join(" ").trim();
+      }
+    }
   }
   return text.replace(/\s+([,.!?;:])/g, "$1");
 }
@@ -250,6 +285,7 @@ export function applyGoldShapePass(
     "snap_overlong",
     "knife_too_many_sentences",
     "essay_diction",
+    "abstract_closer",
   ]);
   if (failures.some((f) => triggers.has(f))) {
     const compressed = compressOnce(userMessage, body, selected, failures);
