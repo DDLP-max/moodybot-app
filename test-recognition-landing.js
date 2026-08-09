@@ -99,15 +99,12 @@ function testWriteDirectiveRequiresProofNotRecap() {
   const lower = CORE_WRITE_DIRECTIVE.toLowerCase();
   assert.ok(lower.includes("think abstractly") && lower.includes("speak concretely"));
   assert.ok(lower.includes("governing pattern"));
-  assert.ok(lower.includes("translate"));
+  assert.ok(lower.includes("translate") || lower.includes("ordinary language"));
   assert.ok(lower.includes("incentive structure"));
-  assert.ok(lower.includes("narrative contract"));
-  assert.ok(lower.includes("making a move"));
+  assert.ok(lower.includes("prove once") || lower.includes("prove it once"));
   assert.ok(lower.includes("trust the reader"));
-  assert.ok(lower.includes("prove it once"));
-  assert.ok(lower.includes("new understanding"));
-  assert.ok(lower.includes("thesis discipline"));
-  assert.ok(lower.includes("one response") && lower.includes("one thesis"));
+  assert.ok(lower.includes("spear"));
+  assert.ok(lower.includes("one thesis"));
   assert.ok(lower.includes("bloodlines mattered"));
 }
 

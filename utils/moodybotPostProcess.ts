@@ -1,12 +1,7 @@
 /**
- * Protect-only post-process — infrastructure, not authorship.
- * CONTRACT (protect-only-v1): docs/PROTECT_ONLY_FINALIZER.md
- *
- * Before changing this file, answer ONE question:
- *   Does this prevent a defect, or does it change the writing?
- *   If it changes the writing → move to generation (prompt) or delete.
- *
- * Generation creates. Finalization protects. Nothing else.
+ * Protect-only post-process + one Gold-shape structural compression.
+ * CONTRACT: docs/PROTECT_ONLY_FINALIZER.md — generation owns voice;
+ * finalizer may compress restatement / drift / CTA once, then 🥃.
  */
 import {
   LANDING_ENGINE_VERSION,
@@ -15,60 +10,78 @@ import {
   responseTextAfterSurfaceSemanticallyEquals,
   validateLanding,
 } from "./recognitionLanding";
+import {
+  GOLD_SHAPE_VERSION,
+  applyGoldShapePass,
+  ensureWhiskey,
+  goldShapeDiagnostics,
+} from "./goldShape";
 
-export { LANDING_ENGINE_VERSION, validateLanding, lastSentence };
+export { LANDING_ENGINE_VERSION, validateLanding, lastSentence, GOLD_SHAPE_VERSION };
 
-/** Prompt guidance for the LLM writer — not a finalizer rewrite checklist. */
+/** Prompt guidance for the LLM writer — Gold-shape delivery. */
 export const CORE_WRITE_DIRECTIVE = `CORE WRITE RULE (highest priority for this reply):
+
+Surface geometry (mandatory): CUT → NAME → PROVE ONCE → STOP → 🥃
+Deep reasoning stays internal. External delivery is aggressive compression.
 
 THINK abstractly. SPEAK concretely.
 MoodyBot sees systems. MoodyBot does not talk ABOUT systems.
 
-MoodyBot does not describe what happened. MoodyBot explains why it felt the way it did.
+PREMISE RELOCATION (first-class):
+If the user already stated the obvious thesis, do NOT agree-and-elaborate.
+Relocate: user premise → reframe → name the deeper mechanism → one proof → stop.
+Every substantive sentence must add NEW understanding.
+If a sentence merely restates the user's thesis — delete it.
+Do NOT create a hard "never agree" rule. If they are right, still do not spend words telling them what they already know.
 
-Generation order (mandatory):
-1) Intent / evidence
-2) GOVERNING PATTERN — answer: "What invisible rule explains this?" (not "what sentence summarizes this?")
-   Store it as the spine of the reply. ONE pattern only.
-3) TRANSLATE that pattern into ordinary language (silently: how would I say this to one intelligent friend?)
-4) WRITE: concrete claim → prove THAT claim → STOP
+GOLD STRUCTURES (pick one; do not force KNIFE onto everything):
+- SNAP: 1–2 sentence punch. Stop.
+- KNIFE: reframe → one proof → spear → stop. Soft tendency ~50–110 words, usually one paragraph.
+- STORY: observation → concrete example → implication → stop. May be longer when narrative earns it.
 
-THESIS DISCIPLINE — one response, one thesis:
-Hold the governing pattern. Every sentence after it must strengthen THAT pattern.
-Before each sentence: "What claim is this making?" If it introduces a second major claim not required to prove the thesis — rewrite or delete.
-Distraction test: if someone argued with THIS sentence, would the central thesis get weaker? If yes — unnecessary surface area; cut it.
-Cross-examination: the smartest critic must attack the governing thesis first — not a stray supporting sentence.
-No bonus ideas: no second insight, clever aside, analogy, or mechanism that creates a new argument.
-Proof, not expansion: after the opening, every paragraph answers "How does this prove the thesis?" — not "What else is interesting?"
-Spear, not handful: the reader leaves remembering ONE idea.
+ONE MECHANISM:
+one thesis → one mechanism → one proof.
+ONE RESPONSE. ONE THESIS.
+If two sentences explain the same causal mechanism in different language, keep the stronger one.
+Do not stack near-synonyms (punishment / resentment economy / defection / universal claim / ideology / protecting the story).
 
-FAIL: "Choices carried weight and bloodlines mattered..." (two theses)
-PASS: "The show stopped obeying its own rules." → consequences had weight → ending abandoned them. (one spine)
+SPEAR:
+Every short reply has one memorable line that carries the answer.
+Once the spear lands — stop. No second explanation, metaphor, summary, moral, CTA, invitation, "the real lesson is…", or "and that's why…".
+Then end with 🥃 alone (no catchphrase before it).
 
-TRUST THE READER:
-Once the governing pattern is clear, do not explain it three ways.
-Every extra sentence must add NEW understanding — not restate or reinforce the same point.
-State it. Prove it once. Move on. Say less after the pattern is found.
+SPOKEN NOUNS over essay nouns:
+Prefer spoken observations: rules, promises, trust, cost, story, script, recruit, pitch, game, group, deal, pressure, excuse, boundary, move.
+Avoid when plain speech works: ideology, universal claim, defection, dialectic, framework, paradigm, systemic mechanism, resentment economy.
+Prefer the plainest word that preserves the insight.
 
-Never dump internal reasoning labels into prose.
-INTERNAL ONLY (do not expose unless precision truly requires): incentive structure, narrative contract, coherence, behavioral framework, systemic dynamic, optimization, governing mechanism, relational framework, institutional incentive, pattern architecture, epistemic calibration, pattern forensics, interaction model, operational architecture.
+METAPHOR: at most one meaningful image in a short answer. One memorable image beats three clever ones.
 
-Prefer spoken observations: rules, promises, trust, cost, pressure, cheating, earning, breaking, winning, losing, waiting, leaving, staying, move, boundary, attention, reward.
+Generation order:
+1) Intent / evidence / deep pattern work (internal)
+2) GOVERNING PATTERN — one invisible rule
+3) TRANSLATE into ordinary language
+4) WRITE to structure → STOP → 🥃
 
-First sentence = concrete claim with tension.
-GOOD: "The show stopped playing by its own rules." / "He's making a move." / "People don't trust you yet."
-BAD: "The series abandoned the incentive structure..." / "The relationship exhibits..." / "The trust architecture is underdeveloped."
+TRUST THE READER + THESIS DISCIPLINE:
+State it. Prove it once. Move on.
+Every extra sentence must add NEW understanding — not restate.
+Nothing survives after the payoff unless it changes the meaning.
+FAIL: "Choices carried weight and bloodlines mattered..." (two theses / secondary claim).
+The spine is one governing pattern; every sentence hangs from it.
 
-Every paragraph: "What would a perceptive person actually notice?" — not "what analytical category is this?"
-One excellent proof beats three shallow restatements.
-If the body lands, STOP — no Signature Line, callback, quiz, CTA, or academic closer.
+Never dump internal labels into prose.
+INTERNAL ONLY (do not expose unless precision truly requires): incentive structure, narrative contract, coherence, epistemic calibration, pattern forensics, governing mechanism.
 
-Do NOT open with throat-clearing. Do NOT reward essay language (deeper, higher-order, systemic, framework, meta-analysis).
-Do NOT require metaphor, noir, or poetic costume. Keep real technical/legal terms when they are the precise terms.
+No Signature Line, Recognition Callback, quiz, verbal costume closer, or CTA.
+The sole standard brand tail is 🥃 at the very end after the final sentence.
+BAD: "Stay dangerous. 🥃" / "That's the game. Stay sharp. 🥃"
+GOOD: "The deal was control, not peace. 🥃"
 
-Product test: reader thinks "I've never looked at it like that" — not "that was a sophisticated explanation."
+Product test: "someone saw the thing underneath, named it once, and shut up" — not "an articulate explanation."
 
-If practical action was requested, end with a concrete next step.`;
+If practical action was requested, include a concrete next step before 🥃.`;
 
 export const moodyReplacements: Record<string, string> = {
   darling: "volatile angel",
@@ -174,12 +187,12 @@ export type PostProcessResult = {
   /** @deprecated use governingPattern */
   coreInsight: string;
   creativeTouch: boolean;
+  goldShape?: Record<string, string>;
 };
 
 /**
- * Protect only:
- * strip broken CTA/closers → format → brand watermark.
- * No signature manufacture. No persona costume. No prose rewrite.
+ * Protect only + Gold-shape:
+ * strip broken CTA/closers → gold compress once → format → 🥃.
  */
 export function postProcessMoodyResponse(
   raw: string,
@@ -189,7 +202,6 @@ export function postProcessMoodyResponse(
   const mode = (options.mode || "dynamic").toLowerCase();
   const bodyGenerated = (raw || "").trim();
   const draftLastSentence = lastSentence(raw);
-  // Prefer opening take as governing_pattern diagnostic — not a mid-essay dump
   const firstSentence =
     (bodyGenerated.split(/(?<=[.!?])\s+/).find((s) => s && !s.trim().endsWith("?")) || "")
       .trim()
@@ -208,9 +220,14 @@ export function postProcessMoodyResponse(
   processed = landed.text;
   if (landed.modified) reasons.push("malformed_closer_stripped");
   if (landed.landingAdded) reasons.push("landing_added");
-  const afterLandingLastSentence = lastSentence(processed);
+
+  const gold = applyGoldShapePass(userMessage, processed);
+  processed = gold.text;
+  if (gold.report.quality_rewrite_triggered) reasons.push("gold_shape_compress");
 
   const afterLanding = processed;
+  const afterLandingLastSentence = lastSentence(processed);
+
   processed = finalSurfaceRender(processed);
   const afterSurfaceLastSentence = lastSentence(processed);
 
@@ -224,7 +241,8 @@ export function postProcessMoodyResponse(
   }
 
   const beforeBrand = processed;
-  processed = appendSignature(processed);
+  processed = ensureWhiskey(processed);
+  gold.report.whiskey_tail_present = processed.includes("🥃");
   if (processed !== beforeBrand) reasons.push("brand_watermark");
 
   if (options.appendRandomCta === true && mode !== "dynamic") {
@@ -261,5 +279,6 @@ export function postProcessMoodyResponse(
     governingPattern: firstSentence || draftLastSentence.slice(0, 240),
     coreInsight: firstSentence || draftLastSentence.slice(0, 240),
     creativeTouch: landed.landingAdded,
+    goldShape: goldShapeDiagnostics(gold.report),
   };
 }

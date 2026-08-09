@@ -223,6 +223,7 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
       landing: processed.landing,
       governing_pattern: processed.governingPattern,
       core_insight: processed.governingPattern, // deprecated alias
+      gold_shape: processed.goldShape || null,
       body_generated: draftLast,
       post_finalizer_changed_text: String(processed.postFinalizerChangedText),
       post_finalizer_reason: processed.postFinalizerReason,
