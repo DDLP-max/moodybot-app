@@ -1,15 +1,13 @@
 /**
- * Integration-style test: same post-process path as
- * POST /api/chat/messages → generateChatResponse → postProcessMoodyResponse
- *
- * Does not call OpenRouter. Injects the exact broken closer as model output.
+ * Dynamic path: body may end the response. No mandatory Signature Line.
  */
 import assert from "assert";
 import { postProcessMoodyResponse } from "./utils/moodybotPostProcess.ts";
 
 const USER = "Why do feminists hate women praising men?";
 const MODEL_DRAFT = [
-  "The accusation stops being analysis the moment disagreement becomes evidence of betrayal.",
+  "The 'pick me' charge works as social enforcement of loyalty.",
+  "Public gratitude toward one man threatens movements that depend on collective resentment.",
   "",
   "What about feminists hate woman looks different now that you've seen it named?",
 ].join("\n");
@@ -19,25 +17,19 @@ const result = postProcessMoodyResponse(MODEL_DRAFT, USER, {
   appendRandomCta: false,
 });
 
-assert.strictEqual(result.landingEngineVersion, "signature-line-v3");
+assert.strictEqual(result.landingEngineVersion, "earned-ending-v1");
+assert.ok(!/looks different now that you've seen it named/i.test(result.text));
+assert.ok(!/seen it named/i.test(result.text));
+// Body already lands — stop writing (no manufactured mic-drop required)
 assert.ok(
-  !/looks different now that you've seen it named/i.test(result.text),
-  result.text
+  ["body_ends_response", "signature_line"].includes(result.landing),
+  result.landing
 );
-assert.ok(!/seen it named/i.test(result.text), result.text);
-assert.ok(!/what about feminists/i.test(result.text), result.text);
-assert.strictEqual(result.landing, "signature_line");
-const closer = result.afterLandingLastSentence.replace(/🥃/g, "").trim();
-assert.ok(
-  !closer.endsWith("?") || /stretch|carrying|cracked/i.test(closer),
-  `unexpected forced question closer: ${closer}`
-);
-// Must reveal one layer deeper — not restate the thesis body
-assert.ok(
-  !/accusation stops being analysis/i.test(closer),
-  `restated thesis as Signature Line: ${closer}`
-);
+if (result.landing === "body_ends_response") {
+  assert.ok(!/moment gratitude becomes betrayal/i.test(result.text));
+}
 
-console.log("Dynamic endpoint landing integration test passed.");
+console.log("Dynamic endpoint earned-ending test passed.");
+console.log("landing=", result.landing);
 console.log("final_http_last_sentence=", result.afterSurfaceLastSentence);
 console.log("landing_engine_version=", result.landingEngineVersion);

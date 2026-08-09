@@ -1,76 +1,30 @@
 /**
- * Signature Line Engine — the sentence the reader remembers tomorrow.
- *
- * MoodyBot is a writer. The last sentence is a first-class writing object.
- * generateSignatureLine runs AFTER the body exists and reacts to it.
+ * Signature Line — earned writing opportunity, not a required feature.
+ * Chase inevitable, not memorable. NO_SIGNATURE_FOUND is success.
  */
 
-export const SIGNATURE_ENGINE_VERSION = "signature-line-v3";
+export const SIGNATURE_ENGINE_VERSION = "earned-ending-v1";
+export const NO_SIGNATURE_FOUND = "NO_SIGNATURE_FOUND";
 
 const MAX_WORDS = 18;
 const MAX_WORDS_EXCEPTIONAL = 22;
 const MIN_WORDS = 4;
+const DISCOVERY_THRESHOLD = 0.72;
+const SIMILARITY_REJECT = 0.62;
 
 const recentSignatures: string[] = [];
-const RECENT_MAX = 32;
 
-const GENERIC_APHORISMS = [
-  "everything happens for a reason",
-  "life is complicated",
-  "truth always wins",
-  "power corrupts",
-  "trust the process",
-  "you got this",
-  "stay strong",
-  "believe in yourself",
-  "it is what it is",
-  "live your truth",
-  "time heals all wounds",
-  "knowledge is power",
-  "change is hard",
-  "the truth hurts",
+const GENERIC = [
+  "everything happens for a reason", "life is complicated", "truth always wins",
+  "truth wins", "power corrupts", "gratitude matters", "movements need enemies",
+  "everything changes", "stories protect themselves", "boundaries matter",
+  "trust the process", "the truth hurts", "change is hard",
 ];
 
 const AI_PROFOUND = [
-  "in a world where",
-  "at the end of the day",
-  "the reality is that",
-  "it's important to remember",
-  "a powerful reminder",
-  "speaks volumes",
-  "the human condition",
+  "in a world where", "at the end of the day", "the reality is that",
+  "a powerful reminder", "speaks volumes", "the human condition",
 ];
-
-const ENGAGEMENT = [
-  "do you want",
-  "would you like",
-  "let me know",
-  "say the word",
-  "does that make sense",
-  "subscribe",
-  "@moodybot",
-];
-
-const SUMMARY = [
-  "in other words",
-  "to summarize",
-  "to sum up",
-  "in summary",
-  "basically",
-  "all in all",
-  "the bottom line is",
-];
-
-export type ResponsePlanLike = {
-  central_insight?: string;
-  original_subject?: string;
-  primary_capability?: string;
-  intervention?: string;
-  anchors?: string[];
-  intent?: string;
-  selected_command?: string;
-  needs_practical_action?: boolean;
-};
 
 function wordCount(text: string): number {
   return ((text || "").match(/[A-Za-z0-9']+/g) || []).length;
@@ -83,9 +37,8 @@ function norm(text: string): string {
 function contentTokens(text: string): Set<string> {
   const stop = new Set([
     "the", "and", "for", "that", "this", "with", "from", "about", "have",
-    "what", "when", "where", "which", "your", "you", "how", "did", "does",
-    "are", "was", "were", "been", "into", "than", "then", "just", "like",
-    "not", "but", "its", "they", "them", "their", "our", "out", "all",
+    "what", "when", "where", "which", "your", "you", "how", "not", "but",
+    "they", "them", "their", "are", "was", "were", "been", "into",
   ]);
   return new Set(
     (norm(text).match(/[a-z0-9']+/g) || []).filter((t) => t.length > 2 && !stop.has(t))
@@ -96,14 +49,7 @@ function isSingleSentence(text: string): boolean {
   const s = (text || "").trim();
   if (!s || !/[.!]$/.test(s)) return false;
   const body = s.slice(0, -1);
-  if (body.includes("?") || body.includes("!") || body.includes(".")) return false;
-  return true;
-}
-
-function hasTurn(line: string): boolean {
-  return /\b(but|becomes?|before|after|where|when|don't|doesn't|isn't|stops?|started|reveals?|explains?|pretending|usually|already|never|only|without|instead|rarely|needs?|runs?\s+out)\b/i.test(
-    line
-  );
+  return !body.includes("?") && !body.includes("!") && !body.includes(".");
 }
 
 function bodySentences(body: string): string[] {
@@ -113,25 +59,46 @@ function bodySentences(body: string): string[] {
     .filter((s) => s && !s.endsWith("?"));
 }
 
-/** If I removed the last sentence, would the body already have said the same thing? */
+function finalParagraph(text: string): string {
+  const paras = (text || "").trim().split(/\n\s*\n/);
+  return (paras[paras.length - 1] || "").trim();
+}
+
+export function lastSentence(text: string): string {
+  const body = (text || "")
+    .replace(/\s*🥃\s*/g, " ")
+    .replace(/@MoodyBotAI/gi, "")
+    .trim();
+  if (!body) return "";
+  const lastPara = finalParagraph(body);
+  const sentences = lastPara
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return sentences[sentences.length - 1] || lastPara;
+}
+
+export function semanticSimilarity(a: string, b: string): number {
+  const ta = contentTokens(a);
+  const tb = contentTokens(b);
+  if (!ta.size || !tb.size) return 0;
+  let inter = 0;
+  for (const t of ta) if (tb.has(t)) inter++;
+  const union = new Set([...ta, ...tb]).size;
+  return inter / Math.max(union, 1);
+}
+
 export function bodyAlreadySaidThis(line: string, body: string): boolean {
   const lineN = norm(line);
   const lineToks = contentTokens(line);
   if (!lineN || !body || !lineToks.size) return false;
   for (const sent of bodySentences(body)) {
     const sentN = norm(sent);
-    if (!sentN) continue;
+    const sentToks = contentTokens(sent);
+    if (!sentN || !sentToks.size) continue;
     if (lineN === sentN || lineN.replace(/[.!]$/, "") === sentN.replace(/[.!]$/, "")) {
       return true;
     }
-    const sentToks = contentTokens(sent);
-    if (!sentToks.size) continue;
-    let overlapCount = 0;
-    for (const t of lineToks) if (sentToks.has(t)) overlapCount++;
-    const overlap = overlapCount / lineToks.size;
-    let novel = 0;
-    for (const t of lineToks) if (!sentToks.has(t)) novel++;
-    if (overlap >= 0.78 && novel <= 1) return true;
     let subset = true;
     for (const t of lineToks) {
       if (!sentToks.has(t)) {
@@ -140,106 +107,94 @@ export function bodyAlreadySaidThis(line: string, body: string): boolean {
       }
     }
     if (subset && lineToks.size >= 3) return true;
+    let overlap = 0;
+    for (const t of lineToks) if (sentToks.has(t)) overlap++;
+    const ratio = overlap / lineToks.size;
+    if (ratio >= 0.72) return true;
+  }
+  const fp = finalParagraph(body);
+  if (fp && semanticSimilarity(line, fp) >= SIMILARITY_REJECT) {
+    const novel = [...contentTokens(line)].filter((t) => !contentTokens(fp).has(t));
+    if (novel.length < 2) return true;
   }
   return false;
 }
 
 export function addsDeeperLayer(line: string, body: string): boolean {
-  if (!body) return true;
+  if (!body) return false;
   const lineToks = contentTokens(line);
   const bodyToks = contentTokens(body);
-  if (!lineToks.size) return false;
-  const novel: string[] = [];
-  for (const t of lineToks) if (!bodyToks.has(t)) novel.push(t);
-  const revealTurn =
-    /\b(becomes?|became|stopped being|already ending|runs?\s+out|pretending|needs? permission|survives by|long before|was already|no longer|instead|don't end|does not end|rarely end|explains?|announces itself)\b/i.test(
+  const novel = [...lineToks].filter((t) => !bodyToks.has(t));
+  const reveal =
+    /\b(becomes?|became|stopped being|already ending|runs?\s+out|pretending|needs? permission|survives by|long before|was already|no longer|instead|don't end|rarely end|explains?|announces itself)\b/i.test(
       line
     );
-  if (/\b(matter|matters|important|real|true|valid)\b\.?$/i.test(norm(line))) {
-    return false;
-  }
-  // Revelation requires a turn + at least one new hinge (not thesis echo)
-  return revealTurn && novel.length >= 1;
+  if (/\b(matter|matters|important|real|true|valid)\b\.?$/i.test(norm(line))) return false;
+  return reveal && novel.length >= 2;
 }
 
-export type SignatureQuality = {
-  specificity: boolean;
-  compression: boolean;
-  authorship: boolean;
-  inevitability: boolean;
-  memory: boolean;
-  reasons: string[];
+export function bodyAlreadyLands(body: string): boolean {
+  const text = (body || "").trim();
+  if (!text) return false;
+  const last = finalParagraph(text);
+  if (!last || last.endsWith("?")) return false;
+  if (/do you want|would you like|seen it named|what about /i.test(last)) return false;
+  const sentences = last.split(/(?<=[.!])\s+/).map((s) => s.trim()).filter(Boolean);
+  if (!sentences.length) return false;
+  const final = sentences[sentences.length - 1];
+  if (!/[.!]$/.test(final)) return false;
+  const wc = final.split(/\s+/).length;
+  if (wc < 7) return false;
+  const lands =
+    /\b(enforcement|threatens?|reveals?|betrayal|convenience|protection|resentment|defection|loyalty|already|stopped|becomes?|explains?|survives?|pretending)\b/i.test(
+      final
+    );
+  const solid = wc >= 12 && !/\b(maybe|perhaps|might)\b/i.test(final);
+  return (lands && wc >= 7) || solid;
+}
+
+export function deletionTest(body: string, signature: string): boolean {
+  if (!signature?.trim()) return false;
+  if (bodyAlreadySaidThis(signature, body)) return false;
+  if (!addsDeeperLayer(signature, body)) return false;
+  const fp = finalParagraph(body);
+  if (fp && semanticSimilarity(signature, fp) >= SIMILARITY_REJECT) return false;
+  return true;
+}
+
+export type SignatureLineScore = {
+  total: number;
   ok: boolean;
+  reasons: string[];
 };
 
-export function scoreSignatureLine(
+export function scoreDiscovery(
   line: string,
-  opts: { body?: string; userMessage?: string; anchors?: string[]; centralInsight?: string } = {}
-): SignatureQuality {
-  const lower = norm(line);
+  body: string,
+  userMessage = ""
+): SignatureLineScore {
   const reasons: string[] = [];
-  const conversation = new Set([
-    ...contentTokens(opts.userMessage || ""),
-    ...contentTokens(opts.centralInsight || ""),
-    ...contentTokens((opts.anchors || []).join(" ")),
-    ...contentTokens(opts.body || ""),
-  ]);
-
-  let specificity = true;
-  if (GENERIC_APHORISMS.some((a) => lower.includes(a) || lower.replace(/[.!]$/, "") === a)) {
-    specificity = false;
-    reasons.push("specificity:generic_aphorism");
-  }
-
-  let compression = true;
-  if (SUMMARY.some((m) => lower.includes(m))) {
-    compression = false;
-    reasons.push("compression:mechanical_summary");
-  } else if (opts.body && bodyAlreadySaidThis(line, opts.body)) {
-    compression = false;
-    reasons.push("compression:restates_thesis");
-  } else if (opts.body && !addsDeeperLayer(line, opts.body)) {
-    compression = false;
-    reasons.push("compression:no_deeper_layer");
-  }
-
-  let authorship = true;
-  if (ENGAGEMENT.some((m) => lower.includes(m)) || AI_PROFOUND.some((m) => lower.includes(m))) {
-    authorship = false;
-    reasons.push("authorship:ai_or_engagement");
-  }
-  if (/^(so,|so |look,|well,|anyway,)/i.test(line)) {
-    authorship = false;
-    reasons.push("authorship:chat_opener");
-  }
+  const lower = norm(line);
+  if (GENERIC.some((g) => lower.includes(g))) reasons.push("bumper_sticker");
+  if (AI_PROFOUND.some((g) => lower.includes(g))) reasons.push("fake_profundity");
+  if (bodyAlreadySaidThis(line, body)) reasons.push("restates_or_shortens");
+  if (body && !deletionTest(body, line)) reasons.push("fails_deletion_test");
 
   const lineToks = contentTokens(line);
-  let inevitability = true;
-  if (conversation.size && lineToks.size) {
-    let overlap = false;
-    for (const t of lineToks) {
-      if (conversation.has(t)) {
-        overlap = true;
-        break;
-      }
-    }
-    if (!overlap && !(hasTurn(line) && wordCount(line) <= 12)) {
-      inevitability = false;
-      reasons.push("inevitability:not_earned_by_body");
-    }
-  }
-
-  const wc = wordCount(line);
-  let memory =
-    isSingleSentence(line) &&
-    !line.trim().endsWith("?") &&
-    wc >= MIN_WORDS &&
-    wc <= MAX_WORDS_EXCEPTIONAL &&
-    (wc <= 10 || hasTurn(line));
-  if (!memory) reasons.push("memory:fail");
-
-  const ok = specificity && compression && authorship && inevitability && memory;
-  return { specificity, compression, authorship, inevitability, memory, reasons, ok };
+  const bodyToks = contentTokens(body);
+  const novel = [...lineToks].filter((t) => !bodyToks.has(t));
+  const novelInsight = Math.min(1, novel.length / 3);
+  const unexpected = novel.length >= 2 ? 1 : 0.35;
+  let overlap = false;
+  for (const t of lineToks) if (bodyToks.has(t)) overlap = true;
+  const deeper = addsDeeperLayer(line, body);
+  const inevitable = overlap ? 1 : deeper && novel.length >= 2 ? 0.9 : 0.2;
+  const addsMeaning = deeper ? 1 : 0;
+  const differentAbstraction = novel.length >= 2 && deeper ? 1 : 0.25;
+  const total =
+    (novelInsight + unexpected + inevitable + addsMeaning + differentAbstraction) / 5;
+  if (total < DISCOVERY_THRESHOLD) reasons.push("below_discovery_threshold");
+  return { total, ok: total >= DISCOVERY_THRESHOLD && reasons.length === 0, reasons };
 }
 
 export function validateSignatureLine(
@@ -262,11 +217,11 @@ export function validateSignatureLine(
   if (opts.checkNovelty !== false && recentSignatures.includes(norm(s))) {
     return { ok: false, reason: "REJECTED:slogan_reuse" };
   }
-  const q = scoreSignatureLine(s, {
-    body: opts.body,
-    userMessage: opts.userMessage,
-  });
-  if (!q.ok) return { ok: false, reason: "REJECTED:" + (q.reasons[0] || "quality") };
+  if (opts.body && !deletionTest(opts.body, s)) {
+    return { ok: false, reason: "REJECTED:fails_deletion_test" };
+  }
+  const disc = scoreDiscovery(s, opts.body || "", opts.userMessage);
+  if (!disc.ok) return { ok: false, reason: "REJECTED:" + (disc.reasons[0] || "discovery") };
   return { ok: true, reason: "ok" };
 }
 
@@ -274,94 +229,40 @@ function remember(text: string): void {
   const n = norm(text);
   if (!n) return;
   recentSignatures.push(n);
-  while (recentSignatures.length > RECENT_MAX) recentSignatures.shift();
+  while (recentSignatures.length > 32) recentSignatures.shift();
 }
 
-function topicLine(userMessage: string, body: string): string | null {
+function candidateBank(userMessage: string, body: string): string[] {
   const blob = `${userMessage} ${body}`.toLowerCase();
-  const bank: Array<[RegExp, string[]]> = [
-    [
-      /feminist|feminism|praising|pick me|loyalty|equality/,
-      [
-        "The moment gratitude becomes betrayal, the argument stopped being about equality.",
-        "The script usually survives by making disagreement feel like betrayal.",
-        "The moment gratitude needs permission, the argument changed.",
-      ],
-    ],
-    [
-      /boundary|boundaries/,
-      [
-        "Boundaries don't end relationships — they reveal the ones that were already ending.",
-        "Boundaries rarely end relationships — they reveal them.",
-      ],
-    ],
-    [
-      /story|narrative|defending/,
-      [
-        "The story started defending itself long before it started defending people.",
-        "The story started defending itself long before it started defending women.",
-      ],
-    ],
-    [/backstage/, ["The backstage explains the stage."]],
-    [/paper trail|receipts|performance/, ["The paper trail is where the performance runs out."]],
-    [
-      /dirty talk|porn|script/,
-      [
-        "The language only followed — the script library had already grown.",
-        "The script usually survives by making the new language feel ordinary.",
-      ],
-    ],
-    [/cancel|late at night|low priority/, ["Convenience dressed as connection is still just convenience."]],
-  ];
-  for (const [re, lines] of bank) {
-    if (!re.test(blob)) continue;
-    for (const line of lines) {
-      if (recentSignatures.includes(norm(line))) continue;
-      if (validateSignatureLine(line, { allowExceptionalLength: true, userMessage, body }).ok) {
-        return line;
-      }
-    }
+  if (/feminist|feminism|praising|pick me|loyalty|equality/.test(blob)) {
+    return [
+      "The moment gratitude becomes betrayal, the argument stopped being about equality.",
+      "The moment gratitude needs permission, the argument changed.",
+    ];
   }
-  return null;
+  if (/boundary|boundaries/.test(blob)) {
+    return [
+      "Boundaries don't end relationships — they reveal the ones that were already ending.",
+    ];
+  }
+  return [];
 }
 
 export function lastLineIsSignature(text: string, userMessage = ""): boolean {
   const paras = (text || "").trim().split(/\n\s*\n/);
+  if (paras.length < 2) return false;
   const last = (paras[paras.length - 1] || "").trim();
-  const body = paras.slice(0, -1).join("\n\n");
-  // A sole paragraph is the thesis body — not yet a Signature Line.
-  if (!body) return false;
+  const prior = paras.slice(0, -1).join("\n\n");
   return validateSignatureLine(last, {
-    body,
+    body: prior,
     userMessage,
     checkNovelty: false,
+    allowExceptionalLength: true,
   }).ok;
 }
 
-function extractFromBody(body: string, userMessage: string): string | null {
-  // Only a deeper last paragraph counts — mid-body thesis lines explain, not reveal.
-  const paras = (body || "").trim().split(/\n\s*\n/);
-  if (paras.length < 2) return null;
-  const last = (paras[paras.length - 1] || "").trim();
-  const prior = paras.slice(0, -1).join("\n\n");
-  if (!last || !prior || !isSingleSentence(last)) return null;
-  if (bodyAlreadySaidThis(last, prior) || !addsDeeperLayer(last, prior)) return null;
-  if (
-    validateSignatureLine(last, {
-      allowExceptionalLength: true,
-      userMessage,
-      body: prior,
-      checkNovelty: false,
-    }).ok
-  ) {
-    return last;
-  }
-  return null;
-}
-
-/** Write the last sentence after the body exists. */
-export function generateSignatureLine(
-  plan: ResponsePlanLike | null | undefined,
+export function discoverSignatureLine(
+  _plan: unknown,
   draft: string,
   userMessage = ""
 ): string | null {
@@ -370,71 +271,69 @@ export function generateSignatureLine(
     const sents = body.split(/(?<=[.!?])\s+/);
     if (sents.length >= 2) body = sents.slice(0, -1).join(" ").trim();
   }
-  if (lastLineIsSignature(body, userMessage)) {
-    const paras = body.split(/\n\s*\n/);
-    const last = (paras[paras.length - 1] || "").trim();
-    const prior = paras.slice(0, -1).join("\n\n");
-    if (prior && !bodyAlreadySaidThis(last, prior) && addsDeeperLayer(last, prior)) {
-      return last;
+  if (bodyAlreadyLands(body)) return null;
+
+  for (const cand of candidateBank(userMessage, body)) {
+    if (recentSignatures.includes(norm(cand))) continue;
+    const disc = scoreDiscovery(cand, body, userMessage);
+    if (!disc.ok) continue;
+    if (
+      validateSignatureLine(cand, {
+        body,
+        userMessage,
+        allowExceptionalLength: true,
+      }).ok &&
+      deletionTest(body, cand)
+    ) {
+      return cand;
     }
-  }
-  const extracted = extractFromBody(body, userMessage);
-  if (extracted) {
-    const others = body.replace(extracted, " ");
-    if (!bodyAlreadySaidThis(extracted, others) && addsDeeperLayer(extracted, others)) {
-      return extracted;
-    }
-  }
-  const deeper = topicLine(userMessage, body);
-  if (deeper && !bodyAlreadySaidThis(deeper, body) && addsDeeperLayer(deeper, body)) {
-    return deeper;
   }
   return null;
 }
 
+export function generateSignatureLine(
+  plan: unknown,
+  draft: string,
+  userMessage = ""
+): string | null {
+  return discoverSignatureLine(plan, draft, userMessage);
+}
+
 export function craftSignatureLine(userMessage: string, body: string): string | null {
-  return generateSignatureLine({}, body, userMessage);
+  return discoverSignatureLine({}, body, userMessage);
 }
 
 export function ensureSignatureLine(
   text: string,
   userMessage: string,
-  plan?: ResponsePlanLike
-): { text: string; modified: boolean; signature: string | null } {
+  _plan?: unknown
+): { text: string; modified: boolean; signature: string | null; landing: string } {
   let base = (text || "").trim();
-  if (lastLineIsSignature(base, userMessage)) {
-    const paras = base.split(/\n\s*\n/);
-    const line = (paras[paras.length - 1] || "").trim();
-    remember(line);
-    return { text: base, modified: false, signature: line };
-  }
   if (base.endsWith("?")) {
     const sents = base.split(/(?<=[.!?])\s+/);
     if (sents.length >= 2) base = sents.slice(0, -1).join(" ").trim();
   }
-  const line = generateSignatureLine(plan || {}, base, userMessage);
-  if (!line) {
-    return { text: base, modified: false, signature: null };
+
+  if (bodyAlreadyLands(base)) {
+    return { text: base, modified: false, signature: null, landing: "body_ends_response" };
   }
-  // Validate against body without this line (promotion isn't restatement)
-  const priorForGate = line && base.includes(line) ? base.replace(line, " ").replace(/\s{2,}/g, " ").trim() : base;
-  if (
-    !validateSignatureLine(line, {
-      allowExceptionalLength: true,
-      userMessage,
-      body: priorForGate,
-      checkNovelty: false,
-    }).ok
-  ) {
-    return { text: base, modified: false, signature: null };
+
+  if (lastLineIsSignature(base, userMessage)) {
+    const paras = base.split(/\n\s*\n/);
+    const line = (paras[paras.length - 1] || "").trim();
+    const prior = paras.slice(0, -1).join("\n\n");
+    if (deletionTest(prior, line)) {
+      remember(line);
+      return { text: base, modified: false, signature: line, landing: "signature_line" };
+    }
+    return { text: prior || base, modified: true, signature: null, landing: "body_ends_response" };
   }
-  const paras = base.split(/\n\s*\n/);
-  const last = (paras[paras.length - 1] || "").trim();
-  if (last === line) {
-    remember(line);
-    return { text: base, modified: false, signature: line };
+
+  const line = discoverSignatureLine({}, base, userMessage);
+  if (!line || !deletionTest(base, line)) {
+    return { text: base, modified: false, signature: null, landing: "body_ends_response" };
   }
-  const out = base ? `${base.replace(/\s+$/, "")}\n\n${line}` : line;
+  const out = `${base.replace(/\s+$/, "")}\n\n${line}`;
   remember(line);
-  return { text: out, modified: true, signature: line };
+  return { text: out, modified: true, signature: line, landing: "signature_line" };
 }

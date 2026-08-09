@@ -1,17 +1,16 @@
 /**
- * Recognition Landing + Signature Line gate for Dynamic Mode.
- *
- * landing_engine_version must appear in every Dynamic response log.
+ * Earned endings for Dynamic Mode.
+ * BODY_ENDS_RESPONSE is first-class. Signature Line is optional discovery.
  */
 
 import {
   SIGNATURE_ENGINE_VERSION,
+  bodyAlreadyLands,
   ensureSignatureLine,
-  generateSignatureLine,
-  lastLineIsSignature,
-  validateSignatureLine,
+  lastSentence,
 } from "./signatureLine";
 
+export { lastSentence };
 export const LANDING_ENGINE_VERSION = SIGNATURE_ENGINE_VERSION;
 
 const BROKEN_CLOSER_PATTERNS: RegExp[] = [
@@ -19,35 +18,10 @@ const BROKEN_CLOSER_PATTERNS: RegExp[] = [
   /^what about\b.+\bseen it named\b/i,
   /\bhate \w+ looks\b/i,
   /\bfeminists?\b.+\blooks different\b/i,
-  /\bwhat about (?:the )?(?:\w+\s+){2,6}looks\b/i,
   /\bseen it named\b/i,
-  /\bstill holds\?$/i,
 ];
 
-export type LandingValidation = {
-  ok: boolean;
-  reason: string;
-};
-
-export function lastSentence(text: string): string {
-  const body = (text || "")
-    .replace(/\s*🥃\s*/g, " ")
-    .replace(/@MoodyBotAI/gi, "")
-    .trim();
-  if (!body) return "";
-  const paras = body.split(/\n\s*\n/);
-  const lastPara = (paras[paras.length - 1] || "").trim();
-  const lines = lastPara
-    .split(/\n/)
-    .map((l) => l.trim())
-    .filter(Boolean);
-  const candidate = lines[lines.length - 1] || lastPara;
-  const sentences = candidate
-    .split(/(?<=[.!?])\s+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return sentences[sentences.length - 1] || candidate;
-}
+export type LandingValidation = { ok: boolean; reason: string };
 
 export function isBrokenCloser(text: string): boolean {
   const s = (text || "").trim();
@@ -55,23 +29,13 @@ export function isBrokenCloser(text: string): boolean {
   const lower = s.toLowerCase();
   if (BROKEN_CLOSER_PATTERNS.some((pat) => pat.test(lower))) return true;
   if (lower.startsWith("what about ") && lower.includes(" looks ")) return true;
-  if (
-    /\b(?:feminists?|women|men|porn|dirty talk)\b.+\b(?:looks different|seen it named)\b/i.test(
-      lower
-    )
-  ) {
-    return true;
-  }
   return false;
 }
 
-/** Hard rejection gate — exact failure and malformed family. */
 export function validateLanding(closer: string): LandingValidation {
   const s = (closer || "").trim();
   if (!s) return { ok: true, reason: "empty" };
-  if (isBrokenCloser(s)) {
-    return { ok: false, reason: "REJECTED:malformed_topic_staple" };
-  }
+  if (isBrokenCloser(s)) return { ok: false, reason: "REJECTED:malformed_topic_staple" };
   if (/^what about\b/i.test(s) && /\bhate\b/i.test(s)) {
     return { ok: false, reason: "REJECTED:what_about_hate_stack" };
   }
@@ -93,8 +57,6 @@ function stripTrailingBrokenSentence(text: string): string {
       /@MoodyBotAI/i.test(last) ||
       /^🥃/.test(last) ||
       /breathe before you reply/i.test(last) ||
-      /tag .*@MoodyBotAI/i.test(last) ||
-      /he won.?t save you/i.test(last) ||
       /you wanted the truth/i.test(last)
     ) {
       lines.pop();
@@ -107,37 +69,32 @@ function stripTrailingBrokenSentence(text: string): string {
   const paras = out.split(/\n\s*\n/);
   if (paras.length >= 2) {
     const closer = (paras[paras.length - 1] || "").trim();
-    if (!validateLanding(closer).ok || isBrokenCloser(closer)) {
+    if (!validateLanding(closer).ok || isBrokenCloser(closer) || closer.endsWith("?")) {
       out = paras.slice(0, -1).join("\n\n").trim();
     }
   }
 
-  if (out.endsWith("?") || isBrokenCloser(lastSentence(out))) {
+  if (out.endsWith("?") || isBrokenCloser(out.split(/(?<=[.!?])\s+/).pop() || "")) {
     const sentences = out.split(/(?<=[.!?])\s+/);
     if (sentences.length >= 2) {
       const final = sentences[sentences.length - 1] || "";
-      if (!validateLanding(final).ok || isBrokenCloser(final)) {
+      if (!validateLanding(final).ok || isBrokenCloser(final) || final.endsWith("?")) {
         out = sentences.slice(0, -1).join(" ").trim();
       }
     }
   }
 
-  if (/seen it named/i.test(out) || /what about .+ looks different/i.test(out)) {
+  if (/seen it named/i.test(out)) {
     out = out
       .split(/(?<=[.!?])\s+/)
       .filter((s) => validateLanding(s).ok && !isBrokenCloser(s))
       .join(" ")
-      .replace(/\n{3,}/g, "\n\n")
       .trim();
   }
 
   return out;
 }
 
-/**
- * Apply Signature Line after model draft.
- * Order: Signature Line → (callback handled in prompts) → silence fallback.
- */
 export function applyRecognitionLanding(
   text: string,
   userMessage: string
@@ -147,42 +104,34 @@ export function applyRecognitionLanding(
   let modified = out !== before;
 
   const um = (userMessage || "").toLowerCase();
-  const practical =
-    /what should i do|what do i say|how should i handle|what now/.test(um);
-  const grief = /\b(died|funeral|grief|can't stop crying)\b/.test(um);
-
-  if (grief) {
+  if (/\b(died|funeral|grief|can't stop crying)\b/.test(um)) {
     return { text: out, modified, landing: "silence" };
   }
-  if (practical) {
+  if (/what should i do|what do i say|how should i handle|what now/.test(um)) {
     return { text: out, modified, landing: "action" };
   }
 
-  if (lastLineIsSignature(out, userMessage)) {
-    return { text: out, modified, landing: "signature_line" };
+  // Body already finished — stop writing
+  if (bodyAlreadyLands(out)) {
+    return { text: out, modified, landing: "body_ends_response" };
   }
 
-  // Generate AFTER body exists — react to the draft (single path)
   const ensured = ensureSignatureLine(out, userMessage, {});
   out = ensured.text;
   modified = modified || ensured.modified;
 
-  if (isBrokenCloser(lastSentence(out)) || /seen it named/i.test(out)) {
+  if (isBrokenCloser(out.split(/(?<=[.!?])\s+/).pop() || "") || /seen it named/i.test(out)) {
     out = stripTrailingBrokenSentence(out);
     modified = true;
   }
 
-  const landing =
-    ensured.signature && validateSignatureLine(ensured.signature, { allowExceptionalLength: true }).ok
-      ? "signature_line"
-      : lastLineIsSignature(out)
-        ? "signature_line"
-        : "silence";
-
-  return { text: out, modified, landing };
+  return {
+    text: out,
+    modified,
+    landing: ensured.landing || "body_ends_response",
+  };
 }
 
-/** Surface render may change typography only — no new sentences. */
 export function responseTextAfterSurfaceSemanticallyEquals(
   afterLanding: string,
   afterSurface: string
@@ -196,20 +145,11 @@ export function responseTextAfterSurfaceSemanticallyEquals(
       .replace(/\s+/g, " ")
       .trim()
       .toLowerCase();
-
   const a = normalize(afterLanding);
   const b = normalize(afterSurface);
   if (a === b) return true;
-
-  const countSentences = (s: string) =>
-    s.split(/(?<=[.!?])\s+/).filter((x) => x.trim().length > 0).length;
-  if (countSentences(b) > countSentences(a)) return false;
-  if (/seen it named|what about .+ looks different/i.test(afterSurface)) {
-    return false;
-  }
-  const aCore = a.replace(/[.!?]+$/g, "").trim();
-  return (
-    b.includes(aCore.slice(0, Math.min(80, aCore.length))) ||
-    a.includes(b.slice(0, Math.min(80, b.length)))
-  );
+  const count = (s: string) => s.split(/(?<=[.!?])\s+/).filter((x) => x.trim()).length;
+  if (count(b) > count(a)) return false;
+  if (/seen it named|what about .+ looks different/i.test(afterSurface)) return false;
+  return true;
 }
