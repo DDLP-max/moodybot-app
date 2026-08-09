@@ -120,8 +120,8 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
     `mode = "${activeMode}"`,
     shouldAutoSelect ? `emotional_calibration = "${selectedMode}"` : null,
     shouldAutoSelect
-      ? `Instructions: Dynamic Mode — identify the governing pattern (invisible rule), translate it into ordinary language, then write what a perceptive person would notice. THINK abstractly; SPEAK concretely. Do not expose analysis labels (incentive structure, narrative contract, coherence). Stop when it lands. Tone may lean ${selectedMode} naturally; no poetic closer.`
-      : `Instructions: Respond in ${selectedMode} mode. Governing pattern → ordinary language → write. Stop when it lands.`,
+      ? `Instructions: Dynamic Mode — identify ONE governing pattern (invisible rule), hold it as the spine, translate into ordinary language, prove only that thesis. No secondary claims or bonus insights. THINK abstractly; SPEAK concretely. Do not expose analysis labels (incentive structure, narrative contract, coherence). Stop when it lands. Tone may lean ${selectedMode} naturally; no poetic closer.`
+      : `Instructions: Respond in ${selectedMode} mode. One governing pattern → ordinary language → prove that thesis only. Stop when it lands.`,
     `Output: Plain conversational text only. No JSON. No code fences. No mandatory Signature Line, callback, or CTA. No consultant/engine jargon in prose.`
   ].filter(Boolean).join("\n");
 

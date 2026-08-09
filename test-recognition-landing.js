@@ -106,6 +106,9 @@ function testWriteDirectiveRequiresProofNotRecap() {
   assert.ok(lower.includes("trust the reader"));
   assert.ok(lower.includes("prove it once"));
   assert.ok(lower.includes("new understanding"));
+  assert.ok(lower.includes("thesis discipline"));
+  assert.ok(lower.includes("one response") && lower.includes("one thesis"));
+  assert.ok(lower.includes("bloodlines mattered"));
 }
 
 function testFinalizerDoesNotRewriteAbstractDiction() {
