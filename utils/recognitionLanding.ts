@@ -162,8 +162,7 @@ export function applyRecognitionLanding(
     return { text: out, modified, landing: "signature_line" };
   }
 
-  // Generate AFTER body exists — react to the draft
-  generateSignatureLine({}, out, userMessage);
+  // Generate AFTER body exists — react to the draft (single path)
   const ensured = ensureSignatureLine(out, userMessage, {});
   out = ensured.text;
   modified = modified || ensured.modified;

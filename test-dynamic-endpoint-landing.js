@@ -19,7 +19,7 @@ const result = postProcessMoodyResponse(MODEL_DRAFT, USER, {
   appendRandomCta: false,
 });
 
-assert.strictEqual(result.landingEngineVersion, "signature-line-v2");
+assert.strictEqual(result.landingEngineVersion, "signature-line-v3");
 assert.ok(
   !/looks different now that you've seen it named/i.test(result.text),
   result.text
@@ -27,11 +27,15 @@ assert.ok(
 assert.ok(!/seen it named/i.test(result.text), result.text);
 assert.ok(!/what about feminists/i.test(result.text), result.text);
 assert.strictEqual(result.landing, "signature_line");
-// Forced question ban for this politics prompt unless signature language
 const closer = result.afterLandingLastSentence.replace(/🥃/g, "").trim();
 assert.ok(
   !closer.endsWith("?") || /stretch|carrying|cracked/i.test(closer),
   `unexpected forced question closer: ${closer}`
+);
+// Must reveal one layer deeper — not restate the thesis body
+assert.ok(
+  !/accusation stops being analysis/i.test(closer),
+  `restated thesis as Signature Line: ${closer}`
 );
 
 console.log("Dynamic endpoint landing integration test passed.");

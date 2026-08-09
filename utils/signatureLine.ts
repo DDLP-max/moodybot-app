@@ -5,7 +5,7 @@
  * generateSignatureLine runs AFTER the body exists and reacts to it.
  */
 
-export const SIGNATURE_ENGINE_VERSION = "signature-line-v2";
+export const SIGNATURE_ENGINE_VERSION = "signature-line-v3";
 
 const MAX_WORDS = 18;
 const MAX_WORDS_EXCEPTIONAL = 22;
@@ -106,6 +106,62 @@ function hasTurn(line: string): boolean {
   );
 }
 
+function bodySentences(body: string): string[] {
+  return (body || "")
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter((s) => s && !s.endsWith("?"));
+}
+
+/** If I removed the last sentence, would the body already have said the same thing? */
+export function bodyAlreadySaidThis(line: string, body: string): boolean {
+  const lineN = norm(line);
+  const lineToks = contentTokens(line);
+  if (!lineN || !body || !lineToks.size) return false;
+  for (const sent of bodySentences(body)) {
+    const sentN = norm(sent);
+    if (!sentN) continue;
+    if (lineN === sentN || lineN.replace(/[.!]$/, "") === sentN.replace(/[.!]$/, "")) {
+      return true;
+    }
+    const sentToks = contentTokens(sent);
+    if (!sentToks.size) continue;
+    let overlapCount = 0;
+    for (const t of lineToks) if (sentToks.has(t)) overlapCount++;
+    const overlap = overlapCount / lineToks.size;
+    let novel = 0;
+    for (const t of lineToks) if (!sentToks.has(t)) novel++;
+    if (overlap >= 0.78 && novel <= 1) return true;
+    let subset = true;
+    for (const t of lineToks) {
+      if (!sentToks.has(t)) {
+        subset = false;
+        break;
+      }
+    }
+    if (subset && lineToks.size >= 3) return true;
+  }
+  return false;
+}
+
+export function addsDeeperLayer(line: string, body: string): boolean {
+  if (!body) return true;
+  const lineToks = contentTokens(line);
+  const bodyToks = contentTokens(body);
+  if (!lineToks.size) return false;
+  const novel: string[] = [];
+  for (const t of lineToks) if (!bodyToks.has(t)) novel.push(t);
+  const revealTurn =
+    /\b(becomes?|became|stopped being|already ending|runs?\s+out|pretending|needs? permission|survives by|long before|was already|no longer|instead|don't end|does not end|rarely end|explains?|announces itself)\b/i.test(
+      line
+    );
+  if (/\b(matter|matters|important|real|true|valid)\b\.?$/i.test(norm(line))) {
+    return false;
+  }
+  // Revelation requires a turn + at least one new hinge (not thesis echo)
+  return revealTurn && novel.length >= 1;
+}
+
 export type SignatureQuality = {
   specificity: boolean;
   compression: boolean;
@@ -139,6 +195,12 @@ export function scoreSignatureLine(
   if (SUMMARY.some((m) => lower.includes(m))) {
     compression = false;
     reasons.push("compression:mechanical_summary");
+  } else if (opts.body && bodyAlreadySaidThis(line, opts.body)) {
+    compression = false;
+    reasons.push("compression:restates_thesis");
+  } else if (opts.body && !addsDeeperLayer(line, opts.body)) {
+    compression = false;
+    reasons.push("compression:no_deeper_layer");
   }
 
   let authorship = true;
@@ -226,7 +288,13 @@ function topicLine(userMessage: string, body: string): string | null {
         "The moment gratitude needs permission, the argument changed.",
       ],
     ],
-    [/boundary|boundaries/, ["Boundaries rarely end relationships — they reveal them."]],
+    [
+      /boundary|boundaries/,
+      [
+        "Boundaries don't end relationships — they reveal the ones that were already ending.",
+        "Boundaries rarely end relationships — they reveal them.",
+      ],
+    ],
     [
       /story|narrative|defending/,
       [
@@ -236,7 +304,13 @@ function topicLine(userMessage: string, body: string): string | null {
     ],
     [/backstage/, ["The backstage explains the stage."]],
     [/paper trail|receipts|performance/, ["The paper trail is where the performance runs out."]],
-    [/dirty talk|porn|script/, ["The script library grew — the language only followed."]],
+    [
+      /dirty talk|porn|script/,
+      [
+        "The language only followed — the script library had already grown.",
+        "The script usually survives by making the new language feel ordinary.",
+      ],
+    ],
     [/cancel|late at night|low priority/, ["Convenience dressed as connection is still just convenience."]],
   ];
   for (const [re, lines] of bank) {
@@ -255,6 +329,8 @@ export function lastLineIsSignature(text: string, userMessage = ""): boolean {
   const paras = (text || "").trim().split(/\n\s*\n/);
   const last = (paras[paras.length - 1] || "").trim();
   const body = paras.slice(0, -1).join("\n\n");
+  // A sole paragraph is the thesis body — not yet a Signature Line.
+  if (!body) return false;
   return validateSignatureLine(last, {
     body,
     userMessage,
@@ -263,15 +339,22 @@ export function lastLineIsSignature(text: string, userMessage = ""): boolean {
 }
 
 function extractFromBody(body: string, userMessage: string): string | null {
-  const sentences = (body || "")
-    .split(/(?<=[.!?])\s+/)
-    .map((s) => s.trim())
-    .filter((s) => s && !s.endsWith("?"));
-  for (let i = sentences.length - 1; i >= 0; i--) {
-    const s = sentences[i];
-    if (validateSignatureLine(s, { allowExceptionalLength: true, userMessage, body, checkNovelty: false }).ok) {
-      return s;
-    }
+  // Only a deeper last paragraph counts — mid-body thesis lines explain, not reveal.
+  const paras = (body || "").trim().split(/\n\s*\n/);
+  if (paras.length < 2) return null;
+  const last = (paras[paras.length - 1] || "").trim();
+  const prior = paras.slice(0, -1).join("\n\n");
+  if (!last || !prior || !isSingleSentence(last)) return null;
+  if (bodyAlreadySaidThis(last, prior) || !addsDeeperLayer(last, prior)) return null;
+  if (
+    validateSignatureLine(last, {
+      allowExceptionalLength: true,
+      userMessage,
+      body: prior,
+      checkNovelty: false,
+    }).ok
+  ) {
+    return last;
   }
   return null;
 }
@@ -289,11 +372,24 @@ export function generateSignatureLine(
   }
   if (lastLineIsSignature(body, userMessage)) {
     const paras = body.split(/\n\s*\n/);
-    return (paras[paras.length - 1] || "").trim();
+    const last = (paras[paras.length - 1] || "").trim();
+    const prior = paras.slice(0, -1).join("\n\n");
+    if (prior && !bodyAlreadySaidThis(last, prior) && addsDeeperLayer(last, prior)) {
+      return last;
+    }
   }
   const extracted = extractFromBody(body, userMessage);
-  if (extracted) return extracted;
-  return topicLine(userMessage, body);
+  if (extracted) {
+    const others = body.replace(extracted, " ");
+    if (!bodyAlreadySaidThis(extracted, others) && addsDeeperLayer(extracted, others)) {
+      return extracted;
+    }
+  }
+  const deeper = topicLine(userMessage, body);
+  if (deeper && !bodyAlreadySaidThis(deeper, body) && addsDeeperLayer(deeper, body)) {
+    return deeper;
+  }
+  return null;
 }
 
 export function craftSignatureLine(userMessage: string, body: string): string | null {
@@ -317,7 +413,19 @@ export function ensureSignatureLine(
     if (sents.length >= 2) base = sents.slice(0, -1).join(" ").trim();
   }
   const line = generateSignatureLine(plan || {}, base, userMessage);
-  if (!line || !validateSignatureLine(line, { allowExceptionalLength: true, userMessage, body: base, checkNovelty: false }).ok) {
+  if (!line) {
+    return { text: base, modified: false, signature: null };
+  }
+  // Validate against body without this line (promotion isn't restatement)
+  const priorForGate = line && base.includes(line) ? base.replace(line, " ").replace(/\s{2,}/g, " ").trim() : base;
+  if (
+    !validateSignatureLine(line, {
+      allowExceptionalLength: true,
+      userMessage,
+      body: priorForGate,
+      checkNovelty: false,
+    }).ok
+  ) {
     return { text: base, modified: false, signature: null };
   }
   const paras = base.split(/\n\s*\n/);
