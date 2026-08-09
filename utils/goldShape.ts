@@ -10,6 +10,14 @@ const LIKE_A = /\blike a\b|\bas if\b|\bas though\b/gi;
 const CONFERENCE_SIGNALS =
   /\b(ideology|universal claim|defection|dialectic|paradigm|systemic(?:\s+mechanism)?|resentment economy|grievance economy|incentive structure|incentives?|narrative contract|framework|meta-analysis|inconsistency|fixed boundaries|asymmetric incentives|social validation|status signalling|status signaling|resource extraction|boundary violation|wherever .+ reward)\b/gi;
 const ESSAY_NOUNS = CONFERENCE_SIGNALS;
+const STOCK_SOCIAL_MECHANISMS =
+  /\b(rule[- ]shopping|grievance script|resentment economy|loyalty program|collective (grievance|injury)|pick[- ]me enforcement|shared injury story|defection from the)\b/i;
+const TASTE_DOMAIN_MARKERS =
+  /\b(mcdonald|burger|fries|pizza|coffee|food|taste|restaurant|delicious|sushi|steak|dessert|eat|dining)\b/i;
+const PREFERENCE_DOMAIN_MARKERS =
+  /\b(best|worst|overrated|underrated|favorite|familiar|consistency|convenience|nostalgia|value|brand|iphone|tesla)\b/i;
+const SOCIAL_PROMPT_MARKERS =
+  /\b(feminist|feminism|patriarchy|pick[- ]me|misogyn|ideology|woke|privilege|oppression|gender|politics|culture war|grievance)\b/i;
 const CTA_TAIL =
   /(want me to|let me know if|say the word|tag @|mention @|what do you think\??\s*$|agree\??\s*$|stay (dangerous|sharp))/i;
 const SPEAR_MARKERS =
@@ -26,7 +34,18 @@ export type GoldShapeReport = {
   spear_detected: boolean;
   whiskey_tail_present: boolean;
   spear_line: string;
+  mechanism_mismatch: boolean;
 };
+
+/** Favorite-drawer social mechanism on a non-social prompt — diagnose only. */
+export function detectMechanismMismatch(userMessage: string, draft: string): boolean {
+  const body = stripWhiskey(draft);
+  if (!STOCK_SOCIAL_MECHANISMS.test(body)) return false;
+  const um = userMessage || "";
+  if (SOCIAL_PROMPT_MARKERS.test(um)) return false;
+  if (TASTE_DOMAIN_MARKERS.test(um) || PREFERENCE_DOMAIN_MARKERS.test(um)) return true;
+  return false;
+}
 
 function words(text: string): string[] {
   return (text || "").match(WORD_RE) || [];
@@ -176,6 +195,9 @@ export function evaluateGoldShape(userMessage: string, draft: string, structure:
   if (isConferenceTalkSentence(ss[ss.length - 1])) {
     failures.push("abstract_closer");
   }
+  if (detectMechanismMismatch(userMessage, body)) {
+    failures.push("mechanism_mismatch");
+  }
   if (structure === "SNAP" && wc > 70) failures.push("snap_overlong");
   if (structure === "KNIFE" && wc > 140) failures.push("knife_overlong");
   if (structure === "KNIFE" && ss.length > 7) failures.push("knife_too_many_sentences");
@@ -270,10 +292,13 @@ export function applyGoldShapePass(
     spear_detected: false,
     whiskey_tail_present: false,
     spear_line: "",
+    mechanism_mismatch: false,
   };
 
   const failures = evaluateGoldShape(userMessage, body, selected);
   report.quality_failures = failures;
+  report.mechanism_mismatch = failures.includes("mechanism_mismatch");
+  // mechanism_mismatch is diagnostic only — do not invent a better insight here.
   const triggers = new Set([
     "premise_restatement",
     "thesis_repetition",
@@ -293,6 +318,7 @@ export function applyGoldShapePass(
       report.quality_rewrite_triggered = true;
       body = stripWhiskey(compressed);
       report.quality_failures = evaluateGoldShape(userMessage, body, selected);
+      report.mechanism_mismatch = report.quality_failures.includes("mechanism_mismatch");
     }
   }
 
@@ -317,5 +343,6 @@ export function goldShapeDiagnostics(report: GoldShapeReport): Record<string, st
     spear_detected: String(report.spear_detected),
     spear_line: (report.spear_line || "").slice(0, 240),
     whiskey_tail_present: String(report.whiskey_tail_present),
+    mechanism_mismatch: String(report.mechanism_mismatch),
   };
 }

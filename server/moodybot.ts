@@ -13,6 +13,11 @@ import {
   lastSentence,
   postProcessMoodyResponse,
 } from "../utils/moodybotPostProcess";
+import {
+  classifyClaimDomain,
+  domainMechanismGuidance,
+  selectInterpretiveLens,
+} from "../utils/claimDomain";
 import { appendToTextLog } from "./logger";
 import type { ChatCompletionMessageParam } from "openai/resources/chat";
 import { 
@@ -116,13 +121,26 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
   // Slash-command structure only when user/auto-selected a specific tone —
   // never force "poetic closure" / emotional-arc costume on plain Dynamic.
   const structurePrompt = shouldAutoSelect ? undefined : getStructurePrompt(selectedMode);
+  const claimDomain = classifyClaimDomain(userMessage);
+  const lensBundle = selectInterpretiveLens(claimDomain);
+  const mechanismFit = domainMechanismGuidance(
+    claimDomain,
+    lensBundle.lens,
+    lensBundle.primary
+  );
   const modeDirective = [
     `mode = "${activeMode}"`,
+    `claim_domain = "${claimDomain}"`,
+    `interpretive_lens = "${lensBundle.lens}"`,
+    `primary_capability = "${lensBundle.primary}"`,
+    `preferred_structure = "${lensBundle.preferred_structure}"`,
+    `mechanism_hint = "${lensBundle.mechanism_hint}"`,
     shouldAutoSelect ? `emotional_calibration = "${selectedMode}"` : null,
     shouldAutoSelect
-      ? `Instructions: Dynamic Mode — identify ONE governing pattern (invisible rule), hold it as the spine, translate into ordinary language, prove only that thesis. No secondary claims or bonus insights. THINK abstractly; SPEAK concretely. Do not expose analysis labels (incentive structure, narrative contract, coherence). Stop when it lands. Tone may lean ${selectedMode} naturally; no poetic closer.`
-      : `Instructions: Respond in ${selectedMode} mode. One governing pattern → ordinary language → prove that thesis only. Stop when it lands.`,
-    `Output: Plain conversational text only. No JSON. No code fences. No mandatory Signature Line, callback, or CTA. No consultant/engine jargon in prose.`
+      ? `Instructions: Dynamic Mode — four layers: Identity (interpretive lens) → Intelligence (broad capability) → Writing (SNAP/KNIFE/STORY) → Editing (Gold only). Food → Bourdain + Everyday Preference Analysis (not Power analysis). Gold never picks the lens. Identify ONE governing pattern, prove only that thesis. THINK abstractly; SPEAK concretely. Do not expose lens names. Stop when it lands. Tone may lean ${selectedMode} naturally; no poetic closer.`
+      : `Instructions: Respond in ${selectedMode} mode. Interpretive lens → capability → mechanism → ordinary language → prove that thesis only. Stop when it lands.`,
+    mechanismFit,
+    `Output: Plain conversational text only. No JSON. No code fences. No mandatory Signature Line, callback, or CTA. No consultant/engine jargon in prose. Never name the lens.`
   ].filter(Boolean).join("\n");
 
   const messages: ChatCompletionMessageParam[] = [];
