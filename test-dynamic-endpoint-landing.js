@@ -19,14 +19,14 @@ const result = postProcessMoodyResponse(MODEL_DRAFT, USER, {
   appendRandomCta: false,
 });
 
-assert.strictEqual(result.landingEngineVersion, "minimal-write-v1");
+assert.strictEqual(result.landingEngineVersion, "protect-only-v1");
 assert.strictEqual(result.landing, "body_ends_response");
 assert.strictEqual(result.landingAdded, false);
 assert.ok(!/seen it named/i.test(result.text));
 assert.ok(result.text.toLowerCase().includes("stopped earning"));
 assert.ok(!/moment gratitude becomes betrayal/i.test(result.text));
 
-console.log("Dynamic endpoint minimal-write test passed.");
+console.log("Dynamic endpoint protect-only test passed.");
 console.log("landing=", result.landing);
 console.log("landing_added=", result.landingAdded);
 console.log("post_finalizer_reason=", result.postFinalizerReason);

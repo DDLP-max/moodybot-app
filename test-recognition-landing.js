@@ -34,7 +34,7 @@ function testValidateLandingRejectsExactFailure() {
 
 function testMinimalWriteNoForcedSignature() {
   assert.strictEqual(CREATIVE_ENDING_TOOLS_ENABLED, false);
-  assert.strictEqual(LANDING_ENGINE_VERSION, "minimal-write-v1");
+  assert.strictEqual(LANDING_ENGINE_VERSION, "protect-only-v1");
   const { text, landing, landingAdded } = applyRecognitionLanding(GOT_INSIGHT, "Why season 8?");
   assert.strictEqual(landing, "body_ends_response");
   assert.strictEqual(landingAdded, false);
@@ -81,7 +81,7 @@ function testInventoryDraftNotDecorated() {
 }
 
 function testLandingEngineVersionConstant() {
-  assert.strictEqual(LANDING_ENGINE_VERSION, "minimal-write-v1");
+  assert.strictEqual(LANDING_ENGINE_VERSION, "protect-only-v1");
 }
 
 function testWriteDirectiveRequiresProofNotRecap() {
@@ -98,7 +98,7 @@ testSignatureRejectedWhenShorterParaphrase();
 testInventoryDraftNotDecorated();
 testLandingEngineVersionConstant();
 testWriteDirectiveRequiresProofNotRecap();
-console.log("All minimal-write landing tests passed.");
+console.log("All protect-only landing tests passed.");
 console.log("landing_engine_version=", LANDING_ENGINE_VERSION);
 void lastSentence;
 void isBrokenCloser;

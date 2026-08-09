@@ -4,7 +4,7 @@
  * BODY_ENDS_RESPONSE is preferred. NO_SIGNATURE_FOUND is success.
  */
 
-export const SIGNATURE_ENGINE_VERSION = "minimal-write-v1";
+export const SIGNATURE_ENGINE_VERSION = "protect-only-v1";
 /** Creative Signature Line discovery — OFF on default Dynamic path. */
 export const CREATIVE_ENDING_TOOLS_ENABLED =
   process.env.MOODYBOT_CREATIVE_ENDINGS === "1";
