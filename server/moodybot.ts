@@ -8,6 +8,7 @@ const __dirname = path.dirname(__filename);
 
 import fs from "fs";
 import {
+  CORE_WRITE_DIRECTIVE,
   LANDING_ENGINE_VERSION,
   lastSentence,
   postProcessMoodyResponse,
@@ -112,18 +113,20 @@ ${moodyPrompt}
 IMPORTANT: Do NOT add scene-setting text, cinematic descriptions, or italics formatting like "*scene description*".
 Respond directly as MoodyBot in natural prose (not JSON), focused on the user's message.`;
 
-  // Replit pattern: inject STRUCTURE_PROMPTS for the selected tone before the main system prompt
-  const structurePrompt = getStructurePrompt(selectedMode);
+  // Slash-command structure only when user/auto-selected a specific tone —
+  // never force "poetic closure" / emotional-arc costume on plain Dynamic.
+  const structurePrompt = shouldAutoSelect ? undefined : getStructurePrompt(selectedMode);
   const modeDirective = [
     `mode = "${activeMode}"`,
     shouldAutoSelect ? `emotional_calibration = "${selectedMode}"` : null,
     shouldAutoSelect
-      ? `Instructions: Dynamic Mode — calibrate tone toward ${selectedMode}. Full MoodyBot personality, emotional arc, poetic closure.`
-      : `Instructions: Respond in ${selectedMode} mode while keeping MoodyBot voice.`,
-    `Output: Plain conversational text only. No JSON. No code fences.`
+      ? `Instructions: Dynamic Mode — find the hidden pattern / contradiction / emotional truth. Lead with the insight. Use only enough evidence to prove it. Stop when it lands. Tone may lean ${selectedMode} naturally; do not perform a poetic closer.`
+      : `Instructions: Respond in ${selectedMode} mode. Insight first. Stop when the answer lands.`,
+    `Output: Plain conversational text only. No JSON. No code fences. No mandatory Signature Line, callback, or CTA.`
   ].filter(Boolean).join("\n");
 
   const messages: ChatCompletionMessageParam[] = [];
+  messages.push({ role: "system", content: CORE_WRITE_DIRECTIVE });
   if (structurePrompt) {
     messages.push({ role: "system", content: structurePrompt });
   }
@@ -218,8 +221,13 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
       generation_function: "generateChatResponse",
       landing_engine_version: LANDING_ENGINE_VERSION,
       landing: processed.landing,
+      core_insight: processed.coreInsight,
+      body_generated: draftLast,
+      post_finalizer_changed_text: String(processed.postFinalizerChangedText),
+      post_finalizer_reason: processed.postFinalizerReason,
+      landing_added: String(processed.landingAdded),
+      cta_removed: String(processed.ctaRemoved),
       draft_last_sentence: draftLast,
-      after_epistemic_last_sentence: draftLast, // web path has no separate epistemic stage
       after_landing_last_sentence: processed.afterLandingLastSentence,
       after_surface_render_last_sentence: processed.afterSurfaceLastSentence,
       final_http_last_sentence: finalLast,

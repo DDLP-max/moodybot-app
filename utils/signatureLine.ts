@@ -1,9 +1,13 @@
 /**
- * Signature Line — earned writing opportunity, not a required feature.
- * Chase inevitable, not memorable. NO_SIGNATURE_FOUND is success.
+ * Signature Line — rare earned ending, never a required module.
+ * PRIMARY RULE: the body is allowed to be the last line.
+ * BODY_ENDS_RESPONSE is preferred. NO_SIGNATURE_FOUND is success.
  */
 
-export const SIGNATURE_ENGINE_VERSION = "earned-ending-v1";
+export const SIGNATURE_ENGINE_VERSION = "minimal-write-v1";
+/** Creative Signature Line discovery — OFF on default Dynamic path. */
+export const CREATIVE_ENDING_TOOLS_ENABLED =
+  process.env.MOODYBOT_CREATIVE_ENDINGS === "1";
 export const NO_SIGNATURE_FOUND = "NO_SIGNATURE_FOUND";
 
 const MAX_WORDS = 18;
@@ -11,6 +15,16 @@ const MAX_WORDS_EXCEPTIONAL = 22;
 const MIN_WORDS = 4;
 const DISCOVERY_THRESHOLD = 0.72;
 const SIMILARITY_REJECT = 0.62;
+const REDUNDANCY_REJECT = 0.55;
+
+const TERMINAL_RHYTHM_EXAMPLES = [
+  "before the example spreads",
+  "the paper trail does the talking",
+  "the relationship was already telling you",
+  "the performance runs out",
+  "before the example becomes contagious",
+  "examples are more dangerous than arguments",
+];
 
 const recentSignatures: string[] = [];
 
@@ -88,6 +102,34 @@ export function semanticSimilarity(a: string, b: string): number {
   return inter / Math.max(union, 1);
 }
 
+export function isShorterParaphrase(line: string, body: string): boolean {
+  const lineToks = contentTokens(line);
+  if (lineToks.size < 3) return false;
+  const lineWc = wordCount(line);
+  for (const sent of bodySentences(body)) {
+    const sentToks = contentTokens(sent);
+    if (!sentToks.size) continue;
+    let subset = true;
+    for (const t of lineToks) {
+      if (!sentToks.has(t)) {
+        subset = false;
+        break;
+      }
+    }
+    if (subset && lineWc < wordCount(sent)) return true;
+    let overlap = 0;
+    for (const t of lineToks) if (sentToks.has(t)) overlap++;
+    if (
+      overlap / lineToks.size >= 0.8 &&
+      lineWc <= wordCount(sent) &&
+      [...lineToks].filter((t) => !sentToks.has(t)).length <= 1
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function bodyAlreadySaidThis(line: string, body: string): boolean {
   const lineN = norm(line);
   const lineToks = contentTokens(line);
@@ -133,32 +175,106 @@ export function addsDeeperLayer(line: string, body: string): boolean {
   return reveal && novel.length >= 2;
 }
 
+export function isSemanticallyRedundant(line: string, body: string): boolean {
+  if (!line || !body) return false;
+  if (bodyAlreadySaidThis(line, body) || isShorterParaphrase(line, body)) return true;
+  const sents = bodySentences(body);
+  const final = sents[sents.length - 1] || "";
+  const fp = finalParagraph(body);
+  for (const target of [final, fp, body].filter(Boolean)) {
+    const sim = semanticSimilarity(line, target);
+    const novel = [...contentTokens(line)].filter((t) => !contentTokens(target).has(t));
+    if (sim >= SIMILARITY_REJECT && novel.length < 2) return true;
+    if (
+      sim >= REDUNDANCY_REJECT &&
+      wordCount(line) <= wordCount(target) &&
+      novel.length < 3 &&
+      !addsDeeperLayer(line, body)
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export function hasTerminalRhythm(final: string): boolean {
+  const lower = (final || "").trim().toLowerCase().replace(/[.!]+$/, "");
+  if (!lower) return false;
+  if (TERMINAL_RHYTHM_EXAMPLES.some((ex) => lower.includes(ex))) return true;
+  if (
+    /\b(?:before|once|until)\b.+\b(?:spreads?|contagious|runs?\s+out|ends?|talking|telling you)\b/i.test(
+      lower
+    )
+  ) {
+    return true;
+  }
+  if (
+    /\b(?:enforcement|disciplinary|threatens?|resentment|defection|loyalty|narrative|punish|breach|collective)\b/i.test(
+      lower
+    ) &&
+    lower.split(/\s+/).length >= 10 &&
+    /\b(?:spreads?|talking|telling|runs?\s+out|resentment|defection|enforcement|narrative|breach|loyalty|betrayal)\.?$/i.test(
+      lower
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export function bodyAlreadyLands(body: string): boolean {
   const text = (body || "").trim();
   if (!text) return false;
   const last = finalParagraph(text);
   if (!last || last.endsWith("?")) return false;
-  if (/do you want|would you like|seen it named|what about /i.test(last)) return false;
+  if (/do you want|would you like|seen it named|what about |say the word/i.test(last)) {
+    return false;
+  }
+  if (/in other words|to summarize|to sum up|in summary|basically|all in all/i.test(last)) {
+    return false;
+  }
   const sentences = last.split(/(?<=[.!])\s+/).map((s) => s.trim()).filter(Boolean);
   if (!sentences.length) return false;
   const final = sentences[sentences.length - 1];
   if (!/[.!]$/.test(final)) return false;
+  const stem = final.replace(/[.!]+$/, "").trim();
+  if (/\b(?:because|since|which means|however|although|though|but)\s*$/i.test(stem)) {
+    return false;
+  }
   const wc = final.split(/\s+/).length;
   if (wc < 7) return false;
-  const lands =
-    /\b(enforcement|threatens?|reveals?|betrayal|convenience|protection|resentment|defection|loyalty|already|stopped|becomes?|explains?|survives?|pretending)\b/i.test(
+  const rhythm = hasTerminalRhythm(final);
+  const insight =
+    /\b(enforcement|disciplinary|threatens?|reveals?|betrayal|convenience|protection|resentment|defection|loyalty|narrative|grievance|already|stopped|becomes?|explains?|survives?|pretending|punish|breach|collective|subtractive)\b/i.test(
       final
     );
-  const solid = wc >= 12 && !/\b(maybe|perhaps|might)\b/i.test(final);
-  return (lands && wc >= 7) || solid;
+  const hedging = /\b(maybe|perhaps|might|seems? to)\b/i.test(final);
+  const multi = bodySentences(text).length >= 2;
+  const solid = wc >= 12 && !hedging && insight;
+  const rhythmicClose = rhythm && wc >= 8 && !hedging;
+  if (rhythmicClose && (insight || multi || wc >= 14)) return true;
+  if (solid && (rhythm || multi)) return true;
+  // Completed argument: setup sentences + closing insight
+  if (insight && multi && wc >= 7 && !hedging) return true;
+  return false;
 }
 
+export function bodyAloneStrongerOrEqual(body: string, signature: string): boolean {
+  if (!signature?.trim()) return true;
+  if (bodyAlreadyLands(body)) return true;
+  if (isSemanticallyRedundant(signature, body)) return true;
+  if (bodyAlreadySaidThis(signature, body)) return true;
+  if (isShorterParaphrase(signature, body)) return true;
+  if (!addsDeeperLayer(signature, body)) return true;
+  const fp = finalParagraph(body);
+  if (fp && semanticSimilarity(signature, fp) >= SIMILARITY_REJECT) return true;
+  return false;
+}
+
+/** True = keep signature. False = delete (A ≥ B). */
 export function deletionTest(body: string, signature: string): boolean {
   if (!signature?.trim()) return false;
-  if (bodyAlreadySaidThis(signature, body)) return false;
-  if (!addsDeeperLayer(signature, body)) return false;
-  const fp = finalParagraph(body);
-  if (fp && semanticSimilarity(signature, fp) >= SIMILARITY_REJECT) return false;
+  if (bodyAloneStrongerOrEqual(body, signature)) return false;
   return true;
 }
 

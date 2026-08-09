@@ -1,11 +1,11 @@
 /**
- * Earned endings for Dynamic Mode.
- * BODY_ENDS_RESPONSE is first-class. Signature Line is optional discovery.
+ * Protective landing cleanup for Dynamic Mode.
+ * Creative Signature Line / callback discovery is OFF by default.
  */
 
 import {
+  CREATIVE_ENDING_TOOLS_ENABLED,
   SIGNATURE_ENGINE_VERSION,
-  bodyAlreadyLands,
   ensureSignatureLine,
   lastSentence,
 } from "./signatureLine";
@@ -45,6 +45,13 @@ export function validateLanding(closer: string): LandingValidation {
   return { ok: true, reason: "ok" };
 }
 
+const GENERIC_CTA =
+  /\b(do you want|would you like|want me to|say the word|let me know if|does that make sense|anything else\??|if you want|if you'd like)\b/i;
+
+function isGenericCta(text: string): boolean {
+  return GENERIC_CTA.test((text || "").trim());
+}
+
 function stripTrailingBrokenSentence(text: string): string {
   let out = (text || "").trim();
   if (!out) return out;
@@ -66,19 +73,37 @@ function stripTrailingBrokenSentence(text: string): string {
   }
   out = lines.join("\n").trim();
 
-  const paras = out.split(/\n\s*\n/);
-  if (paras.length >= 2) {
+  // Strip trailing CTA / engagement paragraphs before body-landing evaluation
+  let paras = out.split(/\n\s*\n/);
+  while (paras.length >= 2) {
     const closer = (paras[paras.length - 1] || "").trim();
-    if (!validateLanding(closer).ok || isBrokenCloser(closer) || closer.endsWith("?")) {
-      out = paras.slice(0, -1).join("\n\n").trim();
+    if (
+      !validateLanding(closer).ok ||
+      isBrokenCloser(closer) ||
+      closer.endsWith("?") ||
+      isGenericCta(closer)
+    ) {
+      paras = paras.slice(0, -1);
+      out = paras.join("\n\n").trim();
+      continue;
     }
+    break;
   }
 
-  if (out.endsWith("?") || isBrokenCloser(out.split(/(?<=[.!?])\s+/).pop() || "")) {
+  if (
+    out.endsWith("?") ||
+    isBrokenCloser(out.split(/(?<=[.!?])\s+/).pop() || "") ||
+    isGenericCta(out.split(/(?<=[.!?])\s+/).pop() || "")
+  ) {
     const sentences = out.split(/(?<=[.!?])\s+/);
     if (sentences.length >= 2) {
       const final = sentences[sentences.length - 1] || "";
-      if (!validateLanding(final).ok || isBrokenCloser(final) || final.endsWith("?")) {
+      if (
+        !validateLanding(final).ok ||
+        isBrokenCloser(final) ||
+        final.endsWith("?") ||
+        isGenericCta(final)
+      ) {
         out = sentences.slice(0, -1).join(" ").trim();
       }
     }
@@ -98,27 +123,29 @@ function stripTrailingBrokenSentence(text: string): string {
 export function applyRecognitionLanding(
   text: string,
   userMessage: string
-): { text: string; modified: boolean; landing: string } {
+): { text: string; modified: boolean; landing: string; landingAdded: boolean } {
   const before = (text || "").trim();
   let out = stripTrailingBrokenSentence(before);
   let modified = out !== before;
+  let landingAdded = false;
 
   const um = (userMessage || "").toLowerCase();
   if (/\b(died|funeral|grief|can't stop crying)\b/.test(um)) {
-    return { text: out, modified, landing: "silence" };
+    return { text: out, modified, landing: "silence", landingAdded: false };
   }
   if (/what should i do|what do i say|how should i handle|what now/.test(um)) {
-    return { text: out, modified, landing: "action" };
+    return { text: out, modified, landing: "action", landingAdded: false };
   }
 
-  // Body already finished — stop writing
-  if (bodyAlreadyLands(out)) {
-    return { text: out, modified, landing: "body_ends_response" };
+  // Default path: body stands. No signature/callback manufacture.
+  if (!CREATIVE_ENDING_TOOLS_ENABLED) {
+    return { text: out, modified, landing: "body_ends_response", landingAdded: false };
   }
 
   const ensured = ensureSignatureLine(out, userMessage, {});
   out = ensured.text;
   modified = modified || ensured.modified;
+  landingAdded = Boolean(ensured.signature) && ensured.modified;
 
   if (isBrokenCloser(out.split(/(?<=[.!?])\s+/).pop() || "") || /seen it named/i.test(out)) {
     out = stripTrailingBrokenSentence(out);
@@ -129,6 +156,7 @@ export function applyRecognitionLanding(
     text: out,
     modified,
     landing: ensured.landing || "body_ends_response",
+    landingAdded,
   };
 }
 

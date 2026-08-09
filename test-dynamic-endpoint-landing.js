@@ -1,13 +1,15 @@
 /**
- * Dynamic path: body may end the response. No mandatory Signature Line.
+ * Dynamic path: protective post-process only. No forced Signature Line.
  */
 import assert from "assert";
 import { postProcessMoodyResponse } from "./utils/moodybotPostProcess.ts";
 
-const USER = "Why do feminists hate women praising men?";
+const USER = "Why did Game of Thrones season 8 fail?";
 const MODEL_DRAFT = [
-  "The 'pick me' charge works as social enforcement of loyalty.",
-  "Public gratitude toward one man threatens movements that depend on collective resentment.",
+  "Game of Thrones didn't fail because the characters ended in the wrong places.",
+  "It failed because the show stopped earning the distance between cause and consequence.",
+  "",
+  "Daenerys is the cleanest example: madness may have been a plausible destination, but the show skipped the road.",
   "",
   "What about feminists hate woman looks different now that you've seen it named?",
 ].join("\n");
@@ -17,19 +19,15 @@ const result = postProcessMoodyResponse(MODEL_DRAFT, USER, {
   appendRandomCta: false,
 });
 
-assert.strictEqual(result.landingEngineVersion, "earned-ending-v1");
-assert.ok(!/looks different now that you've seen it named/i.test(result.text));
+assert.strictEqual(result.landingEngineVersion, "minimal-write-v1");
+assert.strictEqual(result.landing, "body_ends_response");
+assert.strictEqual(result.landingAdded, false);
 assert.ok(!/seen it named/i.test(result.text));
-// Body already lands — stop writing (no manufactured mic-drop required)
-assert.ok(
-  ["body_ends_response", "signature_line"].includes(result.landing),
-  result.landing
-);
-if (result.landing === "body_ends_response") {
-  assert.ok(!/moment gratitude becomes betrayal/i.test(result.text));
-}
+assert.ok(result.text.toLowerCase().includes("stopped earning"));
+assert.ok(!/moment gratitude becomes betrayal/i.test(result.text));
 
-console.log("Dynamic endpoint earned-ending test passed.");
+console.log("Dynamic endpoint minimal-write test passed.");
 console.log("landing=", result.landing);
-console.log("final_http_last_sentence=", result.afterSurfaceLastSentence);
+console.log("landing_added=", result.landingAdded);
+console.log("post_finalizer_reason=", result.postFinalizerReason);
 console.log("landing_engine_version=", result.landingEngineVersion);

@@ -9,10 +9,21 @@ import {
   applyRecognitionLanding,
   isBrokenCloser,
 } from "./utils/recognitionLanding.ts";
-import { bodyAlreadyLands, bodyAlreadySaidThis, deletionTest } from "./utils/signatureLine.ts";
+import {
+  CREATIVE_ENDING_TOOLS_ENABLED,
+  bodyAlreadySaidThis,
+  deletionTest,
+  isShorterParaphrase,
+} from "./utils/signatureLine.ts";
 
 const BAD =
   "What about feminists hate woman looks different now that you've seen it named?";
+
+const GOT_INSIGHT =
+  "Game of Thrones didn't fail because the characters ended in the wrong places. " +
+  "It failed because the show stopped earning the distance between cause and consequence.\n\n" +
+  "Daenerys is the cleanest example: madness may have been a plausible destination, " +
+  "but the show skipped the road.";
 
 function testValidateLandingRejectsExactFailure() {
   const v = validateLanding(BAD);
@@ -20,47 +31,65 @@ function testValidateLandingRejectsExactFailure() {
   assert.ok(v.reason.startsWith("REJECTED"));
 }
 
-function testBodyAlreadyLandsStops() {
-  const body =
-    "The 'pick me' charge works as social enforcement of loyalty. " +
-    "Public gratitude threatens movements built on resentment.";
-  assert.strictEqual(bodyAlreadyLands(body), true);
-  const { text, landing } = applyRecognitionLanding(body + "\n\n" + BAD, "Why feminists?");
-  assert.ok(!/seen it named/i.test(text));
+function testMinimalWriteNoForcedSignature() {
+  assert.strictEqual(CREATIVE_ENDING_TOOLS_ENABLED, false);
+  assert.strictEqual(LANDING_ENGINE_VERSION, "minimal-write-v1");
+  const { text, landing, landingAdded } = applyRecognitionLanding(GOT_INSIGHT, "Why season 8?");
   assert.strictEqual(landing, "body_ends_response");
+  assert.strictEqual(landingAdded, false);
+  assert.ok(text.toLowerCase().includes("stopped earning"));
+  assert.ok(!/moment gratitude becomes betrayal/i.test(text));
 }
 
-function testRestatementRejected() {
-  const body = "The 'pick me' charge works as social enforcement.";
-  const weak = "The 'pick me' charge works as social enforcement, not protection.";
+function testNoQuestionOrCtaForced() {
+  const withJunk = GOT_INSIGHT + "\n\nDo you want me to break this down? Say the word.\n\n" + BAD;
+  const result = postProcessMoodyResponse(withJunk, "Why season 8?", {
+    mode: "dynamic",
+    appendRandomCta: false,
+  });
+  assert.strictEqual(result.landing, "body_ends_response");
+  assert.strictEqual(result.landingAdded, false);
+  assert.ok(!/seen it named/i.test(result.text));
+  assert.ok(!/do you want/i.test(result.text));
+  assert.ok(!/say the word/i.test(result.text));
+}
+
+function testSignatureRejectedWhenShorterParaphrase() {
+  const body =
+    "Public gratitude toward one man threatens movements that depend on collective resentment of all men.";
+  const weak = "Public gratitude toward one man threatens movements.";
+  assert.strictEqual(isShorterParaphrase(weak, body), true);
   assert.strictEqual(bodyAlreadySaidThis(weak, body), true);
   assert.strictEqual(deletionTest(body, weak), false);
 }
 
-function testPostProcessDynamicPath() {
-  const draft =
-    "The accusation stops being analysis the moment disagreement becomes evidence of betrayal.\n\n" +
-    BAD;
-  const result = postProcessMoodyResponse(
-    draft,
-    "Why do feminists hate women praising men?",
-    { mode: "dynamic", appendRandomCta: false }
-  );
-  assert.strictEqual(result.landingEngineVersion, "earned-ending-v1");
-  assert.ok(!/seen it named/i.test(result.text));
-  assert.ok(["body_ends_response", "signature_line", "silence"].includes(result.landing));
+function testInventoryDraftNotDecorated() {
+  const inventory =
+    "Game of Thrones stands as the clearest case. After seven seasons of intricate plotting, " +
+    "the final season compressed years of character logic into six rushed episodes.\n\n" +
+    "Daenerys's arc collapsed. Jon was exiled. Bran became king.";
+  const result = postProcessMoodyResponse(inventory, "Why season 8 failed?", {
+    mode: "dynamic",
+    appendRandomCta: false,
+  });
+  assert.strictEqual(result.landingAdded, false);
+  assert.ok(!/power protects itself/i.test(result.text));
+  assert.ok(!/stories defend themselves/i.test(result.text));
+  // Persona costume should not rewrite the body on default path
+  assert.ok(result.text.toLowerCase().includes("daenerys"));
 }
 
 function testLandingEngineVersionConstant() {
-  assert.strictEqual(LANDING_ENGINE_VERSION, "earned-ending-v1");
+  assert.strictEqual(LANDING_ENGINE_VERSION, "minimal-write-v1");
 }
 
 testValidateLandingRejectsExactFailure();
-testBodyAlreadyLandsStops();
-testRestatementRejected();
-testPostProcessDynamicPath();
+testMinimalWriteNoForcedSignature();
+testNoQuestionOrCtaForced();
+testSignatureRejectedWhenShorterParaphrase();
+testInventoryDraftNotDecorated();
 testLandingEngineVersionConstant();
-console.log("All recognition landing tests passed.");
+console.log("All minimal-write landing tests passed.");
 console.log("landing_engine_version=", LANDING_ENGINE_VERSION);
 void lastSentence;
 void isBrokenCloser;
