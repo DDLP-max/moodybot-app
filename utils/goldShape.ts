@@ -261,7 +261,42 @@ export function evaluateGoldShape(
   if (structure === "REFLECTION" && ss.length > caps.reflection_sentences) {
     failures.push("reflection_too_many_sentences");
   }
+
+  const paras = stripWhiskey(body)
+    .split(/\n\s*\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (reflection || high) {
+    let restatyParas = 0;
+    for (let i = 1; i < paras.length; i++) {
+      if (words(paras[i]).length < 12) continue;
+      if (paras.slice(0, i).some((prev) => overlapRatio(paras[i], prev) >= 0.48)) {
+        restatyParas++;
+      }
+    }
+    if (restatyParas >= 1) failures.push("paragraph_restatement");
+    if (ss.length >= 5) {
+      const head = ss.slice(0, 2).join(" ");
+      const confirm = ss
+        .slice(2)
+        .filter((s) => overlapRatio(s, head) >= 0.45 && words(s).length >= 8).length;
+      if (confirm >= 2) failures.push("over_confirming");
+    }
+  }
   return failures;
+}
+
+function dropOverConfirming(ss: string[]): string[] {
+  if (ss.length < 3) return ss;
+  const kept: string[] = [ss[0]];
+  for (const s of ss.slice(1)) {
+    if (words(s).length >= 8 && kept.some((k) => overlapRatio(s, k) >= 0.52)) {
+      if (SPEAR_MARKERS.test(s) && words(s).length <= 18) kept.push(s);
+      continue;
+    }
+    kept.push(s);
+  }
+  return kept.length ? kept : ss;
 }
 
 function compressOnce(
@@ -271,7 +306,48 @@ function compressOnce(
   failures: string[],
   responseBudget = "medium"
 ): string {
-  let ss = sentences(stripWhiskey(draft));
+  structure = normalizeStructureName(structure);
+  const high = (responseBudget || "").toLowerCase() === "high";
+  const reflection = structure === "REFLECTION";
+  const body = stripWhiskey(draft);
+  const paras = body
+    .split(/\n\s*\n+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  // Preserve cadence for REFLECTION / Extended KNIFE
+  if ((reflection || high) && paras.length >= 2) {
+    const cleaned: string[] = [];
+    for (const p of paras) {
+      let ss = sentences(p);
+      if (!ss.length) continue;
+      let last = ss[ss.length - 1].replace(CTA_TAIL, "").trim();
+      last = last.replace(/\s*(Stay (dangerous|sharp)\.?|That'?s the game\.?)\s*$/i, "").trim();
+      if (last) ss[ss.length - 1] = last;
+      else ss = ss.slice(0, -1);
+      if (ss.length >= 2) {
+        const compact = [ss[0]];
+        for (let i = 1; i < ss.length; i++) {
+          if (overlapRatio(ss[i], compact[compact.length - 1]) >= 0.68) continue;
+          compact.push(ss[i]);
+        }
+        ss = compact;
+      }
+      if (failures.includes("over_confirming") || failures.includes("paragraph_restatement")) {
+        ss = dropOverConfirming(ss);
+      }
+      const para = ss.join(" ").replace(/\s+/g, " ").trim();
+      if (para) cleaned.push(para);
+    }
+    const out: string[] = cleaned.length ? [cleaned[0]] : [];
+    for (const p of cleaned.slice(1)) {
+      if (out.some((prev) => overlapRatio(p, prev) >= 0.48) && words(p).length >= 12) continue;
+      out.push(p);
+    }
+    return (out.length ? out : cleaned).join("\n\n").replace(/\n{3,}/g, "\n\n").trim();
+  }
+
+  let ss = sentences(body);
   if (!ss.length) return draft;
 
   let last = ss[ss.length - 1].replace(CTA_TAIL, "").trim();
@@ -299,6 +375,10 @@ function compressOnce(
     ss = compact;
   }
 
+  if (failures.includes("over_confirming") || ((reflection || high) && ss.length >= 5)) {
+    ss = dropOverConfirming(ss);
+  }
+
   if ((ss.join(" ").match(LIKE_A) || []).length >= 2) {
     let seen = 0;
     ss = ss.filter((s) => {
@@ -309,9 +389,6 @@ function compressOnce(
     });
   }
 
-  structure = normalizeStructureName(structure);
-  const high = (responseBudget || "").toLowerCase() === "high";
-  const reflection = structure === "REFLECTION";
   if (
     failures.includes("post_payoff_drift") &&
     (structure === "SNAP" || structure === "KNIFE") &&
@@ -331,8 +408,6 @@ function compressOnce(
   }
 
   let text = ss.join(" ").replace(/\s+/g, " ").trim();
-  // Editorial cash-out: drop conference-talk closer if spoken proof already landed.
-  // Generation owns Abstract→Spoken translation — no hardcoded paraphrase dictionary.
   if (failures.includes("abstract_closer")) {
     const ss2 = sentences(text);
     if (ss2.length >= 2 && isConferenceTalkSentence(ss2[ss2.length - 1])) {
@@ -387,6 +462,8 @@ export function applyGoldShapePass(
     "knife_too_many_sentences",
     "reflection_overlong",
     "reflection_too_many_sentences",
+    "paragraph_restatement",
+    "over_confirming",
     "essay_diction",
     "abstract_closer",
   ]);

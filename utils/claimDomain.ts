@@ -165,6 +165,7 @@ export function responseBudgetGuidance(
     return [
       "RESPONSE BUDGET — Depth: low × Shape: SNAP.",
       "PURPOSE: Surprise the reader.",
+      "FORMAT: one paragraph; one movement. Usually 1–3 sentences.",
       "Stop at the spear. Soft ~15–70 words (consequence, not the design).",
       'PASS: "That\'s like saying prison is just a room."',
     ].join("\n");
@@ -173,24 +174,28 @@ export function responseBudgetGuidance(
     return [
       "RESPONSE BUDGET — Depth: high × Shape: REFLECTION.",
       "PURPOSE: Leave the reader seeing their own life differently.",
-      "Unique rule: EARN EVERY PARAGRAPH.",
-      "Beats: Observation → Deepening → Consequence → Acceptance.",
-      "Rotate the same diamond. Do not stack metaphors.",
-      "Soft ~250–450 words may follow — length is a consequence.",
-      "Gold still edits. Do not collapse to a tweet.",
+      "PARAGRAPH LAW: Paragraphs are semantic units, not visual spacing.",
+      "FORMAT: 3–6 paragraphs. Observation → Deepening → Consequence → Acceptance (only if earned).",
+      "Does this paragraph introduce a new layer, or merely reinforce the previous? If reinforce — delete.",
+      'AND THEN? TEST: if the answer is just another proof of the same point, remove it.',
+      "Each paragraph should feel like the conversation moved somewhere new.",
     ].join("\n");
   }
   if (budget === "high") {
     return [
       "RESPONSE BUDGET — Depth: high × Shape: Extended KNIFE.",
       "PURPOSE: Develop one mechanism until it feels inevitable.",
+      "PARAGRAPH LAW: Paragraphs are semantic units, not visual spacing.",
+      "FORMAT: 2–4 paragraphs; each advances the mechanism.",
       `Topic mode: ${topicMode || "argument"}. Soft ~100–260 words (consequence).`,
+      "AND THEN? TEST: not another proof of the same point.",
       "Do NOT flip into lyrical REFLECTION on politics/hot-takes.",
     ].join("\n");
   }
   return [
     "RESPONSE BUDGET — Depth: medium × Shape: KNIFE.",
     "PURPOSE: Reframe the reader.",
+    "FORMAT: one paragraph / one movement. Two only if the second is the proof rather than another thesis.",
     "Stop after the proof. Soft ~50–140 words (consequence).",
   ].join("\n");
 }
