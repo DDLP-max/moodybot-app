@@ -1,4 +1,7 @@
 import assert from "assert";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import path from "path";
 import {
   CORE_WRITE_DIRECTIVE,
   LANDING_ENGINE_VERSION,
@@ -84,11 +87,36 @@ function testLandingEngineVersionConstant() {
   assert.strictEqual(LANDING_ENGINE_VERSION, "protect-only-v1");
 }
 
+function testProtectOnlyContractDocumented() {
+  const dir = path.dirname(fileURLToPath(import.meta.url));
+  const contract = fs.readFileSync(path.join(dir, "docs/PROTECT_ONLY_FINALIZER.md"), "utf8");
+  assert.ok(/prevent a defect/i.test(contract));
+  assert.ok(/change the writing/i.test(contract));
+  assert.ok(/infrastructure/i.test(contract));
+}
+
 function testWriteDirectiveRequiresProofNotRecap() {
   const lower = CORE_WRITE_DIRECTIVE.toLowerCase();
   assert.ok(lower.includes("thesis") && lower.includes("proof"));
   assert.ok(lower.includes("plot summary"));
-  assert.ok(lower.includes("mechanism") || lower.includes("governing pattern"));
+  assert.ok(lower.includes("concrete before abstract"));
+  assert.ok(lower.includes("translate"));
+  assert.ok(lower.includes("incentive structure"));
+  assert.ok(lower.includes("ordinary human language") || lower.includes("ordinary language"));
+}
+
+function testFinalizerDoesNotRewriteAbstractDiction() {
+  const draft =
+    "Game of Thrones abandoned the incentive structure the show itself had trained viewers to expect. " +
+    "The narrative contract collapsed.";
+  const result = postProcessMoodyResponse(draft, "Why did GoT end badly?", {
+    mode: "dynamic",
+    appendRandomCta: false,
+  });
+  assert.ok(result.text.toLowerCase().includes("incentive structure"));
+  assert.ok(result.text.toLowerCase().includes("narrative contract"));
+  assert.strictEqual(result.landingAdded, false);
+  assert.strictEqual(result.creativeTouch, false);
 }
 
 testValidateLandingRejectsExactFailure();
@@ -97,7 +125,9 @@ testNoQuestionOrCtaForced();
 testSignatureRejectedWhenShorterParaphrase();
 testInventoryDraftNotDecorated();
 testLandingEngineVersionConstant();
+testProtectOnlyContractDocumented();
 testWriteDirectiveRequiresProofNotRecap();
+testFinalizerDoesNotRewriteAbstractDiction();
 console.log("All protect-only landing tests passed.");
 console.log("landing_engine_version=", LANDING_ENGINE_VERSION);
 void lastSentence;

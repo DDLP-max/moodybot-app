@@ -120,9 +120,9 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
     `mode = "${activeMode}"`,
     shouldAutoSelect ? `emotional_calibration = "${selectedMode}"` : null,
     shouldAutoSelect
-      ? `Instructions: Dynamic Mode — find the hidden pattern / contradiction / emotional truth. Lead with the insight. Use only enough evidence to prove it. Stop when it lands. Tone may lean ${selectedMode} naturally; do not perform a poetic closer.`
-      : `Instructions: Respond in ${selectedMode} mode. Insight first. Stop when the answer lands.`,
-    `Output: Plain conversational text only. No JSON. No code fences. No mandatory Signature Line, callback, or CTA.`
+      ? `Instructions: Dynamic Mode — find the hidden pattern, translate it into ordinary human language, then write. Lead with a spoken take. Concrete before abstract. Use only enough evidence to prove it. Stop when it lands. Tone may lean ${selectedMode} naturally; do not perform a poetic closer.`
+      : `Instructions: Respond in ${selectedMode} mode. Insight first, concrete before abstract. Stop when the answer lands.`,
+    `Output: Plain conversational text only. No JSON. No code fences. No mandatory Signature Line, callback, or CTA. No consultant jargon when plain English is stronger.`
   ].filter(Boolean).join("\n");
 
   const messages: ChatCompletionMessageParam[] = [];
