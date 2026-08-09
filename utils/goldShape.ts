@@ -407,7 +407,7 @@ function compressOnce(
     }
   }
 
-  let text = ss.join(" ").replace(/\s+/g, " ").trim();
+  let text = ss.join(" ");
   if (failures.includes("abstract_closer")) {
     const ss2 = sentences(text);
     if (ss2.length >= 2 && isConferenceTalkSentence(ss2[ss2.length - 1])) {
@@ -417,7 +417,14 @@ function compressOnce(
       }
     }
   }
-  return text.replace(/\s+([,.!?;:])/g, "$1");
+  // High / REFLECTION: never flatten cadence with a global whitespace collapse
+  if (reflection || high) {
+    return text
+      .replace(/[ \t]{2,}/g, " ")
+      .replace(/[ \t]+([,.!?;:])/g, "$1")
+      .trim();
+  }
+  return text.replace(/\s+/g, " ").trim().replace(/\s+([,.!?;:])/g, "$1");
 }
 
 export function applyGoldShapePass(

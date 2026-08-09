@@ -175,10 +175,14 @@ export function responseBudgetGuidance(
       "RESPONSE BUDGET — Depth: high × Shape: REFLECTION.",
       "PURPOSE: Leave the reader seeing their own life differently.",
       "PARAGRAPH LAW: Paragraphs are semantic units, not visual spacing.",
-      "FORMAT: 3–6 paragraphs. Observation → Deepening → Consequence → Acceptance (only if earned).",
+      "STRUCTURAL CONTRACT — blank lines between beats (not one wall of text):",
+      "Paragraph 1 — Observation",
+      "Paragraph 2 — Deepening",
+      "Paragraph 3 — Consequence",
+      "Paragraph 4 (optional) — Acceptance (only if earned)",
+      "STOP. 3–6 paragraphs max.",
       "Does this paragraph introduce a new layer, or merely reinforce the previous? If reinforce — delete.",
       'AND THEN? TEST: if the answer is just another proof of the same point, remove it.',
-      "Each paragraph should feel like the conversation moved somewhere new.",
     ].join("\n");
   }
   if (budget === "high") {
@@ -186,7 +190,11 @@ export function responseBudgetGuidance(
       "RESPONSE BUDGET — Depth: high × Shape: Extended KNIFE.",
       "PURPOSE: Develop one mechanism until it feels inevitable.",
       "PARAGRAPH LAW: Paragraphs are semantic units, not visual spacing.",
-      "FORMAT: 2–4 paragraphs; each advances the mechanism.",
+      "STRUCTURAL CONTRACT — blank lines between beats (not one wall of text):",
+      "Paragraph 1 — Observation",
+      "Paragraph 2 — Development / proof",
+      "Paragraph 3 (optional) — Consequence",
+      "STOP. 2–4 paragraphs; each advances the mechanism.",
       `Topic mode: ${topicMode || "argument"}. Soft ~100–260 words (consequence).`,
       "AND THEN? TEST: not another proof of the same point.",
       "Do NOT flip into lyrical REFLECTION on politics/hot-takes.",
@@ -484,9 +492,11 @@ export function lensVoiceGuidance(lens: string): string {
       qLine.trim(),
       "Begin with people, not groups. Prefer transferable human pattern over demographic universals.",
       "Guardrail: explain the mechanism without a sweeping claim about men/women as blocs.",
+      "Writing instinct: name the emotional mechanism. Do not narrate the inner movie. Do not finish the reader's inference.",
+      'FAIL (finishing inference): "emptiness without someone to witness his life… She already knows how to build a life…"',
       'FAIL: "Women built lives with friends… Men built theirs around the woman…"',
+      'PASS: "The cat lady line isn\'t really about women. It\'s a man naming the future he\'d fear most…"',
       'PASS: "People only use threats they believe would work on themselves."',
-      'PASS: "Everything else is your history trying to sell you a harder story."',
     ].join("\n");
   }
   return qLine ? `Ask first: "${q}"` : "";
