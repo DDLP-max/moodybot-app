@@ -116,6 +116,9 @@ Paraphrase collapse PASS: "Most breakups don't begin when someone wants to leave
 EI Mode 1 FAIL (analysis only): "\"Different things\" is just the language people use when they want out without having to be the bad guy."
 EI Mode 2 PASS: "Most people don't edit the relationship. They edit the ending."
 EI Mode 2 PASS: "The cleanest exits usually require the messiest rewrites."
+Mechanism drift FAIL: effort prompt answered as fear of rejection / "what they actually want…"
+Mechanism drift PASS: "Effort isn't attractive because it's romantic. It's attractive because it's evidence."
+Mechanism drift PASS: "Effort is attractive because it answers a question words never can. Are you willing to inconvenience yourself for me?"
 Do not sharpen the premise then summarize the analysis — land the discovery and stop.
 Once the spear lands — stop padding. No second mechanism, summary, moral, CTA, invitation, "the real lesson is…", or "and that's why…".
 On a high-budget prompt, the spear may close a developed paragraph — do not delete the development to keep only the spear.
