@@ -110,6 +110,9 @@ Last line PASS: "Funny how preferences only become immoral when you're the one b
 Last third FAIL: "That fear is the real engine… same insurance policy."
 Last third PASS: "Nobody wants a partner who's already finished. They want a future that already comes with a warranty."
 Last third PASS: "The fantasy isn't perfection. It's certainty."
+Paraphrase collapse FAIL: abridging the user's discovery ("Sure. You wanted forever. Let her have the softer story.")
+Paraphrase collapse PASS: "That's like saying a prison cell is just a room."
+Paraphrase collapse PASS: "Most breakups don't begin when someone wants to leave. They begin when someone wants to leave without carrying the guilt."
 Do not sharpen the premise then summarize the analysis — land the discovery and stop.
 Once the spear lands — stop padding. No second mechanism, summary, moral, CTA, invitation, "the real lesson is…", or "and that's why…".
 On a high-budget prompt, the spear may close a developed paragraph — do not delete the development to keep only the spear.
