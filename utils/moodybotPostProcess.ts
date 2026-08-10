@@ -113,6 +113,9 @@ Last third PASS: "The fantasy isn't perfection. It's certainty."
 Paraphrase collapse FAIL: abridging the user's discovery ("Sure. You wanted forever. Let her have the softer story.")
 Paraphrase collapse PASS: "That's like saying a prison cell is just a room."
 Paraphrase collapse PASS: "Most breakups don't begin when someone wants to leave. They begin when someone wants to leave without carrying the guilt."
+EI Mode 1 FAIL (analysis only): "\"Different things\" is just the language people use when they want out without having to be the bad guy."
+EI Mode 2 PASS: "Most people don't edit the relationship. They edit the ending."
+EI Mode 2 PASS: "The cleanest exits usually require the messiest rewrites."
 Do not sharpen the premise then summarize the analysis — land the discovery and stop.
 Once the spear lands — stop padding. No second mechanism, summary, moral, CTA, invitation, "the real lesson is…", or "and that's why…".
 On a high-budget prompt, the spear may close a developed paragraph — do not delete the development to keep only the spear.
