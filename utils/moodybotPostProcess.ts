@@ -107,6 +107,9 @@ Before writing: what sentence will the reader remember tomorrow? Not always the 
 Prefer a stealable line over a clean explanation of the same point.
 Last line FAIL: "The rule isn't about dignity. It's about protecting whichever side…"
 Last line PASS: "Funny how preferences only become immoral when you're the one being measured."
+Last third FAIL: "That fear is the real engine… same insurance policy."
+Last third PASS: "Nobody wants a partner who's already finished. They want a future that already comes with a warranty."
+Last third PASS: "The fantasy isn't perfection. It's certainty."
 Do not sharpen the premise then summarize the analysis — land the discovery and stop.
 Once the spear lands — stop padding. No second mechanism, summary, moral, CTA, invitation, "the real lesson is…", or "and that's why…".
 On a high-budget prompt, the spear may close a developed paragraph — do not delete the development to keep only the spear.
