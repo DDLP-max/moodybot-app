@@ -477,7 +477,13 @@ The real answers? The insights that change your life? Those cost something. Not 
       });
 
       // Get AI response — default to dynamic so auto persona selection runs
-      const { aiReply, selectedMode, isAutoSelected } = await generateChatResponse(
+      const {
+        aiReply,
+        selectedMode,
+        isAutoSelected,
+        landingEngineVersion,
+        diagnostics,
+      } = await generateChatResponse(
         message,
         mode || "dynamic",
         currentUserId,
@@ -493,6 +499,10 @@ The real answers? The insights that change your life? Those cost something. Not 
         content: aiReply
       });
 
+      res.set({
+        "X-MB-Landing-Engine": landingEngineVersion || "missing",
+        "X-MB-Route": "chat/messages",
+      });
       res.json({
         ok: true,
         aiMessage: { content: aiReply, role: "assistant" },
@@ -500,7 +510,9 @@ The real answers? The insights that change your life? Those cost something. Not 
         isAutoSelected,
         sessionId: currentSessionId,
         remaining: limitCheck.remaining - 1,
-        limit: limitCheck.limit
+        limit: limitCheck.limit,
+        landing_engine_version: landingEngineVersion,
+        diagnostics: diagnostics || null,
       });
     } catch (error: any) {
       console.error("Chat API error:", error);

@@ -89,7 +89,11 @@ export async function generateChatResponse(
 
     let aiResponse = response.choices[0].message.content || "I have nothing to say right now.";
     console.log("API response received:", aiResponse.substring(0, 100));
-    const finalReply = postProcessMoodyResponse(aiResponse);
+    const processed = postProcessMoodyResponse(aiResponse, userMessage, {
+      mode,
+      appendRandomCta: mode !== "dynamic",
+    });
+    const finalReply = processed.text;
 
     // Log the interaction
     logApiInteraction({

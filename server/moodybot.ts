@@ -7,7 +7,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 import fs from "fs";
-import { postProcessMoodyResponse } from "../utils/moodybotPostProcess";
+import {
+  CORE_WRITE_DIRECTIVE,
+  LANDING_ENGINE_VERSION,
+  lastSentence,
+  postProcessMoodyResponse,
+} from "../utils/moodybotPostProcess";
+import {
+  applyBudgetToStructure,
+  classifyClaimDomain,
+  classifyResponseBudget,
+  classifyTopicMode,
+  domainMechanismGuidance,
+  lensInternalQuestion,
+  responseBudgetGuidance,
+  selectInterpretiveLens,
+} from "../utils/claimDomain";
 import { appendToTextLog } from "./logger";
 import type { ChatCompletionMessageParam } from "openai/resources/chat";
 import { 
@@ -20,10 +35,26 @@ import {
 } from "./config";
 import { MODEL_DYNAMIC } from "./lib/models";
 import { getStructurePrompt } from "./structurePrompts";
+import { createHash } from "crypto";
+import { execSync } from "child_process";
 
 const PROMPT_PATH = path.resolve("server/system_prompt.txt");
 let cachedPrompt = "";
 let cachedPromptMtime = 0;
+
+function promptContentHash(text: string): string {
+  return createHash("sha256").update(text || "").digest("hex").slice(0, 16);
+}
+
+function gitCommitShort(): string {
+  try {
+    return execSync("git rev-parse --short HEAD", { stdio: ["ignore", "pipe", "ignore"] })
+      .toString()
+      .trim();
+  } catch {
+    return process.env.RENDER_GIT_COMMIT?.slice(0, 7) || process.env.GIT_COMMIT?.slice(0, 7) || "";
+  }
+}
 
 /** Always use the latest system_prompt.txt (reloads when the file changes). */
 function loadMoodyPrompt(): string {
@@ -41,6 +72,14 @@ function loadMoodyPrompt(): string {
   }
 }
 
+export type ChatGenerationResult = {
+  aiReply: string;
+  selectedMode: string;
+  isAutoSelected: boolean;
+  landingEngineVersion: string;
+  diagnostics?: Record<string, string>;
+};
+
 export async function generateChatResponse(
   userMessage: string,
   mode: string = "savage",
@@ -48,7 +87,7 @@ export async function generateChatResponse(
   sessionId?: number,
   conversationHistory: ChatCompletionMessageParam[] = [],
   imageData?: string
-): Promise<{ aiReply: string; selectedMode: string; isAutoSelected: boolean }> {
+): Promise<ChatGenerationResult> {
   // Dynamic Mode (and legacy "savage") auto-select tone from message content
   const shouldAutoSelect = mode === "dynamic" || mode === "savage" || !mode;
   const selectedMode = shouldAutoSelect ? selectModeFromMessage(userMessage) : normalizeModeName(mode);
@@ -64,7 +103,8 @@ export async function generateChatResponse(
     return {
       aiReply: "MoodyBot is not properly configured. Set a valid OPENROUTER_API_KEY (sk-or-...) in your environment.",
       selectedMode,
-      isAutoSelected
+      isAutoSelected,
+      landingEngineVersion: LANDING_ENGINE_VERSION,
     };
   }
   
@@ -83,18 +123,51 @@ ${moodyPrompt}
 IMPORTANT: Do NOT add scene-setting text, cinematic descriptions, or italics formatting like "*scene description*".
 Respond directly as MoodyBot in natural prose (not JSON), focused on the user's message.`;
 
-  // Replit pattern: inject STRUCTURE_PROMPTS for the selected tone before the main system prompt
-  const structurePrompt = getStructurePrompt(selectedMode);
+  // Slash-command structure only when user/auto-selected a specific tone —
+  // never force "poetic closure" / emotional-arc costume on plain Dynamic.
+  const structurePrompt = shouldAutoSelect ? undefined : getStructurePrompt(selectedMode);
+  const claimDomain = classifyClaimDomain(userMessage);
+  const lensBundle = selectInterpretiveLens(claimDomain);
+  const topicMode = classifyTopicMode(userMessage, claimDomain);
+  const responseBudget = classifyResponseBudget(userMessage, claimDomain, topicMode);
+  const preferredStructure = applyBudgetToStructure(
+    lensBundle.preferred_structure,
+    responseBudget,
+    userMessage,
+    claimDomain,
+    topicMode
+  );
+  const mechanismFit = domainMechanismGuidance(
+    claimDomain,
+    lensBundle.lens,
+    lensBundle.primary
+  );
   const modeDirective = [
     `mode = "${activeMode}"`,
+    `claim_domain = "${claimDomain}"`,
+    `interpretive_lens = "${lensBundle.lens}"`,
+    `primary_capability = "${lensBundle.primary}"`,
+    `topic_mode = "${topicMode}"`,
+    `response_budget = "${responseBudget}"`,
+    `preferred_structure = "${preferredStructure}"`,
+    `routing_structure = "${preferredStructure === "KNIFE" && responseBudget === "high" ? "Extended KNIFE" : preferredStructure}"`,
+    `mechanism_hint = "${lensBundle.mechanism_hint}"`,
+    lensInternalQuestion(lensBundle.lens)
+      ? `lens_question = "${lensInternalQuestion(lensBundle.lens)}"`
+      : null,
+    `lens_persistence = "routing_only"`,
+    `structure_persistence = "routing_only"`,
     shouldAutoSelect ? `emotional_calibration = "${selectedMode}"` : null,
     shouldAutoSelect
-      ? `Instructions: Dynamic Mode — calibrate tone toward ${selectedMode}. Full MoodyBot personality, emotional arc, poetic closure.`
-      : `Instructions: Respond in ${selectedMode} mode while keeping MoodyBot voice.`,
-    `Output: Plain conversational text only. No JSON. No code fences.`
+      ? `Instructions: Dynamic Mode — Identity → Intelligence → Depth×Shape (SNAP/KNIFE/REFLECTION) → Gold within budget. Existential/aging/grief → REFLECTION (~250–450). Food/hot takes → SNAP. Ask the lens question first. Gold never picks the lens. ONE thesis; develop enough for the depth. Do not expose lens names. Stop when it lands. Tone may lean ${selectedMode} naturally; no poetic closer.`
+      : `Instructions: Respond in ${selectedMode} mode. Interpretive lens → capability → mechanism → Depth×Shape → ordinary language → prove that thesis only. Stop when it lands.`,
+    responseBudgetGuidance(responseBudget, preferredStructure, topicMode),
+    mechanismFit,
+    `Output: Plain conversational text only. No JSON. No code fences. No mandatory Signature Line, callback, or CTA. No consultant/engine jargon in prose. Never name the lens.`
   ].filter(Boolean).join("\n");
 
   const messages: ChatCompletionMessageParam[] = [];
+  messages.push({ role: "system", content: CORE_WRITE_DIRECTIVE });
   if (structurePrompt) {
     messages.push({ role: "system", content: structurePrompt });
   }
@@ -167,18 +240,65 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
     console.error("❌ Empty AI response from OpenRouter");
     throw new Error("Empty response from AI model");
   }
-  
-  const finalReply = postProcessMoodyResponse(aiRaw);
+
+  const promptHash = promptContentHash(moodyPrompt);
+  const commit = gitCommitShort();
+  const draftLast = lastSentence(aiRaw);
+
+  const processed = postProcessMoodyResponse(aiRaw, userMessage, {
+    mode: activeMode,
+    appendRandomCta: false,
+    preferredStructure,
+    responseBudget,
+  });
+  const finalReply = processed.text;
+  const finalLast = lastSentence(finalReply);
+
+  // Temporary production path trace — one structured block per Dynamic request
+  console.log("DYNAMIC_TRACE_START");
+  console.log(
+    JSON.stringify({
+      git_commit: commit,
+      prompt_hash: promptHash,
+      route: "POST /api/chat/messages",
+      generation_function: "generateChatResponse",
+      landing_engine_version: LANDING_ENGINE_VERSION,
+      landing: processed.landing,
+      governing_pattern: processed.governingPattern,
+      core_insight: processed.governingPattern, // deprecated alias
+      gold_shape: processed.goldShape || null,
+      body_generated: draftLast,
+      post_finalizer_changed_text: String(processed.postFinalizerChangedText),
+      post_finalizer_reason: processed.postFinalizerReason,
+      landing_added: String(processed.landingAdded),
+      cta_removed: String(processed.ctaRemoved),
+      draft_last_sentence: draftLast,
+      after_landing_last_sentence: processed.afterLandingLastSentence,
+      after_surface_render_last_sentence: processed.afterSurfaceLastSentence,
+      final_http_last_sentence: finalLast,
+      landing_modified: String(processed.landingModified),
+    })
+  );
+  console.log("DYNAMIC_TRACE_END");
+
   console.log("Post-processed response:", finalReply);
+  console.log("landing_engine_version=", LANDING_ENGINE_VERSION);
 
   appendToTextLog(
-    `Mode: ${selectedMode} (Auto: ${isAutoSelected})\nUser: ${userId ?? "anon"}\nMessage: ${userMessage}${imageData ? ' [with image]' : ''}\nReply: ${finalReply}`
+    `Mode: ${selectedMode} (Auto: ${isAutoSelected})\nUser: ${userId ?? "anon"}\nMessage: ${userMessage}${imageData ? ' [with image]' : ''}\nReply: ${finalReply}\nlanding_engine_version=${LANDING_ENGINE_VERSION}`
   );
 
   return {
     aiReply: finalReply,
     selectedMode,
-    isAutoSelected
+    isAutoSelected,
+    landingEngineVersion: LANDING_ENGINE_VERSION,
+    diagnostics: {
+      git_commit: commit,
+      prompt_hash: promptHash,
+      landing_engine_version: LANDING_ENGINE_VERSION,
+      landing: processed.landing,
+    },
   };
 } catch (error: any) {
   console.error("OpenRouter API error:", error);
@@ -194,7 +314,8 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
     return {
       aiReply: "MoodyBot is having connection issues. Please check your internet and try again.",
       selectedMode,
-      isAutoSelected
+      isAutoSelected,
+      landingEngineVersion: LANDING_ENGINE_VERSION,
     };
   }
 
@@ -207,7 +328,8 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
     return {
       aiReply: "MoodyBot's API key is invalid or expired. Please check OPENROUTER_API_KEY and try again.",
       selectedMode,
-      isAutoSelected
+      isAutoSelected,
+      landingEngineVersion: LANDING_ENGINE_VERSION,
     };
   }
 
@@ -215,7 +337,8 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
     return {
       aiReply: "MoodyBot received an invalid request. Please try rephrasing your message.",
       selectedMode,
-      isAutoSelected
+      isAutoSelected,
+      landingEngineVersion: LANDING_ENGINE_VERSION,
     };
   }
 
@@ -223,7 +346,8 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
     return {
       aiReply: "MoodyBot is getting too many requests. Please try again in a moment.",
       selectedMode,
-      isAutoSelected
+      isAutoSelected,
+      landingEngineVersion: LANDING_ENGINE_VERSION,
     };
   }
 
@@ -235,7 +359,8 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
   return {
     aiReply: `MoodyBot hit an error: ${error.message || "unknown failure"}. Try again in a moment.`,
     selectedMode,
-    isAutoSelected
+    isAutoSelected,
+    landingEngineVersion: LANDING_ENGINE_VERSION,
   };
 }
 }

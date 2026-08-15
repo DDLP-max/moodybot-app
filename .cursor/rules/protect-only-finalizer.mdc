@@ -1,0 +1,36 @@
+---
+description: Dynamic post-process is infrastructure, not authorship (protect-only-v1).
+globs: utils/moodybotPostProcess.ts,utils/recognitionLanding.ts,utils/signatureLine.ts,server/moodybot.ts
+alwaysApply: false
+---
+
+# Protect-only finalizer contract
+
+Engine: `protect-only-v1`
+
+**Generation creates. Finalization protects. Nothing else.**
+
+Before any change to `postProcessMoodyResponse` / recognition landing / signature tools, answer ONE question:
+
+> Does this prevent a defect, or does it change the writing?
+
+- **Prevents a defect** → may belong in post-process.
+- **Changes the writing** → does NOT belong in post-process. Move it into generation (`CORE_WRITE_DIRECTIVE` / system prompt) or delete it.
+
+## Post-process may ONLY
+
+1. Remove obvious hallucinated mechanics (if present on this path)
+2. Remove generic assistant garbage / broken closers
+3. Fix broken formatting
+4. Remove duplicated ideas
+5. Enforce safety
+
+## Post-process must NOT
+
+Improve / tighten / rewrite prose · add conclusions, callbacks, signature lines · change cadence, openings, endings · score writing quality · manufacture voice.
+
+If the draft is coherent: **ship it.**
+
+Brand watermark (`🥃 @MoodyBotAI`) is infrastructure branding, not a Signature Line.
+
+The finalizer is infrastructure. Not authorship.
