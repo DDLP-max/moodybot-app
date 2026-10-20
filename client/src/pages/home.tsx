@@ -5,9 +5,22 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import AppFooter from "@/components/AppFooter";
 
+const lines = [
+  "The pizza that knows you're not calling anyone else either. 🥃",
+  "The sketches are still pretending the curtain has a future. 🥃",
+  "Families don't guilt you for needing a day off. They just call you selfish when the guilt stops working. 🥃",
+];
+
+const writingTools = [
+  { title: "Copy", detail: "Titles, hooks, and captions", href: "/copywriter" },
+  { title: "Stories", detail: "Essays and longer pieces", href: "/creative-writer" },
+  { title: "Read a situation", detail: "What a message is actually doing", href: "/validation" },
+];
+
 export default function Home() {
   const [, setLocation] = useLocation();
   const [isMobile, setIsMobile] = useState(false);
+  const [line, setLine] = useState(0);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -19,11 +32,12 @@ export default function Home() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const writingTools = [
-    { title: "Copy", href: "/copywriter" },
-    { title: "Stories", href: "/creative-writer" },
-    { title: "A read", href: "/validation" },
-  ];
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setLine((current) => (current + 1) % lines.length);
+    }, 7000);
+    return () => window.clearInterval(id);
+  }, []);
 
   return (
     <div 
@@ -116,8 +130,8 @@ export default function Home() {
               </div>
             </motion.div>
             
-            <p className="text-lg sm:text-xl md:text-2xl font-bold mb-2 text-muted-foreground">AI has enough intelligence. It could use a personality.</p>
-            <p className="text-sm sm:text-base text-muted-foreground mb-8 max-w-md mx-auto">
+            <p className="text-lg sm:text-xl md:text-2xl font-bold mb-2 text-white">AI has enough intelligence. It could use a personality.</p>
+            <p className="text-sm sm:text-base text-zinc-300 mb-8 max-w-md mx-auto">
               Say something. Or show me something.
             </p>
 
@@ -136,15 +150,21 @@ export default function Home() {
               </a>
             </div>
 
-            <nav className="text-sm text-muted-foreground" aria-label="Writing tools">
-              {writingTools.map((tool, index) => (
-                <span key={tool.href}>
-                  {index > 0 && <span className="mx-2">·</span>}
-                  <a href={tool.href} className="hover:text-white">{tool.title}</a>
-                </span>
-              ))}
-            </nav>
+            <p className="mt-10 mx-auto max-w-xl min-h-16 text-base sm:text-lg text-zinc-200" aria-live="polite">
+              {lines[line]}
+            </p>
           </motion.div>
+        </section>
+
+        <section className="relative z-10 px-6 pb-16 text-center" aria-label="Writing tools">
+          <div className="mx-auto grid max-w-3xl gap-6 sm:grid-cols-3">
+            {writingTools.map((tool) => (
+              <a key={tool.href} href={tool.href} className="block hover:text-white">
+                <span className="block text-sm font-semibold text-white">{tool.title}</span>
+                <span className="mt-1 block text-sm text-zinc-400">{tool.detail}</span>
+              </a>
+            ))}
+          </div>
         </section>
       </div>
       
