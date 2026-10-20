@@ -19,36 +19,10 @@ export default function Home() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Mode cards configuration with better icons
-  const MODE_CARDS = [
-    {
-      title: "CONVERSATION",
-      icon: "🥃",
-      description: "Say something. Or show me something.",
-      color: "from-purple-500 to-indigo-500",
-      href: "/dynamic"
-    },
-    {
-      title: "COPY", 
-      icon: "✍️",
-      description: "Titles, hooks, and captions in MoodyBot's voice.",
-      color: "from-green-400 to-teal-500",
-      href: "/copywriter"
-    },
-    {
-      title: "STORIES",
-      icon: "🎭",
-      description: "Stories, essays, and observations with the same voice.",
-      color: "from-orange-400 to-red-500",
-      href: "/creative-writer"
-    },
-    {
-      title: "A READ",
-      icon: "🎯",
-      description: "A message, a situation, a person. MoodyBot says what it notices.",
-      color: "from-teal-400 to-purple-400",
-      href: "/validation"
-    }
+  const writingTools = [
+    { title: "Copy", href: "/copywriter" },
+    { title: "Stories", href: "/creative-writer" },
+    { title: "A read", href: "/validation" },
   ];
 
   return (
@@ -143,31 +117,33 @@ export default function Home() {
             </motion.div>
             
             <p className="text-lg sm:text-xl md:text-2xl font-bold mb-2 text-muted-foreground">AI has enough intelligence. It could use a personality.</p>
-            <p className="text-sm sm:text-base text-muted-foreground mb-8 max-w-sm mx-auto">
-              No forced positivity. No personality transplant.
+            <p className="text-sm sm:text-base text-muted-foreground mb-8 max-w-md mx-auto">
+              Say something. Or show me something.
             </p>
-            
-            {/* Mode Options */}
-            <div className="mode-cards-container max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 px-4 mb-8">
-              {MODE_CARDS.map((mode, index) => (
-                <div key={index} className="flex flex-col items-center">
-                  <a 
-                    href={mode.href} 
-                    className={`mode-card block rounded-xl p-3 text-center font-bold tracking-wide
-                      bg-gradient-to-r ${mode.color} text-white w-full py-4 shadow hover:opacity-90 transition`}
-                    style={{ minHeight: '120px' }}
-                  >
-                    <div className="flex items-center justify-center space-x-2 mb-2">
-                      <span className="text-2xl">{mode.icon}</span>
-                      <span className="text-sm sm:text-base">{mode.title}</span>
-                    </div>
-                  </a>
-                  <p className="text-xs sm:text-sm text-gray-300 mt-2 text-center leading-relaxed">
-                    {mode.description}
-                  </p>
-                </div>
-              ))}
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
+              <Button
+                onClick={() => setLocation("/dynamic")}
+                className="rounded-full px-6 py-3 bg-violet-500 hover:bg-violet-400 text-white font-semibold"
+              >
+                Talk to MoodyBot →
+              </Button>
+              <a
+                href="https://moodybot.ai/#sees"
+                className="rounded-full px-6 py-3 border border-white/20 text-sm font-semibold text-white/80 hover:text-white"
+              >
+                See it in action →
+              </a>
             </div>
+
+            <nav className="text-sm text-muted-foreground" aria-label="Writing tools">
+              {writingTools.map((tool, index) => (
+                <span key={tool.href}>
+                  {index > 0 && <span className="mx-2">·</span>}
+                  <a href={tool.href} className="hover:text-white">{tool.title}</a>
+                </span>
+              ))}
+            </nav>
           </motion.div>
         </section>
       </div>
