@@ -19,18 +19,7 @@ const writingTools = [
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const [isMobile, setIsMobile] = useState(false);
   const [line, setLine] = useState(0);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -40,135 +29,103 @@ export default function Home() {
   }, []);
 
   return (
-    <div 
-      className="main-container min-h-screen bg-background text-foreground overflow-x-hidden"
-      style={{ 
-        minHeight: '100vh',
-        minHeight: '100dvh', // Dynamic viewport height for mobile
-        paddingTop: isMobile ? 'env(safe-area-inset-top, 20px)' : '0',
-        paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 80px)' : '20px'
-      }}
-    >
-      {/* Fixed Navigation Bar */}
-      <nav 
-        className="header fixed top-0 w-full z-50 bg-background/90 backdrop-blur-sm border-b border-primary/20" 
-        style={{ 
-          paddingTop: 'max(env(safe-area-inset-top), 0.75rem)',
-          background: 'linear-gradient(135deg, #0D1B2A 0%, #1C1C1C 100%)'
-        }}
+    <div className="flex min-h-dvh flex-col bg-background text-foreground">
+      <nav
+        className="shrink-0 border-b border-white/10 bg-background/90"
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
-        <div className="flex items-center justify-between px-4 py-3">
-          <a 
-            href="https://moodybot.ai" 
-            target="_blank" 
+        <div className="flex items-center justify-between px-4 py-2">
+          <a
+            href="https://moodybot.ai"
+            target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2 opacity-70 transition-opacity hover:opacity-100"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-teal-400 to-violet-500 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">M</span>
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-teal-400 to-violet-500">
+              <span className="text-xs font-bold text-white">M</span>
             </div>
-            <span className="font-black text-lg gradient-text">MoodyBot</span>
+            <span className="gradient-text text-sm font-semibold">MoodyBot</span>
           </a>
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary">
-              <User className="h-5 w-5" />
-            </Button>
-          </div>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-500 hover:text-zinc-300">
+            <User className="h-4 w-4" />
+          </Button>
         </div>
       </nav>
 
-      <div className="pt-16" style={{ paddingTop: 'calc(4rem + max(env(safe-area-inset-top), 0.75rem))' }}>
-        {/* Hero Section */}
-        <section 
-          className="relative flex items-center justify-center overflow-hidden"
-          style={{ 
-            minHeight: isMobile ? 'calc(100vh - 4rem - env(safe-area-inset-top, 0.75rem))' : '100vh',
-            paddingTop: 'max(env(safe-area-inset-top, 1rem))'
-          }}
+      <main className="flex flex-1 items-center justify-center px-6 py-6">
+        <motion.div
+          className="w-full max-w-3xl text-center"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-background/50 to-background">
-            <div className="w-full h-full bg-gradient-to-br from-primary/10 via-background to-accent/5" />
-          </div>
-          
-          <motion.div 
-            className="relative z-10 text-center px-6 w-full max-w-6xl mx-auto"
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1 }}
+          <motion.h1
+            className="mb-4 animate-pulse-slow font-black text-4xl sm:text-6xl md:text-8xl"
+            initial={{ scale: 0.96 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.6 }}
           >
-            <motion.h1 
-              className="font-black text-4xl sm:text-6xl md:text-8xl mb-4 animate-pulse-slow"
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 1.2 }}
+            <span className="gradient-text text-shadow-neon">MoodyBot</span>
+          </motion.h1>
+
+          <div className="hero-avatar-container mb-6 px-4">
+            <div
+              className="hero-avatar relative mx-auto overflow-visible rounded-full shadow-lg ring-1 ring-white/10"
+              style={{
+                width: "clamp(72px, 22vw, 112px)",
+                height: "clamp(72px, 22vw, 112px)",
+                aspectRatio: "1 / 1",
+              }}
             >
-              <span className="gradient-text text-shadow-neon">MoodyBot</span>
-            </motion.h1>
-            
-            {/* MoodyBot Character Image */}
-            <motion.div
-              className="mb-6 px-4 hero-avatar-container"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 1, delay: 0.3 }}
-            >
-              <div className="relative mx-auto rounded-full ring-1 ring-white/10 shadow-lg overflow-visible hero-avatar" 
-                   style={{ 
-                     width: 'clamp(72px, 22vw, 112px)', 
-                     height: 'clamp(72px, 22vw, 112px)',
-                     aspectRatio: '1 / 1'
-                   }}>
-                <div className="p-1 rounded-full bg-gradient-to-b from-violet-500/10 to-transparent h-full w-full">
-                  <img
-                    src="/moodybot-min.png"
-                    alt="MoodyBot"
-                    className="w-full h-full object-contain rounded-full block"
-                    loading="eager"
-                    decoding="async"
-                  />
-                </div>
+              <div className="h-full w-full rounded-full bg-gradient-to-b from-violet-500/10 to-transparent p-1">
+                <img
+                  src="/moodybot-min.png"
+                  alt="MoodyBot"
+                  className="block h-full w-full rounded-full object-contain"
+                  loading="eager"
+                  decoding="async"
+                />
               </div>
-            </motion.div>
-            
-            <p className="text-lg sm:text-xl md:text-2xl font-bold mb-2 text-white">AI has enough intelligence. It could use a personality.</p>
-            <p className="text-sm sm:text-base text-zinc-300 mb-8 max-w-md mx-auto">
-              Say something. Or show me something.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
-              <Button
-                onClick={() => setLocation("/dynamic")}
-                className="rounded-full px-6 py-3 bg-violet-500 hover:bg-violet-400 text-white font-semibold"
-              >
-                Talk to MoodyBot →
-              </Button>
-              <a
-                href="https://moodybot.ai/#sees"
-                className="rounded-full px-6 py-3 border border-white/20 text-sm font-semibold text-white/80 hover:text-white"
-              >
-                See it in action →
-              </a>
             </div>
+          </div>
 
-            <p className="mt-10 mx-auto max-w-xl min-h-16 text-base sm:text-lg text-zinc-200" aria-live="polite">
-              {lines[line]}
-            </p>
-          </motion.div>
-        </section>
+          <p className="mb-2 text-lg font-bold text-zinc-50 sm:text-xl md:text-2xl" style={{ color: "#fafafa" }}>
+            AI has enough intelligence. It could use a personality.
+          </p>
+          <p className="mx-auto mb-6 max-w-md text-sm text-zinc-300 sm:text-base">
+            Say something. Or show me something.
+          </p>
 
-        <section className="relative z-10 px-6 pb-16 text-center" aria-label="Writing tools">
-          <div className="mx-auto grid max-w-3xl gap-6 sm:grid-cols-3">
+          <div className="mb-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Button
+              onClick={() => setLocation("/dynamic")}
+              className="rounded-full bg-violet-500 px-6 py-3 font-semibold text-white hover:bg-violet-400"
+            >
+              Talk to MoodyBot →
+            </Button>
+            <a
+              href="https://moodybot.ai/#sees"
+              className="rounded-full border border-white/20 px-6 py-3 text-sm font-semibold text-white/80 hover:text-white"
+            >
+              See it in action →
+            </a>
+          </div>
+
+          <p className="mx-auto min-h-12 max-w-xl text-base text-zinc-200 sm:text-lg" aria-live="polite">
+            {lines[line]}
+          </p>
+
+          <nav className="mx-auto mt-8 grid max-w-3xl gap-4 sm:grid-cols-3" aria-label="Writing tools">
             {writingTools.map((tool) => (
               <a key={tool.href} href={tool.href} className="block hover:text-white">
-                <span className="block text-sm font-semibold text-white">{tool.title}</span>
-                <span className="mt-1 block text-sm text-zinc-400">{tool.detail}</span>
+                <span className="block text-sm font-semibold text-zinc-200">{tool.title}</span>
+                <span className="mt-1 block text-xs text-zinc-500">{tool.detail}</span>
               </a>
             ))}
-          </div>
-        </section>
-      </div>
-      
-      {/* Footer */}
+          </nav>
+        </motion.div>
+      </main>
+
       <AppFooter />
     </div>
   );
