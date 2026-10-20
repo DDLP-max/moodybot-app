@@ -3,7 +3,7 @@ services:
     name: moodybot-webapp
     env: node
     plan: starter
-    buildCommand: npm install && npm run build
+    buildCommand: bash scripts/render-build.sh
     startCommand: npm start
     healthCheckPath: /health
     envVars:

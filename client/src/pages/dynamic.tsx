@@ -128,7 +128,14 @@ export default function DynamicPage() {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText || "Failed to send message");
+        let detail = errorText;
+        try {
+          const parsed = JSON.parse(errorText);
+          detail = parsed.error || parsed.message || errorText;
+        } catch {
+          detail = errorText;
+        }
+        throw new Error(detail || "Failed to send message");
       }
 
       const data = await response.json();
@@ -180,7 +187,9 @@ export default function DynamicPage() {
       const raw = error instanceof Error ? error.message : String(error);
       const errorMessage = raw.includes("Subscribe to MoodyBot") || raw.includes("free trial")
         ? raw
-        : `Sorry, I encountered an error: ${raw}`;
+        : raw === "Failed to fetch"
+          ? "The upload didn't finish, so that question is still yours. Try the image again."
+          : `Sorry, I encountered an error: ${raw}`;
       
       setMessages(prev => {
         // Check if the last message is already an error message to avoid duplicates

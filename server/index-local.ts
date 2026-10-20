@@ -14,14 +14,14 @@ const app = express();
 // CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://moodybot.ai', 'https://www.moodybot.ai']
+    ? ['https://app.moodybot.ai', 'https://moodybot.ai', 'https://www.moodybot.ai']
     : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5000', 'http://127.0.0.1:5000'],
   credentials: true
 }));
 
 // Increase payload limits for image uploads
-app.use(express.json({ limit: 12 * 1024 * 1024 }));
-app.use(express.urlencoded({ limit: 12 * 1024 * 1024, extended: true }));
+app.use(express.json({ limit: 16 * 1024 * 1024 }));
+app.use(express.urlencoded({ limit: 16 * 1024 * 1024, extended: true }));
 
 app.use((req, res, next) => {
   const start = Date.now();

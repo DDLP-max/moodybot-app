@@ -22,6 +22,10 @@ server/data/
 __pycache__/
 *.pyc
 
+# Vision runtime checked out at build time
+runtime/
+pydeps/
+
 # OS files
 .DS_Store
 Thumbs.db

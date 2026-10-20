@@ -18,14 +18,14 @@ const app = express();
 // CORS configuration
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://moodybot.ai', 'https://www.moodybot.ai']
+    ? ['https://app.moodybot.ai', 'https://moodybot.ai', 'https://www.moodybot.ai']
     : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:5000', 'http://127.0.0.1:5000'],
   credentials: true
 }));
 
 // Increase payload limits for image uploads
-app.use(express.json({ limit: 12 * 1024 * 1024 })); // room for one image
-app.use(express.urlencoded({ limit: 10 * 1024 * 1024, extended: true })); // 10MB
+app.use(express.json({ limit: 16 * 1024 * 1024 }));
+app.use(express.urlencoded({ limit: 16 * 1024 * 1024, extended: true }));
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -65,10 +65,14 @@ app.use((req, res, next) => {
     await registerRoutes(app); // no longer expecting a return value
 
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
+      if (res.headersSent) return;
+      const tooLarge = err?.type === "entity.too.large";
+      const status = tooLarge ? 413 : err.status || err.statusCode || 500;
+      const message = tooLarge
+        ? "That image is too big. Send it smaller."
+        : err.message || "Internal Server Error";
 
-      res.status(status).json({ message });
+      res.status(status).json({ error: message, message });
       console.error("❌ Server error:", err);
     });
 

@@ -489,9 +489,6 @@ The real answers? The insights that change your life? Those cost something. Not 
         });
       }
 
-      // Increment question count for free users
-      await storage.incrementQuestionCount(currentUserId);
-
       // Get or create session
       let currentSessionId = sessionId;
       if (!currentSessionId) {
@@ -567,6 +564,9 @@ The real answers? The insights that change your life? Those cost something. Not 
         content: aiReply
       });
 
+      await storage.incrementQuestionCount(currentUserId);
+      const billed = await storage.checkQuestionLimit(currentUserId);
+
       res.set({
         "X-MB-Landing-Engine": landingEngineVersion || "missing",
         "X-MB-Route": "chat/messages",
@@ -577,8 +577,8 @@ The real answers? The insights that change your life? Those cost something. Not 
         selectedMode,
         isAutoSelected,
         sessionId: currentSessionId,
-        remaining: limitCheck.remaining - 1,
-        limit: limitCheck.limit,
+        remaining: billed.remaining,
+        limit: billed.limit,
         landing_engine_version: landingEngineVersion,
         diagnostics: diagnostics || null,
       });
