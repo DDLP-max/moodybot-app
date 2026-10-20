@@ -333,7 +333,7 @@ export default function SimplifiedChat() {
           <div className="flex items-center space-x-2">
             <Eye className="text-primary text-xl" />
             <span className="font-black text-lg gradient-text">MoodyBot</span>
-            <span className="text-sm text-muted-foreground">• DYNAMIC MODE</span>
+            <span className="text-sm text-muted-foreground">• Conversation</span>
           </div>
         </div>
         
@@ -362,7 +362,7 @@ export default function SimplifiedChat() {
               if (navigator.share) {
                 navigator.share({
                   title: 'MoodyBot - AI Emotional Intelligence',
-                  text: 'Check out MoodyBot - the AI that adapts to your emotional state and provides personalized support!',
+                  text: 'AI has enough intelligence. It could use a personality.',
                   url: shareUrl
                 });
               } else {
@@ -389,14 +389,14 @@ export default function SimplifiedChat() {
         <div className="flex items-center justify-between">
           <div className="flex-1">
             <p className="text-sm font-medium text-foreground">
-              🚀 Upgrade to MoodyBot Premium
+              More MoodyBot. Fewer limits.
             </p>
             <p className="text-xs text-muted-foreground">
               {questionLimit ? (
                 questionLimit.remaining > 0 
-                  ? `${questionLimit.remaining} free question${questionLimit.remaining === 1 ? '' : 's'} remaining`
-                  : 'No free questions remaining'
-              ) : 'Unlimited emotional intelligence upgrades'}
+                  ? `${questionLimit.remaining} free message${questionLimit.remaining === 1 ? '' : 's'} remaining`
+                  : 'No free messages remaining'
+              ) : 'Keep the conversation going for $9/month.'}
             </p>
           </div>
           <Button
@@ -477,7 +477,7 @@ export default function SimplifiedChat() {
         <div className="flex items-center space-x-2 mb-3">
           <input
             type="text"
-            placeholder={questionLimit && questionLimit.remaining <= 0 ? "Subscribe to continue your journey..." : "Share your story, your pain, your truth... MoodyBot will adapt to you"}
+            placeholder={questionLimit && questionLimit.remaining <= 0 ? "More MoodyBot. Fewer limits." : "Say something. Or show me something."}
             className="flex-1 p-3 rounded-full bg-background border border-muted-foreground text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -515,7 +515,7 @@ export default function SimplifiedChat() {
               onClick={() => window.open('https://moodybot.gumroad.com/l/moodybot-webapp', '_blank')}
               className="w-full md:w-auto rounded-full px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90"
             >
-              Subscribe to Premium
+              Keep the conversation going for $9/month
             </Button>
           ) : (
             <Button
@@ -531,7 +531,7 @@ export default function SimplifiedChat() {
         {/* Dynamic Mode Instructions */}
         <div className="mt-2 text-center">
           <p className="text-xs text-muted-foreground">
-            🧠 DYNAMIC MODE: MoodyBot automatically selects the best persona based on your emotional state and message content
+            Photos · Screenshots · Memes
           </p>
         </div>
       </div>

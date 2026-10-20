@@ -105,7 +105,7 @@ export default function Profile() {
               DAMAGE <span className="gradient-text">ANALYSIS</span>
             </h2>
             <p className="text-muted-foreground text-sm mb-6">
-              Map your patterns, triggers, and emotional loops. Know your enemy: yourself.
+              The conversation remembers what you've already shown it.
             </p>
             <Button
               onClick={() => analyzeMutation.mutate()}

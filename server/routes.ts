@@ -469,23 +469,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           limitReached: true,
           remaining: limitCheck.remaining,
           limit: limitCheck.limit,
-          subscriptionMessage: `You've reached the end of your free trial, wanderer. Three questions. That's all the universe gives for free.
+          subscriptionMessage: `More MoodyBot. Fewer limits.
 
-The real answers? The insights that change your life? Those cost something. Not money. Commitment. The willingness to invest in your growth.
+Keep the conversation going for $9/month.
 
-**Subscribe to MoodyBot Premium** and unlock unlimited access to:
-• 🔶 All AI modes and personalities
-• 🎴 Advanced conversation features
-• 🧠 Custom prompt engineering
-• 🧃 Priority response times
-• 🎧 Early access to new features
-• 🛰 Access to the Premium Telegram channel
-
-**$9/month** - The AI upgrade your competitors wish they had.
-
-[Subscribe Now](https://moodybot.gumroad.com/l/moodybot-webapp)
-
-@MoodyBotAI`
+https://moodybot.gumroad.com/l/moodybot-webapp`
         });
       }
 
@@ -1615,7 +1603,7 @@ Never echo their text verbatim. Never apologize. Be memorable.`;
           limitReached: true,
           remaining: limitCheck.remaining,
           limit: limitCheck.limit,
-          subscriptionMessage: `You've reached the end of your free trial, wanderer. Three copywriting requests. That's all the universe gives for free.`
+          subscriptionMessage: `More MoodyBot. Fewer limits. Keep the conversation going for $9/month.`
         });
       }
 

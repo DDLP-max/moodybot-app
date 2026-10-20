@@ -625,7 +625,7 @@ export default function CreativeWriterPage() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(127,29,29,0.03),transparent_50%)] pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(146,64,14,0.03),transparent_50%)] pointer-events-none" />
       {/* Standard Header */}
-      <StandardHeader modeLabel="CREATIVE WRITER MODE" />
+      <StandardHeader modeLabel="Stories" />
 
       <div className="container mx-auto px-4 py-8 max-w-6xl relative z-10">
         {/* Hero Section */}
@@ -707,13 +707,13 @@ export default function CreativeWriterPage() {
                   <>
                     <p className="text-sm text-muted-foreground">
                       {questionLimit.remaining > 0 
-                        ? `${questionLimit.remaining} free creative writing request${questionLimit.remaining === 1 ? '' : 's'} remaining`
-                        : 'No free creative writing requests remaining'
+                        ? `${questionLimit.remaining} free message${questionLimit.remaining === 1 ? '' : 's'} remaining`
+                        : 'No free messages remaining'
                       }
                     </p>
                     {questionLimit.remaining <= 1 && questionLimit.remaining > 0 && (
                       <p className="text-xs text-orange-500 mt-1">
-                        Last free request! Subscribe for unlimited access.
+                        More MoodyBot. Fewer limits.
                       </p>
                     )}
                   </>
@@ -1420,7 +1420,7 @@ export default function CreativeWriterPage() {
                   <span>Creative Writing Moods</span>
                 </CardTitle>
                 <CardDescription>
-                  Choose the emotional tone for your narrative prose
+                  Choose the tone for the piece
                 </CardDescription>
               </CardHeader>
               <CardContent>

@@ -22,30 +22,30 @@ export default function Home() {
   // Mode cards configuration with better icons
   const MODE_CARDS = [
     {
-      title: "DYNAMIC MODE",
-      icon: "⚡", // Lightning bolt for energy/adaptation
-      description: "AI-powered persona selection. MoodyBot automatically adapts to your emotional state and message content.",
+      title: "CONVERSATION",
+      icon: "🥃",
+      description: "Say something. Or show me something.",
       color: "from-purple-500 to-indigo-500",
       href: "/dynamic"
     },
     {
-      title: "COPYWRITER MODE", 
-      icon: "✍️", // Writing hand instead of T
-      description: "From Ogilvy to Outlaw: MoodyBot's Copy Engine. Create compelling titles, hooks, CTAs, and captions with brutal honesty.",
+      title: "COPY", 
+      icon: "✍️",
+      description: "Titles, hooks, and captions in MoodyBot's voice.",
       color: "from-green-400 to-teal-500",
       href: "/copywriter"
     },
     {
-      title: "CREATIVE WRITER MODE",
-      icon: "🎭", // Drama masks for creative expression
-      description: "Stories, essays, and blurbs with a sharp MoodyBot edge.",
+      title: "STORIES",
+      icon: "🎭",
+      description: "Stories, essays, and observations with the same voice.",
       color: "from-orange-400 to-red-500",
       href: "/creative-writer"
     },
     {
-      title: "VALIDATION MODE",
-      icon: "🎯", // Target for precision validation
-      description: "Positive, negative, or mixed push-pull. Make people feel seen, set boundaries, or do both with precision.",
+      title: "A READ",
+      icon: "🎯",
+      description: "A message, a situation, a person. MoodyBot says what it notices.",
       color: "from-teal-400 to-purple-400",
       href: "/validation"
     }
@@ -133,7 +133,7 @@ export default function Home() {
                 <div className="p-1 rounded-full bg-gradient-to-b from-violet-500/10 to-transparent h-full w-full">
                   <img
                     src="/moodybot-min.png"
-                    alt="MoodyBot AI Character"
+                    alt="MoodyBot"
                     className="w-full h-full object-contain rounded-full block"
                     loading="eager"
                     decoding="async"
@@ -142,9 +142,9 @@ export default function Home() {
               </div>
             </motion.div>
             
-            <p className="text-lg sm:text-xl md:text-2xl font-bold mb-2 text-muted-foreground">AI FOR THE REAL YOU</p>
+            <p className="text-lg sm:text-xl md:text-2xl font-bold mb-2 text-muted-foreground">AI has enough intelligence. It could use a personality.</p>
             <p className="text-sm sm:text-base text-muted-foreground mb-8 max-w-sm mx-auto">
-              No toxic positivity. No bullshit. Just brutal honesty and real growth.
+              No forced positivity. No personality transplant.
             </p>
             
             {/* Mode Options */}

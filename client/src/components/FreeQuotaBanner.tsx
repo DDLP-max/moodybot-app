@@ -27,11 +27,11 @@ export default function FreeQuotaBanner({
     }`}>
       {hasFreeLeft ? (
         <span className="text-green-300">
-          {remaining} free question{remaining === 1 ? '' : 's'} remaining
+          {remaining} free message{remaining === 1 ? '' : 's'} remaining
         </span>
       ) : (
         <span className="text-gray-300">
-          No free questions remaining
+          No free messages remaining
         </span>
       )}
     </div>

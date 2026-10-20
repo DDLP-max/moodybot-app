@@ -185,15 +185,15 @@ export default function DynamicPage() {
     onError: (error) => {
       console.error("Error sending message:", error);
       const raw = error instanceof Error ? error.message : String(error);
-      const errorMessage = raw.includes("Subscribe to MoodyBot") || raw.includes("free trial")
+      const errorMessage = raw.includes("Fewer limits") || raw.includes("free trial")
         ? raw
-        : raw === "Failed to fetch"
-          ? "The upload didn't finish, so that question is still yours. Try the image again."
-          : `Sorry, I encountered an error: ${raw}`;
+        : raw === "Failed to fetch" || raw.length > 180
+          ? "Couldn't get that through. Try again."
+          : raw || "Couldn't get that through. Try again.";
       
       setMessages(prev => {
         // Check if the last message is already an error message to avoid duplicates
-        if (prev.length > 0 && prev[prev.length - 1].content.includes("Sorry, I encountered an error")) {
+        if (prev.length > 0 && prev[prev.length - 1].content.includes("Couldn't get that through")) {
           return prev;
         }
         // Add error message to the end
@@ -358,7 +358,7 @@ export default function DynamicPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <StandardHeader modeLabel="DYNAMIC MODE" />
+      <StandardHeader modeLabel="Conversation" />
 
       <ModeShell max="4xl">
         {/* Top banner INSIDE the container */}
@@ -366,8 +366,8 @@ export default function DynamicPage() {
           left={
             <span>
               {freeLeft > 0 
-                ? `${freeLeft} free question${freeLeft === 1 ? '' : 's'} remaining`
-                : 'No free questions remaining'
+                ? `${freeLeft} free message${freeLeft === 1 ? '' : 's'} remaining`
+                : 'No free messages remaining'
               }
             </span>
           }
@@ -420,8 +420,8 @@ export default function DynamicPage() {
             {messages.length === 0 && (
               <div className="text-center text-muted-foreground py-8">
                 <Sparkles className="h-12 w-12 mx-auto mb-4 text-primary/50" />
-                <p className="text-lg font-medium">Your conversational accomplice 🥃</p>
-                <p className="text-sm">Send a thought, a photograph, or a screenshot.</p>
+                <p className="text-lg font-medium">Say something interesting.</p>
+                <p className="text-sm">A thought, a screenshot, a terrible photograph. MoodyBot will take it from there.</p>
               </div>
             )}
           </div>
@@ -461,6 +461,7 @@ export default function DynamicPage() {
                 disabled={sendMessageMutation.isPending || isInitializing || isGated}
                 onClick={() => fileInputRef.current?.click()}
                 aria-label="Attach an image"
+                title="Attach an image"
               >
                 <Image className="h-5 w-5" />
               </Button>
@@ -482,7 +483,7 @@ export default function DynamicPage() {
                 }}
                 className="flex-1 resize-y rounded-xl bg-black/30 border border-white/10 
                            placeholder-white/40 text-white p-3 min-h-[52px] focus:outline-none focus:ring-2 ring-violet-400"
-                placeholder="Message MoodyBot or attach an image..."
+                placeholder={isGated ? "More MoodyBot. Fewer limits." : "Say something. Or show me something."}
                 disabled={sendMessageMutation.isPending || isInitializing || isGated}
               />
               <Button
@@ -494,7 +495,7 @@ export default function DynamicPage() {
               </Button>
             </form>
             <p className="mt-2 text-center text-xs text-muted-foreground">
-              {attachError || "JPG · PNG · WEBP"}
+              {attachError || (attachment && !message.trim() ? "No caption necessary." : "Photos · Screenshots · Memes")}
             </p>
           </div>
         </div>
@@ -504,7 +505,8 @@ export default function DynamicPage() {
       {/* Subscribe CTA when gated */}
       {isGated && (
         <div className="rounded-xl bg-gradient-to-r from-slate-800/60 to-slate-700/60 p-4 text-sm text-center">
-          You've used your 3 free replies. Subscribe to continue.
+          <p className="font-medium">More MoodyBot. Fewer limits.</p>
+          <p className="mt-1">Keep the conversation going for $9/month.</p>
         </div>
       )}
 

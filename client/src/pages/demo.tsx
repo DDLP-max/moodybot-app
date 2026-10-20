@@ -65,7 +65,7 @@ export default function Demo() {
                   <span>Test Input</span>
                 </CardTitle>
                 <CardDescription>
-                  Enter text to see how the dynamic persona engine analyzes emotional content
+                  Say something. Or show me something.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -238,29 +238,29 @@ export default function Demo() {
         {/* How It Works */}
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle>How Dynamic Persona Selection Works</CardTitle>
+            <CardTitle>How the conversation chooses a voice</CardTitle>
             <CardDescription>
-              The AI analyzes your message content and emotional indicators to automatically select the most appropriate persona
+              MoodyBot reads what you sent and answers in the voice that fits it.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div className="space-y-2">
-                <h4 className="font-semibold text-blue-600">1. Emotional Detection</h4>
+                <h4 className="font-semibold text-blue-600">1. Read</h4>
                 <p className="text-muted-foreground">
-                  Analyzes keywords, tone, and content type to identify emotional state
+                  Notices the tone, the subject, and what the message is actually doing.
                 </p>
               </div>
               <div className="space-y-2">
                 <h4 className="font-semibold text-purple-600">2. Persona Selection</h4>
                 <p className="text-muted-foreground">
-                  Matches emotional state to optimal persona combinations using compatibility matrix
+                  Picks the voice that fits what was sent.
                 </p>
               </div>
               <div className="space-y-2">
                 <h4 className="font-semibold text-green-600">3. Adaptive Response</h4>
                 <p className="text-muted-foreground">
-                  MoodyBot responds using the selected persona stack for optimal emotional resonance
+                  Answers in that voice. The personality stays MoodyBot.
                 </p>
               </div>
             </div>

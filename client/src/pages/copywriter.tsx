@@ -93,16 +93,16 @@ export default function CopywriterPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Standard Header */}
-      <StandardHeader modeLabel="COPYWRITER MODE" />
+      <StandardHeader modeLabel="Copy" />
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Hero Section */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-black mb-4 bg-gradient-to-r from-green-500 to-teal-600 bg-clip-text text-transparent">
-            Copywriter Mode
+            Copy
           </h1>
           <p className="text-xl text-muted-foreground mb-2">
-            From Ogilvy to Outlaw: MoodyBot's Copy Engine
+            Titles, hooks, and captions in MoodyBot's voice.
           </p>
           <p className="text-sm text-muted-foreground">
             Titles • Hooks • CTAs • Captions • Long-Form Storytelling Posts
@@ -118,19 +118,19 @@ export default function CopywriterPage() {
                   <>
                     <p className="text-sm text-muted-foreground">
                       {questionLimit.remaining > 0 
-                        ? `${questionLimit.remaining} free copywriting request${questionLimit.remaining === 1 ? '' : 's'} remaining`
-                        : 'No free copywriting requests remaining'
+                        ? `${questionLimit.remaining} free message${questionLimit.remaining === 1 ? '' : 's'} remaining`
+                        : 'No free messages remaining'
                       }
                     </p>
                     {questionLimit.remaining <= 1 && questionLimit.remaining > 0 && (
                       <p className="text-xs text-orange-500 mt-1">
-                        Last free request! Subscribe for unlimited access.
+                        More MoodyBot. Fewer limits.
                       </p>
                     )}
                   </>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    3 free copywriting requests remaining
+                    3 free messages remaining
                   </p>
                 )}
               </div>

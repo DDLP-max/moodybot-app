@@ -333,7 +333,7 @@ export default function ValidationMode() {
   return (
     <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #0D1B2A 0%, #1C1C1C 100%)' }}>
       {/* Standard Header */}
-      <StandardHeader modeLabel="VALIDATION MODE" />
+      <StandardHeader modeLabel="A read" />
 
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         {/* Question Limit Display */}
@@ -344,13 +344,13 @@ export default function ValidationMode() {
                 <div className="text-center flex-1">
                   <p className="text-sm text-gray-300">
                     {questionLimit.remaining > 0 
-                      ? `${questionLimit.remaining} free validation request${questionLimit.remaining === 1 ? '' : 's'} remaining`
-                      : 'No free validation requests remaining'
+                      ? `${questionLimit.remaining} free message${questionLimit.remaining === 1 ? '' : 's'} remaining`
+                      : 'No free messages remaining'
                     }
                   </p>
                   {questionLimit.remaining <= 1 && questionLimit.remaining > 0 && (
                     <p className="text-xs text-orange-400 mt-1">
-                      Last free request! Subscribe for unlimited access.
+                      More MoodyBot. Fewer limits.
                     </p>
                   )}
                 </div>
@@ -371,9 +371,9 @@ export default function ValidationMode() {
         {/* Input Section */}
         <Card className="border-0 shadow-2xl" style={{ backgroundColor: 'rgba(20, 184, 166, 0.05)', borderColor: 'rgba(20, 184, 166, 0.2)' }}>
           <CardHeader>
-            <CardTitle className="text-white">Generate Validation Response</CardTitle>
+            <CardTitle className="text-white">Say what it notices</CardTitle>
             <CardDescription className="text-gray-300">
-              Create emotionally intelligent responses that validate feelings and behaviors
+              A message, a situation, a person. MoodyBot will take it from there.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">

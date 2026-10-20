@@ -565,8 +565,8 @@ export default function Chat() {
             <div className="flex items-center justify-center space-x-2 mt-2">
               <span className="text-xs text-muted-foreground">
                 {questionLimit.remaining > 0 
-                  ? `${questionLimit.remaining} free question${questionLimit.remaining === 1 ? '' : 's'} remaining`
-                  : 'No free questions remaining'
+                  ? `${questionLimit.remaining} free message${questionLimit.remaining === 1 ? '' : 's'} remaining`
+                  : 'No free messages remaining'
                 }
               </span>
               {questionLimit.remaining <= 1 && questionLimit.remaining > 0 && (
@@ -606,7 +606,7 @@ export default function Chat() {
                 🚨 Last question remaining!
               </p>
               <p className="text-xs text-muted-foreground">
-                Subscribe to MoodyBot Premium for unlimited access to emotional intelligence upgrades
+                More MoodyBot. Fewer limits. Keep the conversation going for $9/month.
               </p>
             </div>
             <Button
@@ -704,7 +704,7 @@ export default function Chat() {
         <div className="flex items-center space-x-2 mb-3">
           <input
             type="text"
-            placeholder={questionLimit && questionLimit.remaining <= 0 ? "Subscribe to continue your journey..." : "Begin your cinematic journey... Share your story, your pain, your truth"}
+            placeholder={questionLimit && questionLimit.remaining <= 0 ? "More MoodyBot. Fewer limits." : "Say something. Or show me something."}
             className="flex-1 p-3 rounded-full bg-background border border-muted-foreground text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -744,7 +744,7 @@ export default function Chat() {
               onClick={() => window.open('https://moodybot.gumroad.com/l/moodybot-webapp', '_blank')}
               className="w-full md:w-auto rounded-full px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90"
             >
-              Subscribe to Premium
+              Keep the conversation going for $9/month
             </Button>
           ) : (
             <Button
@@ -752,7 +752,7 @@ export default function Chat() {
               className="w-full md:w-auto rounded-full px-6 py-3 bg-primary text-primary-foreground hover:bg-primary/90"
               disabled={sendMessageMutation.isPending || isInitializing}
             >
-              {sendMessageMutation.isPending ? "Crafting..." : "Begin Journey"}
+              {sendMessageMutation.isPending ? "Crafting..." : "Send"}
             </Button>
           )}
         </div>
@@ -760,7 +760,7 @@ export default function Chat() {
         {/* Cinematic Experience Instructions */}
         <div className="mt-2 text-center">
           <p className="text-xs text-muted-foreground">
-            🎬 Cinematic Mode: Each response is crafted for emotional depth and atmospheric storytelling
+            Photos · Screenshots · Memes
           </p>
         </div>
       </div>
