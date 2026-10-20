@@ -15,6 +15,13 @@ server/.env
 logs
 *.log
 
+# Stored chat images
+server/data/
+
+# Python cache
+__pycache__/
+*.pyc
+
 # OS files
 .DS_Store
 Thumbs.db

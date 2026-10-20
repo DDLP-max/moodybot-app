@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { generateChatResponse } from "./moodybot";
+import { runVision } from "./visionBridge";
 import { insertChatSessionSchema, insertChatMessageSchema, insertUserSchema } from "@shared/schema";
 import type { ChatCompletionMessageParam } from "openai/resources/chat";
 import { systemPromptManager } from "./systemPromptManager";
@@ -137,6 +138,34 @@ function normalizeCopywriterResult(r: any) {
 
   console.log("🔍 Normalized result:", normalized);
   return normalized;
+}
+
+const WEB_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const WEB_IMAGE_BYTES = 8_000_000;
+
+function parseImagePayload(
+  imageData?: string,
+  imageMime?: string
+): { mime: string; base64: string; error?: string } | null {
+  if (!imageData || typeof imageData !== "string") return null;
+  let mime = (imageMime || "").split(";", 1)[0].trim().toLowerCase();
+  let base64 = imageData.trim();
+  const marker = ";base64,";
+  const dataIndex = base64.indexOf(marker);
+  if (base64.startsWith("data:") && dataIndex > 5) {
+    mime = base64.slice(5, dataIndex).toLowerCase();
+    base64 = base64.slice(dataIndex + marker.length);
+  }
+  if (mime === "image/jpg") mime = "image/jpeg";
+  if (!WEB_IMAGE_TYPES.has(mime)) {
+    return { mime, base64: "", error: "Send a JPG, PNG, or WEBP image." };
+  }
+  const bytes = Buffer.from(base64, "base64").length;
+  if (!bytes) return { mime, base64: "", error: "That file is empty." };
+  if (bytes > WEB_IMAGE_BYTES) {
+    return { mime, base64: "", error: "That image is too big. Send it smaller." };
+  }
+  return { mime, base64 };
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -407,10 +436,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Send message and get AI response
   app.post("/api/chat/messages", async (req, res) => {
     try {
-      const { message, userId, sessionId, imageData, mode } = req.body;
-      
-      if (!message || message.trim().length === 0) {
-        return res.status(400).json({ error: "Message cannot be empty" });
+      const { message, userId, sessionId, imageData, imageMime, mode } = req.body;
+      const text = typeof message === "string" ? message.trim() : "";
+      const image = parseImagePayload(imageData, imageMime);
+
+      if (!text && !image) {
+        return res.status(400).json({ error: "Send a message or an image." });
+      }
+      if (image && image.error) {
+        return res.status(400).json({ error: image.error });
       }
 
       // Default to user ID 1 if not provided (for now)
@@ -464,33 +498,67 @@ The real answers? The insights that change your life? Those cost something. Not 
         const session = await storage.createChatSession({
           userId: currentUserId,
           mode: mode || "dynamic",
-          title: message.substring(0, 50) + (message.length > 50 ? "..." : "")
+          title: (text || "Image").substring(0, 50)
         });
         currentSessionId = session.id;
       }
 
-      // Save user message
-      const userMessage = await storage.createChatMessage({
+      const owned = await storage.getChatSession(Number(currentSessionId));
+      if (owned && owned.userId !== Number(currentUserId)) {
+        return res.status(403).json({ error: "That conversation belongs to someone else." });
+      }
+
+      let vision = null;
+      try {
+        vision = await runVision({
+          action: "complete",
+          userId: Number(currentUserId),
+          sessionId: Number(currentSessionId),
+          text,
+          imageBase64: image?.base64 || "",
+          mime: image?.mime || "",
+          apiKey: process.env.OPENROUTER_API_KEY || "",
+        });
+      } catch {
+        vision = null;
+      }
+      if ((image?.base64 || vision?.hasImages) && (!vision || !vision.ok)) {
+        return res.status(400).json({ error: vision?.error || "Could not read that image." });
+      }
+
+      await storage.createChatMessage({
         sessionId: currentSessionId,
         role: "user",
-        content: message
+        content: text || "[image]"
       });
 
-      // Get AI response — default to dynamic so auto persona selection runs
-      const {
-        aiReply,
-        selectedMode,
-        isAutoSelected,
-        landingEngineVersion,
-        diagnostics,
-      } = await generateChatResponse(
-        message,
-        mode || "dynamic",
-        currentUserId,
-        currentSessionId,
-        [], // No conversation history for now
-        imageData
-      );
+      let aiReply = "";
+      let selectedMode = mode || "dynamic";
+      let isAutoSelected = true;
+      let landingEngineVersion = "web";
+      let diagnostics: Record<string, string> | null = null;
+
+      if (vision?.hasImages) {
+        aiReply = vision.reply || "";
+        landingEngineVersion = "shared-vision";
+        diagnostics = { vision_anchor: vision.anchor || "" };
+        if (!aiReply) {
+          return res.status(502).json({ error: "MoodyBot couldn't generate a proper response. Try again." });
+        }
+      } else {
+        const generated = await generateChatResponse(
+          text,
+          mode || "dynamic",
+          currentUserId,
+          currentSessionId,
+          []
+        );
+        aiReply = generated.aiReply;
+        selectedMode = generated.selectedMode;
+        isAutoSelected = generated.isAutoSelected;
+        landingEngineVersion = generated.landingEngineVersion;
+        diagnostics = generated.diagnostics || null;
+      }
 
       // Save AI message
       const aiMessage = await storage.createChatMessage({

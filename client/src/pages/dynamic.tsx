@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Image, Upload, Sparkles } from "lucide-react";
+import { Image, Sparkles } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { dynamicPersonaEngine, type PersonaAnalysis } from "@/lib/dynamicPersonaEngine";
 import { useFreeResponses } from "@/hooks/useFreeResponses";
@@ -32,6 +32,8 @@ export default function DynamicPage() {
   const [isInitializing, setIsInitializing] = useState(true);
   const [currentPersonaAnalysis, setCurrentPersonaAnalysis] = useState<PersonaAnalysis | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [attachment, setAttachment] = useState<{ url: string; dataUrl: string; mime: string } | null>(null);
+  const [attachError, setAttachError] = useState("");
 
   // Use improved quota hooks
   const { freeLeft, isLoading: loadingFree, decrement } = useFreeResponses();
@@ -102,13 +104,13 @@ export default function DynamicPage() {
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async (messageText: string) => {
+    mutationFn: async (payload: { text: string; imageData?: string; imageMime?: string }) => {
       if (!currentSession) {
         throw new Error("No active session");
       }
 
       // Analyze user input for UI persona indicator (server also auto-selects)
-      const personaAnalysis = dynamicPersonaEngine.analyzeUserInput(messageText, currentSession.userId.toString());
+      const personaAnalysis = dynamicPersonaEngine.analyzeUserInput(payload.text, currentSession.userId.toString());
       setCurrentPersonaAnalysis(personaAnalysis);
 
       const response = await fetch("/api/chat/messages", {
@@ -117,7 +119,9 @@ export default function DynamicPage() {
         body: JSON.stringify({
           sessionId: currentSession.sessionId,
           userId: currentSession.userId,
-          message: messageText,
+          message: payload.text,
+          imageData: payload.imageData,
+          imageMime: payload.imageMime,
           mode: "dynamic",
         }),
       });
@@ -189,8 +193,40 @@ export default function DynamicPage() {
     },
   });
 
+  const takeImageFile = (file: File | null | undefined) => {
+    if (!file) return;
+    const mime = file.type === "image/jpg" ? "image/jpeg" : file.type;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(mime)) {
+      setAttachError("Send a JPG, PNG, or WEBP image.");
+      return;
+    }
+    if (file.size > 8_000_000) {
+      setAttachError("That image is too big. Send it smaller.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === "string" ? reader.result : "";
+      if (!dataUrl) return;
+      setAttachment((current) => {
+        if (current) URL.revokeObjectURL(current.url);
+        return { url: URL.createObjectURL(file), dataUrl, mime };
+      });
+      setAttachError("");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearAttachment = () => {
+    setAttachment((current) => {
+      if (current) URL.revokeObjectURL(current.url);
+      return null;
+    });
+    setAttachError("");
+  };
+
   const handleSendMessage = async () => {
-    if (!message.trim()) return;
+    if (!message.trim() && !attachment) return;
     if (sendMessageMutation.isPending || isInitializing) return;
     if (isGated) return;
 
@@ -204,23 +240,26 @@ export default function DynamicPage() {
       return;
     }
 
-    const messageText = message;
+    const messageText = message.trim();
+    const image = attachment;
     setMessage("");
+    setAttachment(null);
 
-    // Add user message immediately to show it in the chat
     const userMessage: Message = {
       role: "user",
       content: messageText,
+      image: image?.url,
       personaAnalysis: currentPersonaAnalysis || undefined
     };
     
-    setMessages(prev => {
-      const newMessages = [...prev, userMessage];
-      return newMessages;
-    });
+    setMessages(prev => [...prev, userMessage]);
 
     try {
-      await sendMessageMutation.mutateAsync(messageText);
+      await sendMessageMutation.mutateAsync({
+        text: messageText,
+        imageData: image?.dataUrl,
+        imageMime: image?.mime,
+      });
     } catch (error) {
       // Error handled by onError in useMutation
     }
@@ -356,9 +395,14 @@ export default function DynamicPage() {
                     {message.personaAnalysis && (
                       <PersonaIndicator analysis={message.personaAnalysis} />
                     )}
-                    <div className="mt-2">
-                      {formatMessageContent(message.content)}
-                    </div>
+                    {message.image && (
+                      <img src={message.image} alt="" className="mb-2 max-h-64 rounded-lg" />
+                    )}
+                    {message.content && (
+                      <div className="mt-2">
+                        {formatMessageContent(message.content)}
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               ))}
@@ -367,38 +411,82 @@ export default function DynamicPage() {
             {messages.length === 0 && (
               <div className="text-center text-muted-foreground py-8">
                 <Sparkles className="h-12 w-12 mx-auto mb-4 text-primary/50" />
-                <p className="text-lg font-medium">Welcome to Dynamic Mode</p>
-                <p className="text-sm">Share your story, your pain, your truth... MoodyBot will adapt to you</p>
+                <p className="text-lg font-medium">Your conversational accomplice 🥃</p>
+                <p className="text-sm">Send a thought, a photograph, or a screenshot.</p>
               </div>
             )}
           </div>
 
           {/* Composer */}
-          <div className="border-t border-white/10 p-4 md:p-6">
+          <div
+            className="border-t border-white/10 p-4 md:p-6"
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+              event.preventDefault();
+              takeImageFile(event.dataTransfer.files?.[0]);
+            }}
+          >
+            {attachment && (
+              <div className="mb-3 flex items-start gap-3">
+                <img src={attachment.url} alt="" className="h-24 w-24 rounded-lg object-cover" />
+                <button type="button" onClick={clearAttachment} className="text-sm text-white/70 underline">
+                  Remove
+                </button>
+              </div>
+            )}
             <form className="flex items-end gap-3" onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(event) => {
+                  takeImageFile(event.target.files?.[0]);
+                  event.target.value = "";
+                }}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                className="px-3 text-white"
+                disabled={sendMessageMutation.isPending || isInitializing || isGated}
+                onClick={() => fileInputRef.current?.click()}
+                aria-label="Attach an image"
+              >
+                <Image className="h-5 w-5" />
+              </Button>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
+                onPaste={(event) => {
+                  const file = Array.from(event.clipboardData.files).find((item) => item.type.startsWith("image/"));
+                  if (file) {
+                    event.preventDefault();
+                    takeImageFile(file);
+                  }
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
                 className="flex-1 resize-y rounded-xl bg-black/30 border border-white/10 
                            placeholder-white/40 text-white p-3 min-h-[52px] focus:outline-none focus:ring-2 ring-violet-400"
-                placeholder="Share your story, your pain, your truth... MoodyBot will adapt to you"
+                placeholder="Message MoodyBot or attach an image..."
                 disabled={sendMessageMutation.isPending || isInitializing || isGated}
               />
               <Button
                 type="submit"
-                disabled={sendMessageMutation.isPending || isInitializing || isGated}
+                disabled={sendMessageMutation.isPending || isInitializing || isGated || (!message.trim() && !attachment)}
                 className="px-4 py-3 rounded-xl bg-violet-500 hover:bg-violet-400 text-white font-semibold shadow-lg"
               >
-                {sendMessageMutation.isPending ? "Crafting..." : "Send Message"}
+                {sendMessageMutation.isPending ? "Crafting..." : "Send"}
               </Button>
             </form>
-            
-            {/* Dynamic Mode Instructions */}
-            <div className="mt-2 text-center">
-              <p className="text-xs text-muted-foreground">
-                🧠 Dynamic Mode: MoodyBot automatically selects the best persona based on your emotional state and message content
-              </p>
-            </div>
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              {attachError || "JPG · PNG · WEBP"}
+            </p>
           </div>
         </div>
       </ModeShell>

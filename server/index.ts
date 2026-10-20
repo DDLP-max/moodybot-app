@@ -24,7 +24,7 @@ app.use(cors({
 }));
 
 // Increase payload limits for image uploads
-app.use(express.json({ limit: 10 * 1024 * 1024 })); // 10MB
+app.use(express.json({ limit: 12 * 1024 * 1024 })); // room for one image
 app.use(express.urlencoded({ limit: 10 * 1024 * 1024, extended: true })); // 10MB
 
 app.use((req, res, next) => {
