@@ -72,8 +72,8 @@ export default function Home() {
             <div
               className="hero-avatar relative mx-auto overflow-visible rounded-full shadow-lg ring-1 ring-white/10"
               style={{
-                width: "clamp(72px, 22vw, 112px)",
-                height: "clamp(72px, 22vw, 112px)",
+                width: "clamp(112px, 26vw, 180px)",
+                height: "clamp(112px, 26vw, 180px)",
                 aspectRatio: "1 / 1",
               }}
             >
