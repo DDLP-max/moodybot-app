@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { User } from "lucide-react";
+import { Eye, User } from "lucide-react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
@@ -34,17 +34,15 @@ export default function Home() {
         className="shrink-0 border-b border-white/10 bg-background/90"
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
-        <div className="flex items-center justify-between px-4 py-2">
+        <div className="flex items-center justify-between p-4">
           <a
             href="https://moodybot.ai"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 opacity-70 transition-opacity hover:opacity-100"
+            className="flex items-center space-x-2"
           >
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-r from-teal-400 to-violet-500">
-              <span className="text-xs font-bold text-white">M</span>
-            </div>
-            <span className="gradient-text text-sm font-semibold">MoodyBot</span>
+            <Eye className="h-5 w-5 text-primary" />
+            <span className="font-black text-lg gradient-text">MoodyBot</span>
           </a>
           <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-500 hover:text-zinc-300">
             <User className="h-4 w-4" />
