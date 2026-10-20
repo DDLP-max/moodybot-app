@@ -91,15 +91,56 @@ def _ensure_pillow() -> None:
         raise RuntimeError("The image reader isn't installed on this server.") from exc
 
 
-def _runtime_root() -> Path:
+def _project_root() -> Path:
+    for candidate in (ROOT, *ROOT.parents):
+        if (candidate / "package.json").is_file():
+            return candidate
+    return Path.cwd()
+
+
+def _runtime_candidates() -> list:
+    project = _project_root()
     configured = os.environ.get("MOODYBOT_RUNTIME")
+    found = []
     if configured:
-        root = Path(configured)
-    else:
-        root = ROOT.parents[1] / "_render_src"
-    if not (root / "prompt_runtime.py").is_file():
-        raise RuntimeError("MoodyBot personality runtime is not available.")
-    return root
+        found.append(Path(configured))
+    found.extend([
+        project / "runtime",
+        Path.cwd() / "runtime",
+        ROOT.parent / "runtime",
+    ])
+    if len(ROOT.parents) > 1:
+        found.append(ROOT.parents[1] / "_render_src")
+    if len(ROOT.parents) > 2:
+        found.append(ROOT.parents[2] / "_render_src")
+    return found
+
+
+def _runtime_root() -> Path:
+    for root in _runtime_candidates():
+        if (root / "prompt_runtime.py").is_file():
+            return root
+    dest = _project_root() / "runtime"
+    import subprocess
+    if dest.exists() and not (dest / "prompt_runtime.py").is_file():
+        import shutil
+        shutil.rmtree(dest, ignore_errors=True)
+    try:
+        subprocess.run(
+            [
+                "git", "clone", "--depth", "1",
+                "https://github.com/DDLP-max/moodybot-telegram.git",
+                str(dest),
+            ],
+            check=True,
+            timeout=120,
+            capture_output=True,
+        )
+    except Exception:
+        print("runtime checkout failed", file=sys.stderr)
+    if (dest / "prompt_runtime.py").is_file():
+        return dest
+    raise RuntimeError("MoodyBot personality runtime is not available.")
 
 
 def _load_bot_functions(path: Path) -> dict:

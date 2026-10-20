@@ -16,6 +16,8 @@ function runtimeDir(scriptPath: string): string | undefined {
   const candidates = [
     process.env.MOODYBOT_RUNTIME,
     path.resolve(process.cwd(), "runtime"),
+    path.resolve(path.dirname(scriptPath), "..", "runtime"),
+    path.resolve(path.dirname(scriptPath), "..", "..", "runtime"),
     path.resolve(path.dirname(scriptPath), "..", "..", "_render_src"),
     path.resolve(path.dirname(scriptPath), "..", "_render_src"),
   ].filter((value): value is string => Boolean(value));

@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "tsx bootstrap.ts",
-    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && node -e \"const fs=require('fs');try{fs.mkdirSync('dist/logs',{recursive:true});}catch(e){} for (const f of ['web_vision.py','moodybot_vision.py']) fs.copyFileSync('server/'+f,'dist/'+f);\"",
+    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist && node -e \"const fs=require('fs');try{fs.mkdirSync('dist/logs',{recursive:true});}catch(e){} for (const f of ['web_vision.py','moodybot_vision.py']) fs.copyFileSync('server/'+f,'dist/'+f);\" && node scripts/fetch-runtime.mjs",
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "check": "tsc",
     "db:push": "drizzle-kit push"
