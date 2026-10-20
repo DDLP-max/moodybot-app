@@ -41,6 +41,56 @@ def memory_for(user_id: int) -> ImageMemory:
     return ImageMemory(MEMORY_ROOT / str(user_id), retention_days(), memory_limit())
 
 
+def _ensure_pillow() -> None:
+    """The Node host does not ship Pillow. Install it for this interpreter once."""
+    local = ROOT / "pydeps"
+    entries = [entry for entry in (os.environ.get("PYTHONPATH") or "").split(os.pathsep) if entry]
+    entries.append(str(local))
+    for entry in entries:
+        if entry not in sys.path:
+            sys.path.insert(0, entry)
+    try:
+        import PIL  # noqa: F401
+        return
+    except ImportError:
+        pass
+    local.mkdir(parents=True, exist_ok=True)
+    import subprocess
+    completed = subprocess.run(
+        [
+            sys.executable, "-m", "pip", "install",
+            "--disable-pip-version-check",
+            "--target", str(local),
+            "pillow",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=90,
+    )
+    if completed.returncode != 0:
+        subprocess.run([sys.executable, "-m", "ensurepip", "--upgrade"], capture_output=True, text=True, timeout=90)
+        completed = subprocess.run(
+            [
+                sys.executable, "-m", "pip", "install",
+                "--disable-pip-version-check",
+                "--target", str(local),
+                "pillow",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=90,
+        )
+    if completed.returncode != 0:
+        print("pillow install failed", file=sys.stderr)
+        raise RuntimeError("The image reader isn't installed on this server.")
+    import importlib
+    importlib.invalidate_caches()
+    try:
+        import PIL  # noqa: F401
+    except ImportError as exc:
+        raise RuntimeError("The image reader isn't installed on this server.") from exc
+
+
 def _runtime_root() -> Path:
     configured = os.environ.get("MOODYBOT_RUNTIME")
     if configured:
@@ -117,6 +167,7 @@ def _gather(payload: dict):
     memory = memory_for(user_id)
     raw_b64 = payload.get("imageBase64") or ""
     if raw_b64:
+        _ensure_pillow()
         raw = base64.b64decode(raw_b64)
         jpeg, mime = normalize_image(raw, payload.get("mime"))
         return {

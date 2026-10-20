@@ -1,10 +1,10 @@
 services:
   - type: web
     name: moodybot-webapp
-    env: node
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     plan: starter
-    buildCommand: bash scripts/render-build.sh
-    startCommand: npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV

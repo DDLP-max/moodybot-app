@@ -1,0 +1,8 @@
+node_modules
+dist
+pydeps
+runtime
+.git
+server/data
+**/.env
+**/.env.txt
