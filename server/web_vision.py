@@ -49,11 +49,17 @@ def _ensure_pillow() -> None:
     for entry in entries:
         if entry not in sys.path:
             sys.path.insert(0, entry)
+    missing = []
     try:
         import PIL  # noqa: F401
-        return
     except ImportError:
-        pass
+        missing.append("pillow")
+    try:
+        import pillow_heif  # noqa: F401
+    except ImportError:
+        missing.append("pillow-heif")
+    if not missing:
+        return
     local.mkdir(parents=True, exist_ok=True)
     import subprocess
     completed = subprocess.run(
@@ -61,11 +67,11 @@ def _ensure_pillow() -> None:
             sys.executable, "-m", "pip", "install",
             "--disable-pip-version-check",
             "--target", str(local),
-            "pillow",
+            *missing,
         ],
         capture_output=True,
         text=True,
-        timeout=90,
+        timeout=120,
     )
     if completed.returncode != 0:
         subprocess.run([sys.executable, "-m", "ensurepip", "--upgrade"], capture_output=True, text=True, timeout=90)
@@ -74,11 +80,11 @@ def _ensure_pillow() -> None:
                 sys.executable, "-m", "pip", "install",
                 "--disable-pip-version-check",
                 "--target", str(local),
-                "pillow",
+                *missing,
             ],
             capture_output=True,
             text=True,
-            timeout=90,
+            timeout=120,
         )
     if completed.returncode != 0:
         print("pillow install failed", file=sys.stderr)

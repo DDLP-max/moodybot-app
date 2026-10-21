@@ -140,7 +140,16 @@ function normalizeCopywriterResult(r: any) {
   return normalized;
 }
 
-const WEB_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const WEB_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/bmp",
+  "image/heic",
+  "image/heif",
+  "image/tiff",
+]);
 const WEB_IMAGE_BYTES = 8_000_000;
 
 function parseImagePayload(
@@ -158,7 +167,7 @@ function parseImagePayload(
   }
   if (mime === "image/jpg") mime = "image/jpeg";
   if (!WEB_IMAGE_TYPES.has(mime)) {
-    return { mime, base64: "", error: "Send a JPG, PNG, or WEBP image." };
+    return { mime, base64: "", error: "Send a JPG, PNG, WEBP, GIF, or HEIC image." };
   }
   const bytes = Buffer.from(base64, "base64").length;
   if (!bytes) return { mime, base64: "", error: "That file is empty." };

@@ -24,6 +24,31 @@ interface Message {
   personaAnalysis?: PersonaAnalysis;
 }
 
+const IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/bmp",
+  "image/heic",
+  "image/heif",
+  "image/tiff",
+]);
+
+function imageMime(file: File): string | null {
+  const declared = (file.type === "image/jpg" ? "image/jpeg" : file.type).toLowerCase();
+  if (IMAGE_TYPES.has(declared)) return declared;
+  const name = file.name.toLowerCase();
+  if (name.endsWith(".heic") || name.endsWith(".heif")) return "image/heic";
+  if (name.endsWith(".png")) return "image/png";
+  if (name.endsWith(".webp")) return "image/webp";
+  if (name.endsWith(".gif")) return "image/gif";
+  if (name.endsWith(".bmp")) return "image/bmp";
+  if (name.endsWith(".tif") || name.endsWith(".tiff")) return "image/tiff";
+  if (name.endsWith(".jpg") || name.endsWith(".jpeg")) return "image/jpeg";
+  return null;
+}
+
 export default function DynamicPage() {
   const [location, setLocation] = useLocation();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -204,9 +229,9 @@ export default function DynamicPage() {
 
   const takeImageFile = (file: File | null | undefined) => {
     if (!file) return;
-    const mime = file.type === "image/jpg" ? "image/jpeg" : file.type;
-    if (!["image/jpeg", "image/png", "image/webp"].includes(mime)) {
-      setAttachError("Send a JPG, PNG, or WEBP image.");
+    const mime = imageMime(file);
+    if (!mime) {
+      setAttachError("Send a JPG, PNG, WEBP, GIF, or HEIC image.");
       return;
     }
     if (file.size > 8_000_000) {
@@ -447,7 +472,7 @@ export default function DynamicPage() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
+                accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/heic,image/heif,image/tiff,.heic,.heif"
                 className="hidden"
                 onChange={(event) => {
                   takeImageFile(event.target.files?.[0]);
