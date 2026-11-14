@@ -2,6 +2,8 @@
  * Gold-shape delivery: cut → name → prove once → stop → 🥃
  * At most one structural compression. Not creative authorship.
  */
+import { contentIsProtected } from "./claimDomain";
+
 export const GOLD_SHAPE_VERSION = "gold-shape-v1";
 
 const WHISKEY = "🥃";
@@ -479,17 +481,12 @@ export function applyGoldShapePass(
     "cta_or_costume_tail",
     "stacked_metaphor",
     "multi_mechanism_essay",
-    "knife_overlong",
-    "snap_overlong",
-    "knife_too_many_sentences",
-    "reflection_overlong",
-    "reflection_too_many_sentences",
     "paragraph_restatement",
     "over_confirming",
     "essay_diction",
     "abstract_closer",
   ]);
-  if (failures.some((f) => triggers.has(f))) {
+  if (failures.some((f) => triggers.has(f)) && !contentIsProtected(userMessage)) {
     const compressed = compressOnce(userMessage, body, editorStructure, failures, budget);
     if (stripWhiskey(compressed)) {
       report.quality_rewrite_triggered = true;

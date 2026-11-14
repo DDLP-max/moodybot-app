@@ -288,7 +288,7 @@ def _ask(messages, api_key: str) -> str:
     body = json.dumps({
         "model": MODEL,
         "messages": messages,
-        "max_tokens": 1000,
+        "max_tokens": 2000,
     }).encode("utf-8")
     request = urllib.request.Request(
         "https://openrouter.ai/api/v1/chat/completions",

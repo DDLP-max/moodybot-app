@@ -20,12 +20,15 @@ import {
   classifyTopicMode,
   domainMechanismGuidance,
   lensInternalQuestion,
+  completionGap,
+  requestGuidance,
   responseBudgetGuidance,
   selectInterpretiveLens,
 } from "../utils/claimDomain";
 import { appendToTextLog } from "./logger";
 import type { ChatCompletionMessageParam } from "openai/resources/chat";
 import { 
+  CONTINUATION_MAX_TOKENS,
   OPENROUTER_MODEL_DYNAMIC, 
   OPENROUTER_API_URL, 
   OPENROUTER_HTTP_REFERER, 
@@ -159,9 +162,10 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
     `structure_persistence = "routing_only"`,
     shouldAutoSelect ? `emotional_calibration = "${selectedMode}"` : null,
     shouldAutoSelect
-      ? `Instructions: Dynamic Mode — Identity → Intelligence → Depth×Shape (SNAP/KNIFE/REFLECTION) → Gold within budget. Existential/aging/grief → REFLECTION (~250–450). Food/hot takes → SNAP. Ask the lens question first. Gold never picks the lens. ONE thesis; develop enough for the depth. Do not expose lens names. Stop when it lands. Tone may lean ${selectedMode} naturally; no poetic closer.`
-      : `Instructions: Respond in ${selectedMode} mode. Interpretive lens → capability → mechanism → Depth×Shape → ordinary language → prove that thesis only. Stop when it lands.`,
+      ? `Instructions: Dynamic Mode — Identity → Intelligence → Depth×Shape (SNAP/KNIFE/REFLECTION). Existential/aging/grief → REFLECTION. Food/hot takes → SNAP. Ask the lens question first. Gold never picks the lens. ONE thesis unless they asked for a list. Do not expose lens names. Personality is voice, not a length cap. Tone may lean ${selectedMode} naturally; no poetic closer.`
+      : `Instructions: Respond in ${selectedMode} mode. Interpretive lens → capability → mechanism → Depth×Shape → ordinary language. Answer the request completely.`,
     responseBudgetGuidance(responseBudget, preferredStructure, topicMode),
+    requestGuidance(userMessage),
     mechanismFit,
     `Output: Plain conversational text only. No JSON. No code fences. No mandatory Signature Line, callback, or CTA. No consultant/engine jargon in prose. Never name the lens.`
   ].filter(Boolean).join("\n");
@@ -233,12 +237,49 @@ Respond directly as MoodyBot in natural prose (not JSON), focused on the user's 
     throw new Error("Invalid response structure from OpenRouter API");
   }
   
-  const aiRaw = json.choices[0].message.content;
+  let aiRaw = json.choices[0].message.content as string;
+  const finishReason = json.choices[0].finish_reason;
   console.log("Raw AI response:", aiRaw);
   
   if (!aiRaw || aiRaw.trim().length === 0) {
     console.error("❌ Empty AI response from OpenRouter");
     throw new Error("Empty response from AI model");
+  }
+
+  const gap = completionGap(userMessage, aiRaw);
+  if (gap || finishReason === "length") {
+    const followup = gap || "The previous answer was cut off by the token limit. Continue from the last sentence. Do not restart. Do not drop what was already said. Return only the continuation.";
+    const continued = await fetch(OPENROUTER_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+        "HTTP-Referer": OPENROUTER_HTTP_REFERER,
+        "X-Title": OPENROUTER_X_TITLE
+      },
+      body: JSON.stringify({
+        model: MODEL_DYNAMIC,
+        messages: [
+          ...messages,
+          { role: "assistant", content: aiRaw },
+          { role: "user", content: followup },
+        ],
+        temperature: DYNAMIC_TEMPERATURE,
+        max_tokens: CONTINUATION_MAX_TOKENS
+      }),
+    });
+    if (continued.ok) {
+      const continuedJson = await continued.json();
+      const extra = continuedJson?.choices?.[0]?.message?.content;
+      if (typeof extra === "string" && extra.trim()) {
+        aiRaw = gap ? extra : `${aiRaw.trim()} ${extra.trim()}`;
+        if (completionGap(userMessage, aiRaw)) {
+          console.error("DYNAMIC_INCOMPLETE request still short after one continuation");
+        }
+      }
+    } else if (gap || finishReason === "length") {
+      console.error("DYNAMIC_INCOMPLETE continuation failed");
+    }
   }
 
   const promptHash = promptContentHash(moodyPrompt);

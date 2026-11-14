@@ -16,5 +16,6 @@ export const OPENROUTER_X_TITLE = "MoodyBot";
 // Default model parameters
 export const DEFAULT_TEMPERATURE = 0.7;
 export const DEFAULT_MAX_TOKENS = 256;
-export const DYNAMIC_MAX_TOKENS = 1200;
+export const DYNAMIC_MAX_TOKENS = 2000;
+export const CONTINUATION_MAX_TOKENS = 1500;
 export const DYNAMIC_TEMPERATURE = 0.85;

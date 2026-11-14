@@ -155,19 +155,99 @@ export function applyBudgetToStructure(
   return mode === "compress" ? "KNIFE" : pref === "SNAP" ? "KNIFE" : pref;
 }
 
+const NUMBER_WORDS: Record<string, number> = {
+  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+  eleven: 11, twelve: 12, fifteen: 15, twenty: 20,
+};
+
+const COUNT_REQUEST = /\b(?:name|list|give|provide|share|offer)\s+(?:me\s+)?(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty)\s+(?:distinct\s+|different\s+|giant\s+|separate\s+)?(companies|reasons|examples|ways|points|items|things|steps|businesses)\b/i;
+
+function requestedCount(text: string): { count: number; unit: string; oneEach: boolean } | null {
+  const match = COUNT_REQUEST.exec(text || "");
+  if (!match) return null;
+  const raw = match[1].toLowerCase();
+  const count = /^\d+$/.test(raw) ? Number(raw) : NUMBER_WORDS[raw] || 0;
+  if (count < 1 || count > 20) return null;
+  return {
+    count,
+    unit: match[2].toLowerCase(),
+    oneEach: /\bone sentence each\b/i.test(text),
+  };
+}
+
+export function requestGuidance(userMessage: string): string {
+  const header = [
+    "USER REQUEST (overrides shape, SNAP, one-beat, sentence caps, and word budgets):",
+    "Safety and the channel's real delivery limit still apply.",
+    "Personality is the voice of the answer. It is not permission to drop what they asked for.",
+    "Do not infer the job from how short the prompt is. Do not pad a simple question into an essay.",
+  ];
+  const counted = requestedCount(userMessage);
+  if (counted) {
+    header.push(
+      `Deliver exactly ${counted.count} distinct ${counted.unit}.${counted.oneEach ? " One sentence each." : ""}`,
+      "Do not stop early. Do not replace the list with one observation.",
+      "Predictions and judgments are opinions, not established facts.",
+    );
+    return header.join("\n");
+  }
+  if (/\b(?:in\s+)?one sentence\b/i.test(userMessage)) {
+    header.push("Exactly one sentence. Put the answer in it. Do not add a second.");
+    return header.join("\n");
+  }
+  if (/^yes or no\b/i.test(userMessage.trim())) {
+    header.push("Answer directly. Add an explanation only when it earns its place.");
+    return header.join("\n");
+  }
+  if (/\b(thoroughly|in detail|walk me through|explain how|explain the)\b/i.test(userMessage)) {
+    header.push(
+      "Answer every part they named, with enough detail that the question is actually answered.",
+      "Do not omit a requested dimension to sound sharper.",
+    );
+    return header.join("\n");
+  }
+  header.push("Answer the question at its natural length. A short question can take a short answer. Do not invent a paragraph quota.");
+  return header.join("\n");
+}
+
+export function contentIsProtected(userMessage: string): boolean {
+  if (requestedCount(userMessage)) return true;
+  return /\b(thoroughly|in detail|walk me through|explain how|explain the)\b/i.test(userMessage || "");
+}
+
+export function deliveredItemCount(text: string): number {
+  const body = (text || "").replace(/\s*🥃\s*$/, "").trim();
+  const numbered = body.match(/^\s*(?:\d+[\).:]|[-•])\s+\S/gm);
+  if (numbered && numbered.length >= 2) return numbered.length;
+  return body.split(/(?<=[.!?])\s+/).map((part) => part.trim()).filter(Boolean).length;
+}
+
+export function completionGap(userMessage: string, text: string): string {
+  const counted = requestedCount(userMessage);
+  if (!counted) return "";
+  const got = deliveredItemCount(text);
+  if (got >= counted.count) return "";
+  return (
+    `The draft delivered ${got} items. The user asked for exactly ${counted.count} distinct ${counted.unit}.` +
+    (counted.oneEach ? " One sentence each." : "") +
+    " Return the complete answer with every requested item. Do not summarize the list into fewer items. Keep the same voice. Predictions stay opinions."
+  );
+}
+
 export function responseBudgetGuidance(
   budget: ResponseBudget,
   structure = "",
   topicMode: TopicMode | string = "neutral"
 ): string {
   const shape = normalizeStructure(structure);
+  const shared = "This shape is voice, not a cap. The user's request decides how much is said. Do not stop early for a sentence count or a word count. Do not pad.";
   if (budget === "low" || shape === "SNAP") {
     return [
       "RESPONSE BUDGET — Depth: low × Shape: SNAP.",
       "PURPOSE: Surprise the reader.",
-      "FORMAT: one paragraph; one movement. Usually 1–3 sentences.",
-      "Stop at the spear. Soft ~15–70 words (consequence, not the design).",
+      shared,
       'PASS: "That\'s like saying prison is just a room."',
+      "Do not lyricize.",
     ].join("\n");
   }
   if (shape === "REFLECTION") {
@@ -175,14 +255,15 @@ export function responseBudgetGuidance(
       "RESPONSE BUDGET — Depth: high × Shape: REFLECTION.",
       "PURPOSE: Leave the reader seeing their own life differently.",
       "PARAGRAPH LAW: Paragraphs are semantic units, not visual spacing.",
-      "STRUCTURAL CONTRACT — blank lines between beats (not one wall of text):",
+      "STRUCTURAL CONTRACT — a new paragraph when the thought changes:",
       "Paragraph 1 — Observation",
       "Paragraph 2 — Deepening",
       "Paragraph 3 — Consequence",
-      "Paragraph 4 (optional) — Acceptance (only if earned)",
-      "STOP. 3–6 paragraphs max.",
+      "Paragraph 4 — Acceptance, only if it earns its place",
+      "There is no paragraph quota.",
       "Does this paragraph introduce a new layer, or merely reinforce the previous? If reinforce — delete.",
       'AND THEN? TEST: if the answer is just another proof of the same point, remove it.',
+      shared,
     ].join("\n");
   }
   if (budget === "high") {
@@ -190,21 +271,17 @@ export function responseBudgetGuidance(
       "RESPONSE BUDGET — Depth: high × Shape: Extended KNIFE.",
       "PURPOSE: Develop one mechanism until it feels inevitable.",
       "PARAGRAPH LAW: Paragraphs are semantic units, not visual spacing.",
-      "STRUCTURAL CONTRACT — blank lines between beats (not one wall of text):",
-      "Paragraph 1 — Observation",
-      "Paragraph 2 — Development / proof",
-      "Paragraph 3 (optional) — Consequence",
-      "STOP. 2–4 paragraphs; each advances the mechanism.",
-      `Topic mode: ${topicMode || "argument"}. Soft ~100–260 words (consequence).`,
+      `Topic mode: ${topicMode || "argument"}.`,
       "AND THEN? TEST: not another proof of the same point.",
       "Do NOT flip into lyrical REFLECTION on politics/hot-takes.",
+      shared,
     ].join("\n");
   }
   return [
     "RESPONSE BUDGET — Depth: medium × Shape: KNIFE.",
     "PURPOSE: Reframe the reader.",
-    "FORMAT: one paragraph / one movement. Two only if the second is the proof rather than another thesis.",
-    "Stop after the proof. Soft ~50–140 words (consequence).",
+    "Develop enough to land. Do not force SNAP.",
+    shared,
   ].join("\n");
 }
 
